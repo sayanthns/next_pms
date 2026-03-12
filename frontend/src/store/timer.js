@@ -18,12 +18,21 @@ export const useTimerStore = defineStore("timer", () => {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   });
 
+  function parseServerTime(dtStr) {
+    // Frappe returns UTC datetimes without timezone suffix (e.g. "2026-03-12 15:30:45.123456")
+    // Append 'Z' so JS Date parses it as UTC instead of local time
+    if (dtStr && !dtStr.endsWith("Z") && !dtStr.includes("+")) {
+      return new Date(dtStr.replace(" ", "T") + "Z").getTime();
+    }
+    return new Date(dtStr).getTime();
+  }
+
   function startElapsedCounter() {
     stopElapsedCounter();
     intervalId = setInterval(() => {
       if (startTime.value) {
         elapsedSeconds.value = Math.floor(
-          (Date.now() - new Date(startTime.value).getTime()) / 1000
+          (Date.now() - parseServerTime(startTime.value)) / 1000
         );
       }
     }, 1000);
