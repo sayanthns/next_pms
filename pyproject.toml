@@ -1,0 +1,16 @@
+[project]
+name = "next_pms"
+version = "0.0.1"
+description = "IT Project Management System for ERPNext"
+authors = [
+    {name = "EFTPMS", email = "info@eftpms.com"}
+]
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["flit_core >=3.4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench]
+app-name = "next_pms"

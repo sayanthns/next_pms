@@ -1,0 +1,10 @@
+<h3>Task Assigned: {{ task_title }}</h3>
+<p>Hi {{ assigned_to_name }},</p>
+<p>You have been assigned a new task in project <b>{{ project_name }}</b>:</p>
+<table style="border-collapse:collapse; width:100%; max-width:600px;">
+  <tr><td style="padding:8px; border:1px solid #e5e7eb; font-weight:600;">Task</td><td style="padding:8px; border:1px solid #e5e7eb;">{{ task_title }}</td></tr>
+  <tr><td style="padding:8px; border:1px solid #e5e7eb; font-weight:600;">Priority</td><td style="padding:8px; border:1px solid #e5e7eb;">{{ priority }}</td></tr>
+  <tr><td style="padding:8px; border:1px solid #e5e7eb; font-weight:600;">Due Date</td><td style="padding:8px; border:1px solid #e5e7eb;">{{ due_date or 'Not set' }}</td></tr>
+  <tr><td style="padding:8px; border:1px solid #e5e7eb; font-weight:600;">Type</td><td style="padding:8px; border:1px solid #e5e7eb;">{{ task_type }}</td></tr>
+</table>
+<p style="margin-top:16px;"><a href="{{ task_url }}" style="background:#5B4CF5; color:white; padding:10px 20px; text-decoration:none; border-radius:6px;">View Task</a></p>

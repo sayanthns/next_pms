@@ -1,0 +1,110 @@
+{
+    "actions": [],
+    "autoname": "format:CHK-{####}",
+    "creation": "2024-01-01 00:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "user",
+        "date",
+        "column_break_1",
+        "is_active",
+        "section_break_time",
+        "checkin_time",
+        "checkout_time",
+        "column_break_2",
+        "total_hours"
+    ],
+    "fields": [
+        {
+            "fieldname": "user",
+            "fieldtype": "Link",
+            "label": "User",
+            "options": "User",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "date",
+            "fieldtype": "Date",
+            "label": "Date",
+            "default": "Today",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "is_active",
+            "fieldtype": "Check",
+            "label": "Is Active",
+            "default": "0",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "section_break_time",
+            "fieldtype": "Section Break",
+            "label": "Time"
+        },
+        {
+            "fieldname": "checkin_time",
+            "fieldtype": "Datetime",
+            "label": "Check-in Time",
+            "reqd": 1
+        },
+        {
+            "fieldname": "checkout_time",
+            "fieldtype": "Datetime",
+            "label": "Check-out Time"
+        },
+        {
+            "fieldname": "column_break_2",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "total_hours",
+            "fieldtype": "Float",
+            "label": "Total Hours",
+            "read_only": 1,
+            "in_list_view": 1
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2024-01-01 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Next PMS",
+    "name": "PMS Checkin",
+    "naming_rule": "Expression",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "read": 1,
+            "role": "System Manager",
+            "write": 1,
+            "permlevel": 0
+        },
+        {
+            "create": 1,
+            "read": 1,
+            "role": "PMS Manager",
+            "write": 1,
+            "permlevel": 0
+        },
+        {
+            "create": 1,
+            "read": 1,
+            "role": "PMS Developer",
+            "write": 1,
+            "permlevel": 0
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
+}

@@ -1,0 +1,99 @@
+{
+    "actions": [],
+    "autoname": "format:CMT-{####}",
+    "creation": "2024-01-01 00:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "task",
+        "user",
+        "comment",
+        "column_break_1",
+        "timestamp",
+        "mentions"
+    ],
+    "fields": [
+        {
+            "fieldname": "task",
+            "fieldtype": "Link",
+            "label": "Task",
+            "options": "PMS Task",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "user",
+            "fieldtype": "Link",
+            "label": "User",
+            "options": "User",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "comment",
+            "fieldtype": "Text Editor",
+            "label": "Comment",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "timestamp",
+            "fieldtype": "Datetime",
+            "label": "Timestamp",
+            "default": "Now",
+            "read_only": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "mentions",
+            "fieldtype": "Small Text",
+            "label": "Mentions",
+            "description": "Comma-separated usernames"
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2024-01-01 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Next PMS",
+    "name": "PMS Comment",
+    "naming_rule": "Expression",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "read": 1,
+            "role": "PMS Manager",
+            "write": 1,
+            "permlevel": 0
+        },
+        {
+            "create": 1,
+            "read": 1,
+            "role": "PMS Developer",
+            "write": 1,
+            "permlevel": 0
+        },
+        {
+            "read": 1,
+            "role": "PMS Viewer",
+            "permlevel": 0
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "read": 1,
+            "role": "System Manager",
+            "write": 1,
+            "permlevel": 0
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
+}

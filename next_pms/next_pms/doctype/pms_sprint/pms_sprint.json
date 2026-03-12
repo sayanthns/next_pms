@@ -1,0 +1,100 @@
+{
+    "actions": [],
+    "autoname": "format:SPR-{####}",
+    "creation": "2024-01-01 00:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "sprint_name",
+        "project",
+        "status",
+        "column_break_1",
+        "start_date",
+        "end_date",
+        "section_break_1",
+        "goal"
+    ],
+    "fields": [
+        {
+            "fieldname": "sprint_name",
+            "fieldtype": "Data",
+            "label": "Sprint Name",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "project",
+            "fieldtype": "Link",
+            "label": "Project",
+            "options": "PMS Project",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "label": "Status",
+            "options": "Planned\nActive\nCompleted",
+            "default": "Planned",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "start_date",
+            "fieldtype": "Date",
+            "label": "Start Date",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "end_date",
+            "fieldtype": "Date",
+            "label": "End Date",
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "section_break_1",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "goal",
+            "fieldtype": "Small Text",
+            "label": "Goal"
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2024-01-01 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Next PMS",
+    "name": "PMS Sprint",
+    "naming_rule": "Expression (old style)",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "read": 1,
+            "role": "PMS Manager",
+            "write": 1
+        },
+        {
+            "read": 1,
+            "role": "PMS Developer"
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "read": 1,
+            "role": "System Manager",
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "title_field": "sprint_name",
+    "track_changes": 1
+}

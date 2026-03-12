@@ -1,0 +1,208 @@
+{
+  "charts": [],
+  "content": "[{\"id\":\"pms_header_1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Next PMS</b></span>\",\"col\":12}},{\"id\":\"pms_shortcut_project\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"PMS Project\",\"col\":3}},{\"id\":\"pms_shortcut_task\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"PMS Task\",\"col\":3}},{\"id\":\"pms_shortcut_timelog\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"PMS Time Log\",\"col\":3}},{\"id\":\"pms_shortcut_sprint\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"PMS Sprint\",\"col\":3}},{\"id\":\"pms_spacer_1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pms_number_card_1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Projects\",\"col\":4}},{\"id\":\"pms_number_card_2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Open Tasks\",\"col\":4}},{\"id\":\"pms_number_card_3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Sprints\",\"col\":4}},{\"id\":\"pms_spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pms_header_2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h6\\\"><b>Quick Links</b></span>\",\"col\":12}},{\"id\":\"pms_card_1\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Management\",\"col\":4}},{\"id\":\"pms_card_2\",\"type\":\"card\",\"data\":{\"card_name\":\"Time & Billing\",\"col\":4}},{\"id\":\"pms_card_3\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings & Access\",\"col\":4}}]",
+  "creation": "2024-01-01 00:00:00.000000",
+  "custom_blocks": [],
+  "docstatus": 0,
+  "doctype": "Workspace",
+  "for_user": "",
+  "hide_custom": 0,
+  "icon": "project",
+  "idx": 0,
+  "is_hidden": 0,
+  "label": "Next PMS",
+  "links": [
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Project",
+      "link_count": 0,
+      "link_to": "PMS Project",
+      "link_type": "DocType",
+      "onboard": 1,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Task",
+      "link_count": 0,
+      "link_to": "PMS Task",
+      "link_type": "DocType",
+      "onboard": 1,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Sprint",
+      "link_count": 0,
+      "link_to": "PMS Sprint",
+      "link_type": "DocType",
+      "onboard": 1,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Comment",
+      "link_count": 0,
+      "link_to": "PMS Comment",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "type": "Card Break",
+      "label": "Time & Billing"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Time Log",
+      "link_count": 0,
+      "link_to": "PMS Time Log",
+      "link_type": "DocType",
+      "onboard": 1,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Activity Rate",
+      "link_count": 0,
+      "link_to": "PMS Activity Rate",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Checkin",
+      "link_count": 0,
+      "link_to": "PMS Checkin",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "type": "Card Break",
+      "label": "Settings & Access"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Project Member",
+      "link_count": 0,
+      "link_to": "PMS Project Member",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS Client Portal Access",
+      "link_count": 0,
+      "link_to": "PMS Client Portal Access",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "PMS AI Settings",
+      "link_count": 0,
+      "link_to": "PMS AI Settings",
+      "link_type": "DocType",
+      "onboard": 0,
+      "type": "Link"
+    },
+    {
+      "hidden": 0,
+      "is_query_report": 0,
+      "label": "Next PMS App",
+      "link_count": 0,
+      "link_to": "/next-pms/dashboard",
+      "link_type": "URL",
+      "onboard": 1,
+      "type": "Link"
+    }
+  ],
+  "modified": "2024-01-01 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Next PMS",
+  "name": "Next PMS",
+  "number_cards": [
+    {
+      "color": "Blue",
+      "document_type": "PMS Project",
+      "filters_json": "[[\"PMS Project\",\"status\",\"not in\",[\"Cancelled\",\"Completed\"]]]",
+      "label": "Total Projects",
+      "show_percentage_stats": 0,
+      "stats_time_interval": "Monthly",
+      "type": "Document Count"
+    },
+    {
+      "color": "Orange",
+      "document_type": "PMS Task",
+      "filters_json": "[[\"PMS Task\",\"status\",\"not in\",[\"Done\",\"Cancelled\"]]]",
+      "label": "Open Tasks",
+      "show_percentage_stats": 0,
+      "stats_time_interval": "Monthly",
+      "type": "Document Count"
+    },
+    {
+      "color": "Green",
+      "document_type": "PMS Sprint",
+      "filters_json": "[[\"PMS Sprint\",\"status\",\"=\",\"Active\"]]",
+      "label": "Active Sprints",
+      "show_percentage_stats": 0,
+      "stats_time_interval": "Monthly",
+      "type": "Document Count"
+    }
+  ],
+  "owner": "Administrator",
+  "parent_page": "",
+  "public": 1,
+  "restrict_to_domain": "",
+  "roles": [],
+  "sequence_id": 1,
+  "shortcuts": [
+    {
+      "color": "Blue",
+      "doc_view": "List",
+      "label": "PMS Project",
+      "link_to": "PMS Project",
+      "stats_filter": "",
+      "type": "DocType"
+    },
+    {
+      "color": "Orange",
+      "doc_view": "List",
+      "label": "PMS Task",
+      "link_to": "PMS Task",
+      "stats_filter": "",
+      "type": "DocType"
+    },
+    {
+      "color": "Yellow",
+      "doc_view": "List",
+      "label": "PMS Time Log",
+      "link_to": "PMS Time Log",
+      "stats_filter": "",
+      "type": "DocType"
+    },
+    {
+      "color": "Green",
+      "doc_view": "List",
+      "label": "PMS Sprint",
+      "link_to": "PMS Sprint",
+      "stats_filter": "",
+      "type": "DocType"
+    }
+  ],
+  "title": "Next PMS"
+}

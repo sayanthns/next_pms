@@ -1,0 +1,55 @@
+{% extends "templates/base.html" %}
+
+{% block title %}Next PMS{% endblock %}
+
+{# Remove Frappe navbar, footer, banner completely #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block banner %}{% endblock %}
+
+{% block head_include %}
+{% if has_frontend %}
+{% for css in css_files %}
+<link rel="stylesheet" crossorigin href="/assets/next_pms/frontend/assets/{{ css }}">
+{% endfor %}
+{% endif %}
+<style>
+	/* Full-screen SPA — zero Frappe chrome */
+	body {
+		overflow: hidden;
+		margin: 0;
+		padding: 0;
+	}
+	#app {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		overflow: hidden;
+	}
+	/* Sidebar stays fixed, main content area scrolls */
+	#app .main-content {
+		height: 100vh;
+		overflow-y: auto;
+	}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="app"></div>
+
+<script>
+	window["pms_boot"] = {{ boot_data }};
+</script>
+
+{% if has_frontend %}
+<script type="module" crossorigin src="/assets/next_pms/frontend/assets/{{ js_file }}"></script>
+{% else %}
+<div style="text-align:center; padding:60px;">
+	<h2>Next PMS</h2>
+	<p>The Vue frontend has not been built yet.</p>
+	<p>Run <code>cd frontend && npm run build</code> to build the SPA.</p>
+</div>
+{% endif %}
+{% endblock %}

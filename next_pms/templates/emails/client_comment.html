@@ -1,0 +1,5 @@
+<h3>Client Comment on {{ task_title }}</h3>
+<p>Hi {{ recipient_name }},</p>
+<p>Client <b>{{ client_email }}</b> posted a comment on task <b>{{ task_title }}</b> in project <b>{{ project_name }}</b>:</p>
+<blockquote style="border-left:4px solid #5B4CF5; padding:12px; background:#f8f9fa; margin:16px 0;">{{ comment }}</blockquote>
+<p style="margin-top:16px;"><a href="{{ task_url }}" style="background:#5B4CF5; color:white; padding:10px 20px; text-decoration:none; border-radius:6px;">View Task</a></p>

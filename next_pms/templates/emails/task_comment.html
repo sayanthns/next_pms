@@ -1,0 +1,10 @@
+<h3>New Comment on: {{ task_title }}</h3>
+<p><b>{{ commenter }}</b> commented on a task in project <b>{{ project_name }}</b>:</p>
+<table style="border-collapse:collapse; width:100%; max-width:600px;">
+  <tr><td style="padding:8px; border:1px solid #e5e7eb; font-weight:600;">Task</td><td style="padding:8px; border:1px solid #e5e7eb;">{{ task_title }}</td></tr>
+  <tr><td style="padding:8px; border:1px solid #e5e7eb; font-weight:600;">Project</td><td style="padding:8px; border:1px solid #e5e7eb;">{{ project_name }}</td></tr>
+</table>
+<blockquote style="margin:16px 0; padding:12px 16px; border-left:4px solid #6366f1; background:#f8f7ff; color:#374151; font-size:14px; line-height:1.6;">
+  {{ comment_text }}
+</blockquote>
+<p style="margin-top:16px;"><a href="{{ task_url }}" style="background:#5B4CF5; color:white; padding:10px 20px; text-decoration:none; border-radius:6px;">View Task</a></p>

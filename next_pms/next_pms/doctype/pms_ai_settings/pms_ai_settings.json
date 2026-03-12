@@ -1,0 +1,81 @@
+{
+    "actions": [],
+    "creation": "2024-01-01 00:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "issingle": 1,
+    "field_order": [
+        "ai_provider",
+        "ai_api_key",
+        "ai_model",
+        "column_break_1",
+        "daily_report_enabled",
+        "daily_report_recipient"
+    ],
+    "fields": [
+        {
+            "fieldname": "ai_provider",
+            "fieldtype": "Select",
+            "label": "AI Provider",
+            "options": "OpenAI\nClaude",
+            "default": "OpenAI",
+            "reqd": 0
+        },
+        {
+            "fieldname": "ai_api_key",
+            "fieldtype": "Password",
+            "label": "API Key",
+            "reqd": 0
+        },
+        {
+            "fieldname": "ai_model",
+            "fieldtype": "Data",
+            "label": "Model",
+            "default": "gpt-4o",
+            "reqd": 0
+        },
+        {
+            "fieldname": "column_break_1",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "daily_report_enabled",
+            "fieldtype": "Check",
+            "label": "Enable Daily Report",
+            "default": "0"
+        },
+        {
+            "fieldname": "daily_report_recipient",
+            "fieldtype": "Data",
+            "label": "Report Recipient Email",
+            "default": "sayanth@enfono.in"
+        }
+    ],
+    "index_web_pages_for_search": 0,
+    "links": [],
+    "modified": "2024-01-01 00:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "Next PMS",
+    "name": "PMS AI Settings",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "read": 1,
+            "role": "System Manager",
+            "write": 1,
+            "permlevel": 0
+        },
+        {
+            "read": 1,
+            "role": "PMS Manager",
+            "write": 1,
+            "permlevel": 0
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 0
+}
