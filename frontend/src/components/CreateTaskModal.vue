@@ -117,6 +117,10 @@
           <option value="Improvement">Improvement</option>
           <option value="Research">Research</option>
           <option value="Documentation">Documentation</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Bench Task">Bench Task</option>
+          <option value="R&D Task">R&amp;D Task</option>
+          <option value="Support">Support</option>
         </select>
       </div>
 
@@ -136,6 +140,14 @@
           <label class="form-label">Due Date</label>
           <input v-model="form.due_date" type="date" class="form-input" />
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Reviewer</label>
+        <select v-model="form.reviewer" class="form-input">
+          <option value="">None</option>
+          <option v-for="u in teamMembers" :key="u.name" :value="u.name">{{ u.full_name || u.name }}</option>
+        </select>
       </div>
 
       <div class="form-group">
@@ -180,6 +192,7 @@
 import { ref, watch, nextTick, computed } from 'vue'
 import { call } from '@/utils/frappe'
 import CreateModal from './CreateModal.vue'
+import { eventBus, EVENTS } from '@/utils/eventBus'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -196,6 +209,7 @@ const fileInputRef = ref(null)
 const saving = ref(false)
 const form = ref(getDefaultForm())
 const availableUsers = ref([])
+const teamMembers = ref([])
 const selectedAssignees = ref([])
 const userSearch = ref('')
 const showUserDropdown = ref(false)
@@ -208,6 +222,7 @@ function getDefaultForm() {
     status: props.defaultStatus || 'Backlog',
     sprint: props.defaultSprint || '',
     task_type: '',
+    reviewer: '',
     estimated_hours: 0,
     due_date: '',
     description: '',
@@ -306,6 +321,9 @@ async function loadUsers() {
         user_image: u.user_image,
       }))
     }
+    // Load team members for reviewer dropdown
+    const allUsers = await call('next_pms.api.crud.get_all_users')
+    teamMembers.value = allUsers || []
   } catch (e) {
     console.error('Failed to load users:', e)
     // Fallback to all users
@@ -356,6 +374,7 @@ async function handleSubmit() {
       assignees: JSON.stringify(assigneeEmails),
       sprint: form.value.sprint || null,
       task_type: form.value.task_type || null,
+      reviewer: form.value.reviewer || null,
       estimated_hours: form.value.estimated_hours || 0,
       due_date: form.value.due_date || null,
       description: form.value.description || null,
@@ -364,6 +383,7 @@ async function handleSubmit() {
     if (attachedFiles.value.length && result?.name) {
       await uploadTaskAttachments(result.name)
     }
+    eventBus.emit(EVENTS.TASK_CREATED, result)
     emit('created', result)
   } catch (e) {
     console.error('Failed to create task:', e)

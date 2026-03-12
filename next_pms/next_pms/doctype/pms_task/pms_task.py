@@ -166,7 +166,8 @@ def _send_task_assigned_email(doc):
 
 
 def _send_task_status_change_notifications(doc, old_status):
-    """Send email notification to all task assignees when task status changes."""
+    """Send email notification to all task assignees when task status changes.
+    Also notifies the notify_user and project manager when status is In Review or Done."""
     try:
         changed_by = frappe.session.user
         changed_by_name = frappe.db.get_value("User", changed_by, "full_name") or changed_by
@@ -182,6 +183,15 @@ def _send_task_status_change_notifications(doc, old_status):
         # Also include legacy assigned_to
         if doc.assigned_to and doc.assigned_to != changed_by and doc.assigned_to not in recipients:
             recipients.append(doc.assigned_to)
+
+        # Notify the reviewer and project manager when In Review or Done
+        if doc.status in ("In Review", "Done"):
+            if doc.reviewer and doc.reviewer not in recipients:
+                recipients.append(doc.reviewer)
+            if doc.project:
+                pm = frappe.db.get_value("PMS Project", doc.project, "project_manager")
+                if pm and pm != changed_by and pm not in recipients:
+                    recipients.append(pm)
 
         if not recipients:
             return
@@ -205,7 +215,7 @@ def _send_task_status_change_notifications(doc, old_status):
             now=False,
         )
 
-        # Create Notification Log for each recipient
+        # Create Notification Log and push realtime for each recipient
         for user in recipients:
             frappe.get_doc(
                 {
@@ -218,6 +228,21 @@ def _send_task_status_change_notifications(doc, old_status):
                     "from_user": changed_by,
                 }
             ).insert(ignore_permissions=True)
+
+            # Push realtime notification
+            frappe.publish_realtime(
+                "pms_notification",
+                {
+                    "type": "task_status_changed",
+                    "task": doc.name,
+                    "task_title": doc.task_title,
+                    "project": doc.project,
+                    "old_status": old_status,
+                    "new_status": doc.status,
+                    "changed_by": changed_by_name,
+                },
+                user=user,
+            )
 
     except Exception:
         frappe.log_error("PMS: Failed to send task status change notification")

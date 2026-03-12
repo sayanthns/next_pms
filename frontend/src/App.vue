@@ -299,6 +299,17 @@ function handleClickOutside(e) {
   }
 }
 
+// Auto-refresh on visibility change (tab focus)
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    checkinStore.fetchTodayCheckin()
+    timerStore.fetchRunningTimer()
+    settingsStore.fetchSettings()
+  }
+}
+
+let refreshInterval = null
+
 onMounted(() => {
   settingsStore.fetchSettings()
   checkinStore.fetchTodayCheckin()
@@ -306,6 +317,13 @@ onMounted(() => {
   notificationStore.startAutoRefresh()
   window.addEventListener('keydown', handleKeydown)
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+
+  // Periodic refresh every 60s for checkin and timer
+  refreshInterval = setInterval(() => {
+    checkinStore.fetchTodayCheckin()
+    timerStore.fetchRunningTimer()
+  }, 60000)
 
   if (window.innerWidth < 768) {
     sidebarCollapsed.value = true
@@ -317,7 +335,9 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
   notificationStore.stopAutoRefresh()
+  if (refreshInterval) clearInterval(refreshInterval)
 })
 </script>
 

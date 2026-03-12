@@ -170,7 +170,18 @@ def get_all_timelogs(filters=None, limit=100, offset=0):
     if filters.get("task"):
         db_filters["task"] = filters["task"]
 
-    if filters.get("project"):
+    # Task type filter — find tasks of this type, then filter logs to those tasks
+    if filters.get("task_type"):
+        tt_filters = {"task_type": filters["task_type"]}
+        if filters.get("project"):
+            tt_filters["project"] = filters["project"]
+        tt_tasks = frappe.get_all("PMS Task", filters=tt_filters, pluck="name", limit_page_length=0)
+        if tt_tasks:
+            db_filters["task"] = ["in", tt_tasks]
+        else:
+            return {"logs": [], "total": 0}
+
+    if filters.get("project") and not filters.get("task_type"):
         # Get all tasks for the project, then filter logs by those tasks
         tasks = frappe.get_all(
             "PMS Task",
@@ -230,17 +241,19 @@ def get_all_timelogs(filters=None, limit=100, offset=0):
         limit_start=int(offset),
     )
 
-    # Enrich with task title, project, user full name
+    # Enrich with task title, project, task_type, user full name
     for log in logs:
         task_data = frappe.db.get_value(
-            "PMS Task", log["task"], ["task_title", "project"], as_dict=True
+            "PMS Task", log["task"], ["task_title", "project", "task_type"], as_dict=True
         )
         if task_data:
             log["task_title"] = task_data.task_title
             log["project"] = task_data.project
+            log["task_type"] = task_data.task_type or ""
         else:
             log["task_title"] = log["task"]
             log["project"] = ""
+            log["task_type"] = ""
         log["user_full_name"] = (
             frappe.get_cached_value("User", log["user"], "full_name") or log["user"]
         )

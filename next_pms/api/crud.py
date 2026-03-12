@@ -254,10 +254,18 @@ def get_project_members(project):
 
 @frappe.whitelist()
 def get_all_users():
-    """Return all active users for assignee selection (fallback if no project members)."""
+    """Return only active users who have the 'Next PMS' role."""
+    pms_user_emails = set(
+        r.parent for r in frappe.get_all(
+            "Has Role",
+            filters={"role": "Next PMS", "parenttype": "User"},
+            fields=["parent"],
+            limit_page_length=0,
+        )
+    )
     users = frappe.get_all(
         "User",
-        filters={"enabled": 1, "user_type": "System User"},
+        filters={"enabled": 1, "user_type": "System User", "name": ("in", list(pms_user_emails))},
         fields=["name", "full_name", "user_image"],
         order_by="full_name asc",
         limit_page_length=0,
@@ -408,6 +416,7 @@ def create_task(
     estimated_hours=0,
     due_date=None,
     task_type=None,
+    reviewer=None,
     start_date=None,
     description=None,
 ):
@@ -426,6 +435,7 @@ def create_task(
         "estimated_hours": estimated_hours or 0,
         "due_date": due_date,
         "task_type": task_type,
+        "reviewer": reviewer,
         "start_date": start_date or today(),
         "description": description or "",
         "assignees": [],

@@ -28,6 +28,7 @@
         "section_break_details",
         "description",
         "tags",
+        "reviewer",
         "section_break_hierarchy",
         "parent_task",
         "attachments"
@@ -99,7 +100,7 @@
             "fieldname": "task_type",
             "fieldtype": "Select",
             "label": "Task Type",
-            "options": "Feature\nBug\nImprovement\nResearch\nDocumentation",
+            "options": "Feature\nBug\nImprovement\nResearch\nDocumentation\nMeeting\nBench Task\nR&D Task\nSupport",
             "default": "Feature"
         },
         {
@@ -171,6 +172,13 @@
             "fieldname": "tags",
             "fieldtype": "Small Text",
             "label": "Tags"
+        },
+        {
+            "fieldname": "reviewer",
+            "fieldtype": "Link",
+            "label": "Reviewer",
+            "options": "User",
+            "description": "Reviewer to notify when task status changes to In Review or Done"
         },
         {
             "fieldname": "section_break_hierarchy",

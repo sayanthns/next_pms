@@ -221,9 +221,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { call, getList } from '@/utils/frappe'
 import { useSettingsStore } from '@/store/settings'
+import { eventBus, EVENTS } from '@/utils/eventBus'
 
 const settingsStore = useSettingsStore()
 const loading = ref(true)
@@ -233,8 +234,23 @@ const myTasks = ref([])
 const allTaskCounts = ref({})
 const projectFilter = ref('all')
 
+function onDataChanged() {
+  loadDashboard()
+}
+
 onMounted(async () => {
   await loadDashboard()
+  eventBus.on(EVENTS.TASK_CREATED, onDataChanged)
+  eventBus.on(EVENTS.TASK_STATUS_CHANGED, onDataChanged)
+  eventBus.on(EVENTS.TASK_DELETED, onDataChanged)
+  eventBus.on(EVENTS.TIMER_STOPPED, onDataChanged)
+})
+
+onUnmounted(() => {
+  eventBus.off(EVENTS.TASK_CREATED, onDataChanged)
+  eventBus.off(EVENTS.TASK_STATUS_CHANGED, onDataChanged)
+  eventBus.off(EVENTS.TASK_DELETED, onDataChanged)
+  eventBus.off(EVENTS.TIMER_STOPPED, onDataChanged)
 })
 
 async function loadDashboard() {

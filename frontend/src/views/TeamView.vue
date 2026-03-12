@@ -286,11 +286,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { call } from '@/utils/frappe'
 import { useSettingsStore } from '@/store/settings'
 import EmptyState from '@/components/EmptyState.vue'
+import { eventBus, EVENTS } from '@/utils/eventBus'
 
 const router = useRouter()
 const route = useRoute()
@@ -593,6 +594,10 @@ async function sendTestReport() {
 }
 
 // ── Init ────────────────────────────────────────────────
+function onCheckinChanged() {
+  loadTeamData()
+}
+
 onMounted(() => {
   loadTeamData()
   if (activeTab.value === 'users') {
@@ -601,6 +606,11 @@ onMounted(() => {
   if (activeTab.value === 'ai') {
     loadAiSettings()
   }
+  eventBus.on(EVENTS.CHECKIN_CHANGED, onCheckinChanged)
+})
+
+onUnmounted(() => {
+  eventBus.off(EVENTS.CHECKIN_CHANGED, onCheckinChanged)
 })
 </script>
 

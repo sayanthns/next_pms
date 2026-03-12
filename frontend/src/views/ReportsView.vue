@@ -276,6 +276,103 @@
           </div>
         </div>
 
+        <!-- Hour Log Report by Task Type -->
+        <div class="section-card">
+          <h3 class="section-title">Hour Log Report</h3>
+          <div class="report-filters">
+            <select v-model="hlUser" class="report-filter" @change="loadHourLogReport">
+              <option value="">All Users</option>
+              <option v-for="u in hlUserOptions" :key="u.name" :value="u.name">{{ u.full_name || u.name }}</option>
+            </select>
+            <select v-model="hlTaskType" class="report-filter" @change="loadHourLogReport">
+              <option value="">All Task Types</option>
+              <option v-for="tt in taskTypeOptions" :key="tt" :value="tt">{{ tt }}</option>
+            </select>
+          </div>
+
+          <div v-if="hlLoading" class="loading-container" style="padding: 30px 0">
+            <div class="spinner-sm"></div>
+          </div>
+
+          <template v-else-if="hlReport">
+            <!-- Summary -->
+            <div class="hl-summary">
+              <div class="hl-summary-item">
+                <span class="hl-summary-val">{{ hlReport.totals.hours }}h</span>
+                <span class="hl-summary-label">Total Hours</span>
+              </div>
+              <div class="hl-summary-item">
+                <span class="hl-summary-val">{{ hlReport.totals.entries }}</span>
+                <span class="hl-summary-label">Time Entries</span>
+              </div>
+            </div>
+
+            <!-- By Task Type Table -->
+            <div v-if="hlReport.by_task_type.length" class="breakdown-table-wrap" style="margin-top: 16px">
+              <table class="breakdown-table">
+                <thead>
+                  <tr>
+                    <th>Task Type</th>
+                    <th class="text-right">Hours</th>
+                    <th class="text-right">Entries</th>
+                    <th class="text-right">%</th>
+                    <th>Distribution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in hlReport.by_task_type" :key="row.task_type">
+                    <td>
+                      <div class="status-cell">
+                        <span class="status-dot" :style="{ background: taskTypeColor(row.task_type) }"></span>
+                        {{ row.task_type }}
+                      </div>
+                    </td>
+                    <td class="text-right font-semibold">{{ row.hours }}h</td>
+                    <td class="text-right">{{ row.entries }}</td>
+                    <td class="text-right">{{ row.percentage }}%</td>
+                    <td>
+                      <div class="bar-cell">
+                        <div class="bar-fill" :style="{ width: row.percentage + '%', background: taskTypeColor(row.task_type) }"></div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Detail Table -->
+            <details v-if="hlReport.details.length" class="hl-details" style="margin-top: 16px">
+              <summary class="hl-details-toggle">View detailed entries ({{ hlReport.details.length }})</summary>
+              <div class="breakdown-table-wrap" style="margin-top: 8px">
+                <table class="breakdown-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>User</th>
+                      <th>Task</th>
+                      <th>Type</th>
+                      <th class="text-right">Hours</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="d in hlReport.details" :key="d.log">
+                      <td>{{ d.date }}</td>
+                      <td>{{ d.user_full_name }}</td>
+                      <td>{{ d.task_title }}</td>
+                      <td>
+                        <span class="task-type-badge" :style="{ background: taskTypeColor(d.task_type) + '20', color: taskTypeColor(d.task_type) }">{{ d.task_type }}</span>
+                      </td>
+                      <td class="text-right font-semibold">{{ d.hours }}h</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+
+            <p v-if="!hlReport.by_task_type.length" class="no-data-text">No hour logs found for the selected filters.</p>
+          </template>
+        </div>
+
         <!-- Sprint Progress -->
         <div class="section-card" v-if="sprintProgress.length">
           <h3 class="section-title">Sprint Progress</h3>
@@ -322,7 +419,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '@/store/projects'
 import { useSettingsStore } from '@/store/settings'
-import { getList } from '@/utils/frappe'
+import { getList, call } from '@/utils/frappe'
 import BudgetWidget from '@/components/BudgetWidget.vue'
 
 const props = defineProps({
@@ -345,6 +442,31 @@ const switchProject = ref(props.projectId || '')
 const dashboard = ref(null)
 const loading = ref(false)
 const error = ref(null)
+
+// Hour Log Report state
+const hlUser = ref('')
+const hlTaskType = ref('')
+const hlReport = ref(null)
+const hlLoading = ref(false)
+const hlUserOptions = ref([])
+const taskTypeOptions = ['Feature', 'Bug', 'Improvement', 'Research', 'Documentation', 'Meeting', 'Bench Task', 'R&D Task', 'Support']
+
+const taskTypeColorMap = {
+  'Feature': '#2563EB',
+  'Bug': '#EF4444',
+  'Improvement': '#10b981',
+  'Research': '#8b5cf6',
+  'Documentation': '#6b7280',
+  'Meeting': '#F59E0B',
+  'Bench Task': '#14b8a6',
+  'R&D Task': '#ec4899',
+  'Support': '#f97316',
+  'Uncategorized': '#9ca3af',
+}
+
+function taskTypeColor(tt) {
+  return taskTypeColorMap[tt] || '#9ca3af'
+}
 
 const statusColorMap = {
   'Backlog': '#9ca3af',
@@ -418,11 +540,38 @@ async function loadDashboard() {
     if (!dashboard.value) {
       error.value = 'No dashboard data returned.'
     }
+    // Load hour log report and user options for filters
+    loadHourLogReport()
+    loadHlUserOptions()
   } catch (e) {
     console.error('Failed to load dashboard:', e)
     error.value = 'Failed to load dashboard data. Please try again.'
   } finally {
     loading.value = false
+  }
+}
+
+async function loadHourLogReport() {
+  hlLoading.value = true
+  try {
+    hlReport.value = await call('next_pms.api.dashboard.get_hour_log_report', {
+      project: selectedProject.value || undefined,
+      user: hlUser.value || undefined,
+      task_type: hlTaskType.value || undefined,
+    })
+  } catch (e) {
+    console.error('Failed to load hour log report:', e)
+    hlReport.value = null
+  } finally {
+    hlLoading.value = false
+  }
+}
+
+async function loadHlUserOptions() {
+  try {
+    hlUserOptions.value = await call('next_pms.api.crud.get_all_users')
+  } catch (e) {
+    hlUserOptions.value = []
   }
 }
 
@@ -1208,9 +1357,81 @@ function sprintStatusClass(status) {
 .text-danger { color: #EF4444; }
 .text-muted { color: #6b7280; }
 
+/* Hour Log Report */
+.report-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.report-filter {
+  padding: 7px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: #f9fafb;
+  outline: none;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.report-filter:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.hl-summary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.hl-summary-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.hl-summary-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.hl-summary-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.task-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.hl-details-toggle {
+  font-size: 13px;
+  color: #2563EB;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.hl-details-toggle:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 768px) {
   .hours-grid, .dist-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .report-filters {
+    flex-direction: column;
+  }
+  .report-filter {
+    min-width: 100%;
   }
 }
 </style>

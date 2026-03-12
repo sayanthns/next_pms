@@ -159,3 +159,94 @@ def get_all_projects_summary():
         )
 
     return projects
+
+
+@frappe.whitelist()
+def get_hour_log_report(project=None, user=None, task_type=None):
+    """Return hours grouped by task type, with optional project/user filters.
+    Respects feature permissions for timelog visibility.
+    """
+    import json as json_module
+
+    current_user = frappe.session.user
+    feature_perms = get_current_user_feature_permissions()
+    can_view_all = feature_perms.get("view_all_timelogs", True)
+
+    # Build task filters
+    task_filters = {}
+    if project:
+        task_filters["project"] = project
+    if task_type:
+        task_filters["task_type"] = task_type
+
+    # Get task list with task_type info
+    tasks = frappe.get_all(
+        "PMS Task",
+        filters=task_filters,
+        fields=["name", "task_type", "project", "task_title"],
+        limit_page_length=0,
+    )
+    if not tasks:
+        return {"by_task_type": [], "details": [], "totals": {"hours": 0, "entries": 0}}
+
+    task_map = {t.name: t for t in tasks}
+    task_names = list(task_map.keys())
+
+    # Build timelog filters
+    log_filters = {
+        "task": ["in", task_names],
+        "is_running": 0,
+    }
+    if not can_view_all:
+        log_filters["user"] = current_user
+    elif user:
+        log_filters["user"] = user
+
+    logs = frappe.get_all(
+        "PMS Time Log",
+        filters=log_filters,
+        fields=["name", "task", "user", "duration_hours", "start_time"],
+        limit_page_length=0,
+    )
+
+    # Aggregate by task_type
+    type_totals = {}
+    details = []
+    for log in logs:
+        task_info = task_map.get(log.task, {})
+        tt = task_info.get("task_type") or "Uncategorized"
+        if tt not in type_totals:
+            type_totals[tt] = {"hours": 0, "entries": 0}
+        type_totals[tt]["hours"] += log.duration_hours or 0
+        type_totals[tt]["entries"] += 1
+
+        details.append({
+            "log": log.name,
+            "task": log.task,
+            "task_title": task_info.get("task_title") or log.task,
+            "task_type": tt,
+            "project": task_info.get("project") or "",
+            "user": log.user,
+            "user_full_name": frappe.get_cached_value("User", log.user, "full_name") or log.user,
+            "hours": round(log.duration_hours or 0, 2),
+            "date": str(log.start_time)[:10] if log.start_time else "",
+        })
+
+    total_hours = sum(t["hours"] for t in type_totals.values())
+    total_entries = sum(t["entries"] for t in type_totals.values())
+
+    by_task_type = sorted([
+        {
+            "task_type": tt,
+            "hours": round(data["hours"], 2),
+            "entries": data["entries"],
+            "percentage": round((data["hours"] / total_hours * 100), 1) if total_hours else 0,
+        }
+        for tt, data in type_totals.items()
+    ], key=lambda x: x["hours"], reverse=True)
+
+    return {
+        "by_task_type": by_task_type,
+        "details": sorted(details, key=lambda x: x["date"], reverse=True),
+        "totals": {"hours": round(total_hours, 2), "entries": total_entries},
+    }

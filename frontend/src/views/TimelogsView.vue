@@ -49,6 +49,18 @@
           <option value="">All Tasks</option>
           <option v-for="t in projectTasks" :key="t.name" :value="t.name">{{ t.task_title }}</option>
         </select>
+        <select v-model="filters.task_type" class="filter-select" @change="fetchLogs">
+          <option value="">All Types</option>
+          <option value="Feature">Feature</option>
+          <option value="Bug">Bug</option>
+          <option value="Improvement">Improvement</option>
+          <option value="Research">Research</option>
+          <option value="Documentation">Documentation</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Bench Task">Bench Task</option>
+          <option value="R&D Task">R&amp;D Task</option>
+          <option value="Support">Support</option>
+        </select>
         <input v-model="filters.from_date" type="date" class="filter-input" @change="fetchLogs" placeholder="From" />
         <input v-model="filters.to_date" type="date" class="filter-input" @change="fetchLogs" placeholder="To" />
       </div>
@@ -90,6 +102,7 @@
             <tr>
               <th>User</th>
               <th>Task</th>
+              <th>Type</th>
               <th>Project</th>
               <th>Start</th>
               <th>End</th>
@@ -109,6 +122,10 @@
               </td>
               <td>
                 <router-link :to="`/task/${log.task}`" class="task-link">{{ log.task_title }}</router-link>
+              </td>
+              <td>
+                <span v-if="log.task_type" class="type-badge">{{ log.task_type }}</span>
+                <span v-else class="text-muted">-</span>
               </td>
               <td>
                 <router-link v-if="log.project" :to="`/project/${log.project}`" class="project-link">{{ log.project }}</router-link>
@@ -201,6 +218,7 @@ const filters = reactive({
   user: '',
   project: '',
   task: '',
+  task_type: '',
   from_date: '',
   to_date: '',
 })
@@ -262,6 +280,7 @@ async function fetchLogs() {
     if (filters.user) activeFilters.user = filters.user
     if (filters.project) activeFilters.project = filters.project
     if (filters.task) activeFilters.task = filters.task
+    if (filters.task_type) activeFilters.task_type = filters.task_type
     if (filters.from_date) activeFilters.from_date = filters.from_date
     if (filters.to_date) activeFilters.to_date = filters.to_date
 
@@ -311,6 +330,7 @@ function clearFilters() {
   filters.user = ''
   filters.project = ''
   filters.task = ''
+  filters.task_type = ''
   filters.from_date = ''
   filters.to_date = ''
   projectTasks.value = []
@@ -875,5 +895,15 @@ onMounted(async () => {
   .active-timers-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
 }
 </style>

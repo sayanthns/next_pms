@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { call } from "@/utils/frappe";
+import { eventBus, EVENTS } from "@/utils/eventBus";
 
 export const useCheckinStore = defineStore("checkin", () => {
   const isCheckedIn = ref(false);
@@ -28,6 +29,7 @@ export const useCheckinStore = defineStore("checkin", () => {
       const result = await call("next_pms.api.checkin.checkin");
       isCheckedIn.value = true;
       checkinData.value = result;
+      eventBus.emit(EVENTS.CHECKIN_CHANGED, { action: 'checkin' });
       return result;
     } catch (error) {
       throw error;
@@ -42,6 +44,7 @@ export const useCheckinStore = defineStore("checkin", () => {
       const result = await call("next_pms.api.checkin.checkout");
       isCheckedIn.value = false;
       checkinData.value = result;
+      eventBus.emit(EVENTS.CHECKIN_CHANGED, { action: 'checkout' });
       return result;
     } catch (error) {
       throw error;

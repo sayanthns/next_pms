@@ -29,7 +29,7 @@
             </div>
             <div class="header-actions">
               <button
-                v-if="canEditTask && task.status !== 'Done'"
+                v-if="canChangeStatus && task.status !== 'Done'"
                 class="btn btn-success"
                 @click="markAsDone"
                 :disabled="markingDone"
@@ -66,7 +66,7 @@
               :value="task.status"
               @change="onStatusChange($event)"
               :class="statusSelectClass(task.status)"
-              :disabled="!canEditTask"
+              :disabled="!canChangeStatus"
             >
               <option value="Backlog">Backlog</option>
               <option value="To Do">To Do</option>
@@ -107,11 +107,27 @@
                   <option value="">None</option>
                   <option value="Feature">Feature</option>
                   <option value="Bug">Bug</option>
-                  <option value="Enhancement">Enhancement</option>
-                  <option value="Documentation">Documentation</option>
+                  <option value="Improvement">Improvement</option>
                   <option value="Research">Research</option>
-                  <option value="Testing">Testing</option>
-                  <option value="DevOps">DevOps</option>
+                  <option value="Documentation">Documentation</option>
+                  <option value="Meeting">Meeting</option>
+                  <option value="Bench Task">Bench Task</option>
+                  <option value="R&D Task">R&amp;D Task</option>
+                  <option value="Support">Support</option>
+                </select>
+              </div>
+              <div class="edit-field" v-if="editSprints.length">
+                <label class="edit-label">Sprint</label>
+                <select v-model="editForm.sprint" class="edit-input">
+                  <option value="">No Sprint</option>
+                  <option v-for="s in editSprints" :key="s.name" :value="s.name">{{ s.sprint_name }}</option>
+                </select>
+              </div>
+              <div class="edit-field">
+                <label class="edit-label">Reviewer</label>
+                <select v-model="editForm.reviewer" class="edit-input">
+                  <option value="">None</option>
+                  <option v-for="u in editTeamMembers" :key="u.name" :value="u.name">{{ u.full_name || u.name }}</option>
                 </select>
               </div>
               <div class="edit-field">
@@ -156,6 +172,10 @@
           <div class="info-item">
             <span class="info-label">Sprint</span>
             <span class="info-value">{{ task.sprint || '-' }}</span>
+          </div>
+          <div class="info-item" v-if="task.reviewer">
+            <span class="info-label">Reviewer</span>
+            <span class="info-value">{{ task.reviewer }}</span>
           </div>
           <div class="info-item info-item-wide">
             <div class="info-label-row">
@@ -448,7 +468,11 @@ const editForm = reactive({
   task_type: '',
   is_billable: 0,
   description: '',
+  sprint: '',
+  reviewer: '',
 })
+const editSprints = ref([])
+const editTeamMembers = ref([])
 
 // Delete task
 const showDeleteTaskConfirm = ref(false)
@@ -456,20 +480,39 @@ const deletingTask = ref(false)
 const deleteTaskMessage = ref('')
 const deleteTaskDetails = ref([])
 
+const currentUser = computed(() => window.frappe?.session?.user || window.pms_boot?.user || '')
+
+const isAssignedToTask = computed(() => {
+  if (!task.value) return false
+  // Check legacy assigned_to
+  if (task.value.assigned_to === currentUser.value) return true
+  // Check assignees table
+  const assignees = task.value.assignees || []
+  return assignees.some(a => a.user === currentUser.value)
+})
+
+const canChangeStatus = computed(() => {
+  if (settingsStore.isAdmin || settingsStore.isManager) return true
+  if (!task.value) return false
+  // Developers assigned to the task can change status
+  if (isAssignedToTask.value) return true
+  if (task.value.owner === currentUser.value) return true
+  return false
+})
+
 const canEditTask = computed(() => {
   if (settingsStore.featurePermissions.edit_task === false) return false
   if (settingsStore.isAdmin) return true
   if (!task.value) return false
-  const currentUser = window.frappe?.session?.user || window.pms_boot?.user || ''
-  if (task.value.owner === currentUser) return true
+  if (task.value.owner === currentUser.value) return true
+  if (isAssignedToTask.value) return true
   return settingsStore.isManager
 })
 
 const canDeleteTask = computed(() => {
   if (settingsStore.isAdmin) return true
   if (!task.value) return false
-  const currentUser = window.frappe?.session?.user || window.pms_boot?.user || ''
-  if (task.value.owner === currentUser) return true
+  if (task.value.owner === currentUser.value) return true
   return settingsStore.isManager
 })
 
@@ -711,7 +754,7 @@ async function markAsDone() {
 }
 
 // Edit form
-watch(isEditing, (val) => {
+watch(isEditing, async (val) => {
   if (val && task.value) {
     editForm.task_title = task.value.task_title || ''
     editForm.priority = task.value.priority || 'Medium'
@@ -720,6 +763,22 @@ watch(isEditing, (val) => {
     editForm.task_type = task.value.task_type || ''
     editForm.is_billable = task.value.is_billable ? 1 : 0
     editForm.description = task.value.description || ''
+    editForm.sprint = task.value.sprint || ''
+    editForm.reviewer = task.value.reviewer || ''
+    // Load sprints and team members for this project
+    if (task.value.project) {
+      try {
+        editSprints.value = await getList('PMS Sprint', {
+          fields: ['name', 'sprint_name'],
+          filters: { project: task.value.project },
+          orderBy: 'start_date desc',
+          limit: 0,
+        })
+      } catch { editSprints.value = [] }
+      try {
+        editTeamMembers.value = await call('next_pms.api.crud.get_all_users')
+      } catch { editTeamMembers.value = [] }
+    }
   }
 })
 
@@ -742,6 +801,8 @@ async function saveEdit() {
         due_date: editForm.due_date || null,
         estimated_hours: editForm.estimated_hours || 0,
         task_type: editForm.task_type || null,
+        sprint: editForm.sprint || null,
+        reviewer: editForm.reviewer || null,
         is_billable: editForm.is_billable,
         description: editForm.description || '',
       }),

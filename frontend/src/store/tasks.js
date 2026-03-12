@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { call, getList, getDoc, setValue } from "@/utils/frappe";
+import { eventBus, EVENTS } from "@/utils/eventBus";
 
 export const useTaskStore = defineStore("tasks", () => {
   const tasks = ref([]);
@@ -80,6 +81,7 @@ export const useTaskStore = defineStore("tasks", () => {
       if (currentTask.value && currentTask.value.name === taskName) {
         currentTask.value.status = newStatus;
       }
+      eventBus.emit(EVENTS.TASK_STATUS_CHANGED, { task: taskName, status: newStatus });
       return true;
     } catch (error) {
       console.error("Failed to update task status:", error);

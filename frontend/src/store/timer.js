@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { call } from "@/utils/frappe";
+import { eventBus, EVENTS } from "@/utils/eventBus";
 
 export const useTimerStore = defineStore("timer", () => {
   const isRunning = ref(false);
@@ -145,6 +146,7 @@ export const useTimerStore = defineStore("timer", () => {
       startTime.value = null;
       elapsedSeconds.value = 0;
       saveToLocalStorage();
+      eventBus.emit(EVENTS.TIMER_STOPPED, stoppedData);
       return stoppedData;
     } catch (error) {
       throw error;
