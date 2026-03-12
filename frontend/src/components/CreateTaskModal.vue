@@ -94,6 +94,14 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label class="form-label">Reviewer</label>
+        <select v-model="form.reviewer" class="form-input">
+          <option value="">None</option>
+          <option v-for="u in teamMembers" :key="u.name" :value="u.name">{{ u.full_name || u.name }}</option>
+        </select>
+      </div>
+
       <div class="form-group" v-if="sprints && sprints.length">
         <label class="form-label">Sprint</label>
         <select v-model="form.sprint" class="form-input">
@@ -126,28 +134,21 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Estimated Hours</label>
+          <label class="form-label">Estimated Hours <span class="required">*</span></label>
           <input
             v-model.number="form.estimated_hours"
             type="number"
             class="form-input"
             placeholder="0"
-            min="0"
+            min="0.5"
             step="0.5"
+            required
           />
         </div>
         <div class="form-group">
-          <label class="form-label">Due Date</label>
-          <input v-model="form.due_date" type="date" class="form-input" />
+          <label class="form-label">Due Date <span class="required">*</span></label>
+          <input v-model="form.due_date" type="date" class="form-input" required />
         </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Reviewer</label>
-        <select v-model="form.reviewer" class="form-input">
-          <option value="">None</option>
-          <option v-for="u in teamMembers" :key="u.name" :value="u.name">{{ u.full_name || u.name }}</option>
-        </select>
       </div>
 
       <div class="form-group">
@@ -215,6 +216,11 @@ const userSearch = ref('')
 const showUserDropdown = ref(false)
 const attachedFiles = ref([])
 
+function getTodayDate() {
+  const d = new Date()
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+}
+
 function getDefaultForm() {
   return {
     task_title: '',
@@ -224,7 +230,7 @@ function getDefaultForm() {
     task_type: '',
     reviewer: '',
     estimated_hours: 0,
-    due_date: '',
+    due_date: getTodayDate(),
     description: '',
   }
 }
@@ -363,6 +369,14 @@ watch(() => props.show, (val) => {
 
 async function handleSubmit() {
   if (!form.value.task_title.trim()) return
+  if (!form.value.estimated_hours || form.value.estimated_hours <= 0) {
+    alert('Estimated Hours is required')
+    return
+  }
+  if (!form.value.due_date) {
+    alert('Due Date is required')
+    return
+  }
   saving.value = true
   try {
     const assigneeEmails = selectedAssignees.value.map(a => a.user)

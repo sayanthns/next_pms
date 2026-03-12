@@ -54,6 +54,7 @@ def start_timer(task):
         "task": task,
         "task_title": task_doc.task_title,
         "start_time": str(log.start_time),
+        "server_time": str(now_datetime()),
         "user": user,
     }
 
@@ -118,11 +119,13 @@ def get_running_timer():
     if running:
         log = running[0]
         task_title = frappe.db.get_value("PMS Task", log.task, "task_title")
+        # Send server_time so frontend can compute clock offset
         return {
             "log_name": log.name,
             "task": log.task,
             "task_title": task_title,
             "start_time": str(log.start_time),
+            "server_time": str(frappe.utils.now_datetime()),
         }
 
     return None

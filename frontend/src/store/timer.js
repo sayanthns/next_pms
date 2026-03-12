@@ -10,31 +10,43 @@ export const useTimerStore = defineStore("timer", () => {
   const currentTaskTitle = ref("");
   const startTime = ref(null);
   const elapsedSeconds = ref(0);
+  // Offset between server clock and client clock (serverTime - clientTime) in ms
+  let serverClockOffset = 0;
   let intervalId = null;
 
   const elapsedFormatted = computed(() => {
-    const h = Math.floor(elapsedSeconds.value / 3600);
-    const m = Math.floor((elapsedSeconds.value % 3600) / 60);
-    const s = elapsedSeconds.value % 60;
+    const total = Math.max(0, elapsedSeconds.value);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   });
 
-  function parseServerTime(dtStr) {
-    // Frappe returns UTC datetimes without timezone suffix (e.g. "2026-03-12 15:30:45.123456")
-    // Append 'Z' so JS Date parses it as UTC instead of local time
-    if (dtStr && !dtStr.endsWith("Z") && !dtStr.includes("+")) {
-      return new Date(dtStr.replace(" ", "T") + "Z").getTime();
+  function parseServerDatetime(dtStr) {
+    // Parse a datetime string from Frappe as a local Date object
+    // Frappe returns datetimes in the server's timezone without offset info
+    // We treat them as-is and use serverClockOffset to reconcile with client time
+    if (!dtStr) return 0;
+    return new Date(dtStr.replace(" ", "T")).getTime();
+  }
+
+  function calibrateServerOffset(serverTimeStr) {
+    // Calculate offset: how far ahead/behind the server clock is vs client clock
+    // Both parsed as "local" (no Z suffix) — the difference gives the timezone gap
+    if (serverTimeStr) {
+      const serverMs = new Date(serverTimeStr.replace(" ", "T")).getTime();
+      serverClockOffset = serverMs - Date.now();
     }
-    return new Date(dtStr).getTime();
   }
 
   function startElapsedCounter() {
     stopElapsedCounter();
     intervalId = setInterval(() => {
       if (startTime.value) {
-        elapsedSeconds.value = Math.floor(
-          (Date.now() - parseServerTime(startTime.value)) / 1000
-        );
+        // "Server now" = client Date.now() + offset to match server clock
+        const serverNowMs = Date.now() + serverClockOffset;
+        const startMs = parseServerDatetime(startTime.value);
+        elapsedSeconds.value = Math.max(0, Math.floor((serverNowMs - startMs) / 1000));
       }
     }, 1000);
   }
@@ -56,6 +68,7 @@ export const useTimerStore = defineStore("timer", () => {
           task: currentTask.value,
           taskTitle: currentTaskTitle.value,
           startTime: startTime.value,
+          serverClockOffset: serverClockOffset,
         })
       );
     } else {
@@ -74,6 +87,10 @@ export const useTimerStore = defineStore("timer", () => {
           currentTask.value = data.task;
           currentTaskTitle.value = data.taskTitle;
           startTime.value = data.startTime;
+          // Restore saved offset if available, then fetch fresh from server
+          if (data.serverClockOffset != null) {
+            serverClockOffset = data.serverClockOffset;
+          }
           startElapsedCounter();
         }
       } catch {
@@ -86,6 +103,7 @@ export const useTimerStore = defineStore("timer", () => {
     try {
       const result = await call("next_pms.api.timer.get_running_timer");
       if (result) {
+        calibrateServerOffset(result.server_time);
         isRunning.value = true;
         currentLog.value = result.log_name;
         currentTask.value = result.task;
@@ -111,6 +129,7 @@ export const useTimerStore = defineStore("timer", () => {
       const result = await call("next_pms.api.timer.start_timer", {
         task: taskName,
       });
+      calibrateServerOffset(result.server_time);
       isRunning.value = true;
       currentLog.value = result.log_name;
       currentTask.value = result.task;
