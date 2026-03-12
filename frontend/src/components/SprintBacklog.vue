@@ -520,7 +520,7 @@ function taskStatusClass(status) {
 }
 
 .task-row.drag-over {
-  border-top: 2px solid #6366f1;
+  border-top: 2px solid #2563EB;
 }
 
 /* Column widths */
@@ -569,7 +569,7 @@ function taskStatusClass(status) {
 }
 
 .task-title-link:hover {
-  color: #6366f1;
+  color: #2563EB;
 }
 
 /* Status badges */
@@ -590,7 +590,7 @@ function taskStatusClass(status) {
   font-size: 10px;
 }
 
-.badge-primary { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.badge-primary { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
 .badge-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .badge-warning { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
 .badge-info { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
@@ -606,7 +606,7 @@ function taskStatusClass(status) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 10px;
   font-weight: 600;
@@ -659,9 +659,9 @@ function taskStatusClass(status) {
 }
 
 .btn-add-task:hover {
-  border-color: #6366f1;
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.04);
+  border-color: #2563EB;
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.04);
 }
 
 /* Inline add form */
@@ -685,8 +685,8 @@ function taskStatusClass(status) {
 }
 
 .add-task-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .add-task-select {
@@ -701,7 +701,7 @@ function taskStatusClass(status) {
 }
 
 .add-task-select:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .add-task-hours {
@@ -715,14 +715,14 @@ function taskStatusClass(status) {
 }
 
 .add-task-hours:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .btn-add-confirm {
   padding: 8px 16px;
   border: none;
   border-radius: 6px;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -731,7 +731,7 @@ function taskStatusClass(status) {
 }
 
 .btn-add-confirm:hover {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .btn-add-cancel {

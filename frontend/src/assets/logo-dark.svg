@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background (transparent for dark sidebar) -->
+  <rect width="512" height="512" fill="transparent"/>
+  <!-- Outer C Shape -->
+  <path
+    d="
+      M 400 256
+      A 144 144 0 1 1 400 256
+      M 340 256
+      A 84 84 0 1 0 340 256
+    "
+    fill="#e6e3df"
+    fill-rule="evenodd"
+  />
+  <!-- Outer Hexagon -->
+  <polygon
+    points="256,176 325,216 325,296 256,336 187,296 187,216"
+    fill="#d6cec3"
+  />
+  <!-- Inner Hexagon -->
+  <polygon
+    points="256,216 296,236 296,276 256,296 216,276 216,236"
+    fill="#ff5a00"
+  />
+</svg>

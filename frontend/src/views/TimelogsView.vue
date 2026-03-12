@@ -443,7 +443,7 @@ onMounted(async () => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -485,7 +485,7 @@ onMounted(async () => {
 
 .timer-task-link {
   font-size: 13px;
-  color: #6366f1;
+  color: #2563EB;
   text-decoration: none;
   font-weight: 500;
 }
@@ -496,8 +496,8 @@ onMounted(async () => {
 
 .timer-project-tag {
   font-size: 10px;
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
   padding: 2px 6px;
   border-radius: 4px;
   text-decoration: none;
@@ -549,7 +549,7 @@ onMounted(async () => {
 
 .filter-select:focus,
 .filter-input:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .filter-input {
@@ -667,7 +667,7 @@ onMounted(async () => {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -683,7 +683,7 @@ onMounted(async () => {
 }
 
 .task-link {
-  color: #6366f1;
+  color: #2563EB;
   text-decoration: none;
   font-weight: 500;
 }
@@ -702,8 +702,8 @@ onMounted(async () => {
 }
 
 .project-link:hover {
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.08);
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .text-muted {
@@ -819,7 +819,7 @@ onMounted(async () => {
   width: 36px;
   height: 36px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

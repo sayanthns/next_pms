@@ -95,8 +95,8 @@ defineEmits(['confirm', 'cancel'])
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
 }
 
 .confirm-icon.danger {
@@ -168,12 +168,12 @@ defineEmits(['confirm', 'cancel'])
 }
 
 .cbtn-primary {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .cbtn-primary:hover:not(:disabled) {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .cbtn-danger {

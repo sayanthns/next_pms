@@ -109,7 +109,7 @@
               <div class="profile-field">
                 <label class="field-label">Hourly Rate</label>
                 <div class="rate-edit-wrap">
-                  <span class="rate-currency">$</span>
+                  <span class="rate-currency">₹</span>
                   <input
                     type="number"
                     class="rate-edit-input"
@@ -406,7 +406,7 @@ async function updateHourlyRate(newRate) {
   try {
     await call('next_pms.api.crud.set_user_hourly_rate', { user: props.id, rate })
     user.value.hourly_rate = rate
-    showToast(`Rate updated to $${rate}/hr`)
+    showToast(`Rate updated to ₹${rate}/hr`)
   } catch (e) {
     console.error('Failed to update rate:', e)
     showToast('Failed to update rate', 'error')
@@ -555,14 +555,14 @@ function getInitials(name) {
 }
 
 function getAvatarColor(email) {
-  const colors = ['#6366f1', '#14b8a6', '#F59E0B', '#EF4444', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f97316', '#06b6d4']
+  const colors = ['#2563EB', '#14b8a6', '#F59E0B', '#EF4444', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f97316', '#06b6d4']
   let hash = 0
   for (let i = 0; i < (email || '').length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash)
   return colors[Math.abs(hash) % colors.length]
 }
 
 function statusDotColor(status) {
-  const map = { 'Active': '#10b981', 'In Progress': '#10b981', 'Planning': '#6366f1', 'Planned': '#6366f1', 'Completed': '#059669', 'On Hold': '#F59E0B' }
+  const map = { 'Active': '#10b981', 'In Progress': '#10b981', 'Planning': '#2563EB', 'Planned': '#2563EB', 'Completed': '#059669', 'On Hold': '#F59E0B' }
   return map[status] || '#9ca3af'
 }
 
@@ -617,7 +617,7 @@ onMounted(async () => {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -643,7 +643,7 @@ onMounted(async () => {
   width: 18px;
   height: 18px;
   border: 2px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -755,8 +755,8 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.tab-btn:hover { color: #374151; background: rgba(99, 102, 241, 0.04); }
-.tab-btn.active { color: #6366f1; border-bottom-color: #6366f1; }
+.tab-btn:hover { color: #374151; background: rgba(37, 99, 235, 0.04); }
+.tab-btn.active { color: #2563EB; border-bottom-color: #2563EB; }
 .tab-btn svg { flex-shrink: 0; }
 
 /* ── Cards ─────────────────────────────────── */
@@ -806,7 +806,7 @@ onMounted(async () => {
 }
 
 .role-badge.inline { margin: 0; }
-.role-manager { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.role-manager { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
 .role-developer { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .role-viewer { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 .role-customer { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
@@ -884,7 +884,7 @@ onMounted(async () => {
   max-width: 180px;
 }
 
-.role-select:focus { border-color: #6366f1; }
+.role-select:focus { border-color: #2563EB; }
 .role-select:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .rate-edit-wrap {
@@ -900,8 +900,8 @@ onMounted(async () => {
 }
 
 .rate-edit-wrap:focus-within {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .rate-currency { font-size: 12px; color: #9ca3af; font-weight: 500; }
@@ -962,7 +962,7 @@ onMounted(async () => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.toggle-switch input:checked + .toggle-slider { background: #6366f1; }
+.toggle-switch input:checked + .toggle-slider { background: #2563EB; }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
 
 /* ── Attendance Tab ────────────────────────── */
@@ -982,7 +982,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.filter-select:focus { border-color: #6366f1; }
+.filter-select:focus { border-color: #2563EB; }
 
 .today-detail {
   display: grid;
@@ -1108,8 +1108,8 @@ onMounted(async () => {
 .project-card-role {
   font-size: 11px;
   font-weight: 600;
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.08);
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.08);
   padding: 3px 10px;
   border-radius: 12px;
   white-space: nowrap;
@@ -1152,12 +1152,12 @@ onMounted(async () => {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   transition: all 0.15s;
 }
 
-.btn-save:hover:not(:disabled) { background: #4f46e5; }
+.btn-save:hover:not(:disabled) { background: #1D4ED8; }
 .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Empty / Not Found ─────────────────────── */
@@ -1175,7 +1175,7 @@ onMounted(async () => {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #fff;
-  color: #6366f1;
+  color: #2563EB;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

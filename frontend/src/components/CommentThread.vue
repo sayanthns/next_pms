@@ -210,7 +210,7 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   border: 2px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -241,7 +241,7 @@ onMounted(() => {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -317,8 +317,8 @@ onMounted(() => {
 
 .comment-textarea:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .comment-input-footer {
@@ -335,7 +335,7 @@ onMounted(() => {
 
 .comment-submit-btn {
   padding: 6px 16px;
-  background: #6366f1;
+  background: #2563EB;
   color: white;
   border: none;
   border-radius: 6px;
@@ -346,7 +346,7 @@ onMounted(() => {
 }
 
 .comment-submit-btn:hover:not(:disabled) {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .comment-submit-btn:disabled {

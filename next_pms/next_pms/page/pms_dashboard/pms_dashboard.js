@@ -707,6 +707,6 @@ function render_reports(container, project) {
 }
 
 function format_currency(value) {
-	if (!value) return "$0";
-	return "$" + parseFloat(value).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+	if (!value) return "₹0";
+	return "₹" + parseFloat(value).toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }

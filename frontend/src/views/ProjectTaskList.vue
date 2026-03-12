@@ -332,12 +332,12 @@ function statusKey(status) {
 }
 
 .btn-primary {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .btn-icon {
@@ -357,7 +357,7 @@ function statusKey(status) {
   width: 36px;
   height: 36px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -405,12 +405,12 @@ function statusKey(status) {
 }
 
 .th-sortable:hover {
-  color: #6366f1;
+  color: #2563EB;
 }
 
 .sort-icon {
   margin-left: 4px;
-  color: #6366f1;
+  color: #2563EB;
 }
 
 .task-table td {
@@ -505,7 +505,7 @@ function statusKey(status) {
   flex-shrink: 0;
 }
 
-.avatar-color-0 { background: #6366f1; }
+.avatar-color-0 { background: #2563EB; }
 .avatar-color-1 { background: #7C3AED; }
 .avatar-color-2 { background: #059669; }
 .avatar-color-3 { background: #D97706; }

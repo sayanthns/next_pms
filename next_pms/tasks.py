@@ -265,7 +265,7 @@ def _build_weekly_summary_html(manager_name, project_summaries):
         rows += f"""
         <tr>
             <td style="padding:10px; border:1px solid #e5e7eb;">
-                <a href="{ps['project_url']}" style="color:#5B4CF5; font-weight:600; text-decoration:none;">
+                <a href="{ps['project_url']}" style="color:#2563EB; font-weight:600; text-decoration:none;">
                     {ps['project_name']}
                 </a>
             </td>

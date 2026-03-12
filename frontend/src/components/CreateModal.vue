@@ -129,12 +129,12 @@ defineEmits(['close', 'submit'])
 }
 
 .btn-primary {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .btn-secondary {

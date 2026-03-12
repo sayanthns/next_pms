@@ -228,7 +228,7 @@ function onStartTimer(task) {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -262,8 +262,8 @@ function onStartTimer(task) {
 }
 
 .kanban-column.drop-highlight {
-  background: rgba(99, 102, 241, 0.05);
-  box-shadow: inset 0 0 0 2px rgba(99, 102, 241, 0.3);
+  background: rgba(37, 99, 235, 0.05);
+  box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.3);
 }
 
 .column-header {
@@ -332,9 +332,9 @@ function onStartTimer(task) {
 }
 
 .column-add-btn:hover {
-  border-color: #6366f1;
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.05);
+  border-color: #2563EB;
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.05);
 }
 
 .column-body {

@@ -418,7 +418,7 @@ function sprintStatusClass(status) {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -448,8 +448,8 @@ function sprintStatusClass(status) {
 }
 
 .sprint-section.drop-highlight {
-  box-shadow: inset 0 0 0 2px rgba(99, 102, 241, 0.3);
-  background: rgba(99, 102, 241, 0.02);
+  box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.3);
+  background: rgba(37, 99, 235, 0.02);
 }
 
 .backlog-section {
@@ -589,7 +589,7 @@ function sprintStatusClass(status) {
 }
 
 .task-title-link:hover {
-  color: #6366f1;
+  color: #2563EB;
 }
 
 .task-right {
@@ -616,8 +616,8 @@ function sprintStatusClass(status) {
 }
 
 .badge-primary {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
 }
 
 .badge-success {
@@ -652,7 +652,7 @@ function sprintStatusClass(status) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 10px;
   font-weight: 600;
@@ -691,12 +691,12 @@ function sprintStatusClass(status) {
 
 .btn-outline {
   background: #fff;
-  color: #6366f1;
-  border: 1px solid #6366f1;
+  color: #2563EB;
+  border: 1px solid #2563EB;
 }
 
 .btn-outline:hover {
-  background: rgba(99, 102, 241, 0.05);
+  background: rgba(37, 99, 235, 0.05);
 }
 
 .sprint-header-actions {
@@ -720,8 +720,8 @@ function sprintStatusClass(status) {
 }
 
 .add-task-btn:hover {
-  border-color: #6366f1;
-  color: #6366f1;
-  background: rgba(99, 102, 241, 0.05);
+  border-color: #2563EB;
+  color: #2563EB;
+  background: rgba(37, 99, 235, 0.05);
 }
 </style>

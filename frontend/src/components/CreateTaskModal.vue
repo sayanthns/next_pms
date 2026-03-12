@@ -165,7 +165,7 @@
         </label>
         <div v-if="attachedFiles.length" class="attached-files">
           <div v-for="(f, i) in attachedFiles" :key="i" class="attached-file">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span class="attached-file-name">{{ f.name }}</span>
             <span class="attached-file-size">{{ formatFileSize(f.size) }}</span>
             <button type="button" class="attached-file-remove" @click="removeFile(i)">&times;</button>
@@ -409,8 +409,8 @@ async function handleSubmit() {
 }
 
 .form-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .form-row {
@@ -447,7 +447,7 @@ async function handleSubmit() {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -525,7 +525,7 @@ async function handleSubmit() {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -557,7 +557,7 @@ async function handleSubmit() {
 }
 
 .user-option-check {
-  color: #6366f1;
+  color: #2563EB;
   font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;
@@ -595,8 +595,8 @@ async function handleSubmit() {
 }
 
 .file-upload-area:hover {
-  border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.03);
+  border-color: #2563EB;
+  background: rgba(37, 99, 235, 0.03);
 }
 
 .file-upload-area.has-files {

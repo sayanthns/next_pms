@@ -232,7 +232,7 @@ function getInitials(name) {
 function avatarStyle(user) {
   if (user.user_image) return {}
   // Generate a consistent color from name
-  const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+  const colors = ['#2563EB', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
   const hash = (user.name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
   return { background: colors[hash % colors.length] }
 }
@@ -479,7 +479,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.filter-select:focus { border-color: #6366f1; }
+.filter-select:focus { border-color: #2563EB; }
 
 .filter-count {
   font-size: 12px;
@@ -489,7 +489,7 @@ onMounted(async () => {
 
 /* Loading */
 .loading-container { display: flex; flex-direction: column; align-items: center; padding: 80px 0; }
-.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #2563EB; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { margin-top: 16px; color: #6b7280; font-size: 14px; }
 
@@ -622,7 +622,7 @@ onMounted(async () => {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background: #6366f1;
+  background: #2563EB;
 }
 
 .toggle-switch input:checked + .toggle-slider::before {
@@ -644,7 +644,7 @@ onMounted(async () => {
 }
 
 .role-select:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .role-select:disabled {
@@ -760,8 +760,8 @@ onMounted(async () => {
 }
 
 .ai-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .toggle-wrap {
@@ -784,7 +784,7 @@ onMounted(async () => {
 }
 
 .toggle-wrap input[type="checkbox"]:checked {
-  background: #6366f1;
+  background: #2563EB;
 }
 
 .toggle-wrap input[type="checkbox"]::after {
@@ -835,12 +835,12 @@ onMounted(async () => {
 }
 
 .ai-btn-save {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .ai-btn-save:hover:not(:disabled) {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .ai-btn-test {

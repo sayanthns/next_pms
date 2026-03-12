@@ -2,8 +2,8 @@
 <p>Hi {{ manager_name }},</p>
 <p>Project <b>{{ project_name }}</b> has reached <b>{{ utilization }}%</b> of its budget.</p>
 <table style="border-collapse:collapse; width:100%; max-width:400px;">
-  <tr><td style="padding:8px; border:1px solid #e5e7eb;">Total Budget</td><td style="padding:8px; border:1px solid #e5e7eb;">${{ total_budget }}</td></tr>
-  <tr><td style="padding:8px; border:1px solid #e5e7eb;">Used</td><td style="padding:8px; border:1px solid #e5e7eb;">${{ used_budget }}</td></tr>
-  <tr><td style="padding:8px; border:1px solid #e5e7eb;">Remaining</td><td style="padding:8px; border:1px solid #e5e7eb;">${{ remaining }}</td></tr>
+  <tr><td style="padding:8px; border:1px solid #e5e7eb;">Total Budget</td><td style="padding:8px; border:1px solid #e5e7eb;">₹{{ total_budget }}</td></tr>
+  <tr><td style="padding:8px; border:1px solid #e5e7eb;">Used</td><td style="padding:8px; border:1px solid #e5e7eb;">₹{{ used_budget }}</td></tr>
+  <tr><td style="padding:8px; border:1px solid #e5e7eb;">Remaining</td><td style="padding:8px; border:1px solid #e5e7eb;">₹{{ remaining }}</td></tr>
 </table>
 <p style="margin-top:16px;"><a href="{{ project_url }}" style="background:#EF4444; color:white; padding:10px 20px; text-decoration:none; border-radius:6px;">View Project</a></p>

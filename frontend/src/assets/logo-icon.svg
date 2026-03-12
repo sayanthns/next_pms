@@ -1,0 +1,10 @@
+<svg width="256" height="256" viewBox="60 60 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Blue right arm (longer, behind) -->
+  <rect width="130" height="310" rx="65"
+        transform="translate(245, 75) rotate(35)"
+        fill="#2563EB"/>
+  <!-- Cyan left arm (shorter, in front) -->
+  <rect width="130" height="250" rx="65"
+        transform="translate(100, 175) rotate(-40)"
+        fill="#29D5F5"/>
+</svg>

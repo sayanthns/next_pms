@@ -98,7 +98,7 @@ function getTaskColor(task) {
   if (colorBy.value === 'assignee') {
     return getAssigneeColor(task.assigned_to)
   }
-  return '#6366f1'
+  return '#2563EB'
 }
 
 function getInitials(email) {
@@ -315,7 +315,7 @@ watch(colorBy, () => {
 }
 
 .view-mode-btn.active {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-weight: 600;
 }
@@ -350,7 +350,7 @@ watch(colorBy, () => {
 }
 
 .gantt-color-by select:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .gantt-container {
@@ -393,7 +393,7 @@ watch(colorBy, () => {
 }
 
 .gantt-wrapper .gantt .today-highlight {
-  fill: rgba(99, 102, 241, 0.06);
+  fill: rgba(37, 99, 235, 0.06);
 }
 
 .gantt-wrapper .gantt .bar {
@@ -419,7 +419,7 @@ watch(colorBy, () => {
 }
 
 .gantt-wrapper .gantt .handle {
-  fill: rgba(99, 102, 241, 0.6);
+  fill: rgba(37, 99, 235, 0.6);
 }
 
 .gantt-wrapper .gantt .upper-text,
@@ -486,7 +486,7 @@ watch(colorBy, () => {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 9px;
   font-weight: 600;

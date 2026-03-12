@@ -149,11 +149,6 @@
               <option value="QA">QA</option>
               <option value="Lead">Lead</option>
             </select>
-            <div class="rate-input-wrap">
-              <span class="rate-prefix">{{ settingsStore.currency }}</span>
-              <input v-model.number="newMemberRate" type="number" class="form-input rate-input" placeholder="0" min="0" step="5" />
-              <span class="rate-suffix">/hr</span>
-            </div>
             <button class="btn-confirm-add" :disabled="!newMemberUser || teamSaving" @click="addMember">
               {{ teamSaving ? 'Adding...' : 'Add' }}
             </button>
@@ -196,18 +191,7 @@
                     </select>
                   </td>
                   <td v-if="settingsStore.canViewFinance" class="text-right">
-                    <div class="inline-rate-wrap">
-                      <span class="rate-prefix-sm">{{ settingsStore.currency }}</span>
-                      <input
-                        type="number"
-                        class="inline-rate-input"
-                        :value="m.hourly_rate || 0"
-                        min="0"
-                        step="5"
-                        @change="updateMember(m.user, 'hourly_rate', $event.target.value)"
-                      />
-                      <span class="rate-suffix-sm">/hr</span>
-                    </div>
+                    <span class="rate-display-sm">₹{{ m.hourly_rate || 0 }}/hr</span>
                   </td>
                   <td class="text-right font-mono">{{ m.total_hours ? m.total_hours + 'h' : '0h' }}</td>
                   <td v-if="settingsStore.canViewFinance" class="text-right font-semibold">{{ m.total_cost ? formatCurrency(m.total_cost) : '—' }}</td>
@@ -248,7 +232,7 @@
           <div v-else-if="projectFiles.length" class="files-list">
             <div v-for="f in projectFiles" :key="f.name" class="file-item">
               <div class="file-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               </div>
               <div class="file-info">
                 <a :href="f.file_url" target="_blank" class="file-name">{{ f.file_name }}</a>
@@ -512,7 +496,7 @@ const teamTotalCost = computed(() => {
 })
 
 function getAvatarColor(email) {
-  const colors = ['#6366f1', '#14b8a6', '#F59E0B', '#EF4444', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981']
+  const colors = ['#2563EB', '#14b8a6', '#F59E0B', '#EF4444', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981']
   let hash = 0
   for (let i = 0; i < (email || '').length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash)
   return colors[Math.abs(hash) % colors.length]
@@ -571,7 +555,6 @@ async function addMember() {
       project: props.id,
       user: newMemberUser.value,
       role: newMemberRole.value,
-      hourly_rate: newMemberRate.value || 0,
     })
     showAddMember.value = false
     newMemberUser.value = ''
@@ -828,7 +811,7 @@ watch(() => props.id, () => {
 
 /* Loading */
 .loading-container { display: flex; flex-direction: column; align-items: center; padding: 80px 0; }
-.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #2563EB; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { margin-top: 16px; color: #6b7280; font-size: 14px; }
 
@@ -1016,7 +999,7 @@ watch(() => props.id, () => {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -1062,7 +1045,7 @@ watch(() => props.id, () => {
 .tab-btn.active {
   color: #1a1a2e;
   font-weight: 600;
-  border-bottom-color: #6366f1;
+  border-bottom-color: #2563EB;
 }
 
 .tab-icon-svg {
@@ -1128,7 +1111,7 @@ watch(() => props.id, () => {
 .back-link {
   display: inline-block;
   margin-top: 12px;
-  color: #6366f1;
+  color: #2563EB;
   text-decoration: none;
   font-weight: 500;
 }
@@ -1165,8 +1148,8 @@ watch(() => props.id, () => {
 .team-count-badge {
   display: inline-flex;
   padding: 3px 12px;
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -1177,7 +1160,7 @@ watch(() => props.id, () => {
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  background: #6366f1;
+  background: #2563EB;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1186,7 +1169,7 @@ watch(() => props.id, () => {
   cursor: pointer;
   transition: background 0.2s;
 }
-.btn-add-member:hover { background: #4f46e5; }
+.btn-add-member:hover { background: #1D4ED8; }
 
 /* Add Member Form */
 .add-member-form {
@@ -1211,7 +1194,7 @@ watch(() => props.id, () => {
   outline: none;
   min-width: 180px;
 }
-.form-select:focus { border-color: #6366f1; }
+.form-select:focus { border-color: #2563EB; }
 .form-select-sm { min-width: 120px; }
 
 .rate-input-wrap {
@@ -1278,7 +1261,7 @@ watch(() => props.id, () => {
   outline: none;
 }
 .inline-select:hover { border-color: #d1d5db; }
-.inline-select:focus { border-color: #6366f1; background: #fff; }
+.inline-select:focus { border-color: #2563EB; background: #fff; }
 
 .inline-rate-wrap {
   display: inline-flex;
@@ -1290,12 +1273,18 @@ watch(() => props.id, () => {
   background: #f9fafb;
 }
 .inline-rate-wrap:hover { border-color: #d1d5db; }
-.inline-rate-wrap:focus-within { border-color: #6366f1; background: #fff; }
+.inline-rate-wrap:focus-within { border-color: #2563EB; background: #fff; }
 
 .rate-prefix-sm, .rate-suffix-sm {
   padding: 4px 4px;
   font-size: 12px;
   color: #9ca3af;
+}
+
+.rate-display-sm {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .inline-rate-input {
@@ -1459,7 +1448,7 @@ watch(() => props.id, () => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   border-radius: 8px;
   font-size: 13px;
@@ -1469,7 +1458,7 @@ watch(() => props.id, () => {
 }
 
 .btn-upload:hover {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .file-input-hidden {
@@ -1524,7 +1513,7 @@ watch(() => props.id, () => {
 }
 
 .file-name:hover {
-  color: #6366f1;
+  color: #2563EB;
 }
 
 .file-meta {
@@ -1588,8 +1577,8 @@ watch(() => props.id, () => {
 .timelogs-count-badge {
   display: inline-flex;
   padding: 3px 12px;
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -1612,7 +1601,7 @@ watch(() => props.id, () => {
   min-width: 140px;
   cursor: pointer;
 }
-.tl-filter-select:focus { border-color: #6366f1; }
+.tl-filter-select:focus { border-color: #2563EB; }
 
 /* Summary Row */
 .tl-summary-row {
@@ -1659,7 +1648,7 @@ watch(() => props.id, () => {
   width: 20px;
   height: 20px;
   border: 2px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -1734,7 +1723,7 @@ watch(() => props.id, () => {
 }
 
 .tl-task-link {
-  color: #6366f1;
+  color: #2563EB;
   text-decoration: none;
   font-weight: 500;
 }
@@ -1797,8 +1786,8 @@ watch(() => props.id, () => {
 }
 
 .tl-tag-done {
-  background: rgba(99, 102, 241, 0.08);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563EB;
 }
 
 /* Empty State */

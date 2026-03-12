@@ -266,17 +266,23 @@ def get_all_users():
 
 
 @frappe.whitelist()
-def add_project_member(project, user, role=None, hourly_rate=0):
+def add_project_member(project, user, role=None, hourly_rate=None):
     """Add a team member to a project."""
     doc = frappe.get_doc("PMS Project", project)
     # Check if already a member
     for m in doc.team_members:
         if m.user == user:
             frappe.throw(f"{user} is already a member of this project.")
+
+    # Use the user's global hourly rate if not explicitly provided
+    if hourly_rate is None:
+        rate = frappe.db.get_default("pms_hourly_rate", parent=user)
+        hourly_rate = float(rate or 0)
+
     doc.append("team_members", {
         "user": user,
         "role": role or "Developer",
-        "hourly_rate": hourly_rate or 0,
+        "hourly_rate": hourly_rate,
     })
     doc.save()
     frappe.db.commit()

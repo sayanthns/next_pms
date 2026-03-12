@@ -7,13 +7,13 @@ from next_pms.api.permissions import is_admin_user, get_user_permissions, get_cu
 def get_pms_settings():
     """Return system settings needed by the PMS frontend."""
     # Get default currency from company
-    currency = "USD"
+    currency = "INR"
     try:
         company = frappe.db.get_single_value("Global Defaults", "default_company")
         if company:
             currency = (
                 frappe.get_cached_value("Company", company, "default_currency")
-                or "USD"
+                or "INR"
             )
     except Exception:
         pass

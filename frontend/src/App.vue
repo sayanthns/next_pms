@@ -4,8 +4,9 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo">
-          <span class="logo-icon">N</span>
-          <span v-show="!isDesktopCollapsed" class="logo-text">Next PMS</span>
+          <img v-show="isDesktopCollapsed" class="logo-icon" src="@/assets/logo-icon.svg" alt="Next PMS" />
+          <img v-show="!isDesktopCollapsed" class="logo-icon" src="@/assets/logo.svg" alt="Next PMS" />
+          <span v-show="!isDesktopCollapsed" class="logo-text"><span class="logo-next">Next</span><span class="logo-pms">PMS</span></span>
         </div>
         <div class="sidebar-header-actions">
           <button class="sidebar-toggle-desktop" @click="toggleSidebar" title="Toggle sidebar">
@@ -349,12 +350,12 @@ body {
   min-height: 100vh;
 }
 
-/* ---- Sidebar (Dark Slate Theme) ---- */
+/* ---- Sidebar (White Theme) ---- */
 .sidebar {
   width: 240px;
   min-width: 240px;
-  background: #1a1d2e;
-  color: #94a3b8;
+  background: #ffffff;
+  color: #64748b;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -362,7 +363,7 @@ body {
   left: 0;
   top: 0;
   z-index: 100;
-  border-right: none;
+  border-right: 1px solid #e5e7eb;
   transition: transform 0.25s ease;
 }
 
@@ -371,7 +372,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 20px 18px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .sidebar-header-actions {
@@ -389,28 +390,29 @@ body {
 .logo-icon {
   width: 32px;
   height: 32px;
-  background: #6366f1;
-  color: white;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
+  object-fit: contain;
 }
 
 .logo-text {
   font-size: 16px;
   font-weight: 700;
-  color: #f1f5f9;
   letter-spacing: -0.3px;
+}
+
+.logo-next {
+  color: #29D5F5;
+}
+
+.logo-pms {
+  color: #2563EB;
 }
 
 .sidebar-toggle-mobile {
   display: none;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 22px;
   cursor: pointer;
   padding: 4px 8px;
@@ -418,7 +420,7 @@ body {
 }
 
 .sidebar-toggle-mobile:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: #f3f4f6;
 }
 
 /* ---- Navigation ---- */
@@ -438,7 +440,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  color: #4b5563;
+  color: #9ca3af;
   padding: 0 10px 10px;
 }
 
@@ -448,7 +450,7 @@ body {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #94a3b8;
+  color: #64748b;
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
@@ -456,13 +458,13 @@ body {
 }
 
 .nav-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
+  background: #f3f4f6;
+  color: #1e1e2e;
 }
 
 .nav-link.active {
-  background: rgba(99, 102, 241, 0.15);
-  color: #a5b4fc;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
   font-weight: 600;
 }
 
@@ -484,7 +486,7 @@ body {
   margin-bottom: 10px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: #f8f9fa;
 }
 
 .checkin-status {
@@ -524,15 +526,15 @@ body {
 .checkin-label {
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #64748b;
   flex: 1;
 }
 
 .checkin-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(148, 163, 184, 0.3);
-  border-top-color: #94a3b8;
+  border: 2px solid rgba(100, 116, 139, 0.3);
+  border-top-color: #64748b;
   border-radius: 50%;
   animation: spin-checkin 0.6s linear infinite;
 }
@@ -551,7 +553,7 @@ body {
 /* ---- Sidebar Footer ---- */
 .sidebar-footer {
   padding: 14px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid #e5e7eb;
 }
 
 
@@ -562,7 +564,7 @@ body {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -572,8 +574,8 @@ body {
 }
 
 .sidebar-notification:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
+  background: #f3f4f6;
+  color: #1e1e2e;
 }
 
 .sidebar-notif-icon {
@@ -640,7 +642,7 @@ body {
 .notification-mark-all {
   background: none;
   border: none;
-  color: #6366f1;
+  color: #2563EB;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -649,7 +651,7 @@ body {
 }
 
 .notification-mark-all:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .notification-loading,
@@ -721,7 +723,7 @@ body {
 }
 
 .sidebar-user:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: #f3f4f6;
 }
 
 .sidebar-user-avatar {
@@ -729,7 +731,7 @@ body {
   height: 32px;
   min-width: 32px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: white;
   display: flex;
   align-items: center;
@@ -749,7 +751,7 @@ body {
 .sidebar-user-name {
   font-size: 13px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #1e1e2e;
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -772,7 +774,7 @@ body {
 }
 
 .sidebar-user:hover .sidebar-user-chevron {
-  color: #94a3b8;
+  color: #374151;
 }
 
 /* User Menu Dropdown */
@@ -934,13 +936,13 @@ body {
   z-index: 90;
   width: 44px;
   height: 44px;
-  background: #6366f1;
+  background: #2563EB;
   color: white;
   border: none;
   border-radius: 12px;
   font-size: 20px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
   align-items: center;
   justify-content: center;
 }
@@ -950,7 +952,7 @@ body {
   display: none;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: #64748b;
   font-size: 18px;
   cursor: pointer;
   padding: 4px 8px;
@@ -960,7 +962,7 @@ body {
 }
 
 .sidebar-toggle-desktop:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: #f3f4f6;
 }
 
 @media (min-width: 769px) {

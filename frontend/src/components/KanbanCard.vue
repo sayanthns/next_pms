@@ -195,7 +195,7 @@ function onDragEnd(event) {
 
 .kanban-card:hover {
   border-color: #d1d5db;
-  border-left-color: #6366f1;
+  border-left-color: #2563EB;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
 }
 
@@ -348,7 +348,7 @@ function onDragEnd(event) {
   position: relative;
 }
 
-.avatar-color-0 { background: #6366f1; }
+.avatar-color-0 { background: #2563EB; }
 .avatar-color-1 { background: #7C3AED; }
 .avatar-color-2 { background: #059669; }
 .avatar-color-3 { background: #D97706; }
@@ -400,7 +400,7 @@ function onDragEnd(event) {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   background: #f9fafb;
-  color: #6366f1;
+  color: #2563EB;
   font-size: 10px;
   cursor: pointer;
   display: flex;
@@ -411,7 +411,7 @@ function onDragEnd(event) {
 }
 
 .mini-timer-btn:hover {
-  background: rgba(99, 102, 241, 0.05);
-  border-color: #6366f1;
+  background: rgba(37, 99, 235, 0.05);
+  border-color: #2563EB;
 }
 </style>

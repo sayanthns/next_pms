@@ -538,7 +538,7 @@ function getInitials(email) {
 
 function getAvatarColor(email) {
   const colors = [
-    '#6366f1', '#14b8a6', '#F59E0B', '#EF4444',
+    '#2563EB', '#14b8a6', '#F59E0B', '#EF4444',
     '#3b82f6', '#8b5cf6', '#ec4899', '#10b981',
   ]
   let hash = 0
@@ -623,8 +623,8 @@ function sprintStatusClass(status) {
 }
 
 .selector-dropdown:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .selector-loading-inline {
@@ -751,8 +751,8 @@ function sprintStatusClass(status) {
 }
 
 .switcher-dropdown:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 /* Buttons */
@@ -771,12 +771,12 @@ function sprintStatusClass(status) {
 }
 
 .btn-primary {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .btn-primary:disabled {
@@ -797,7 +797,7 @@ function sprintStatusClass(status) {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -806,7 +806,7 @@ function sprintStatusClass(status) {
   width: 20px;
   height: 20px;
   border: 2px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -869,8 +869,8 @@ function sprintStatusClass(status) {
 }
 
 .icon-tasks {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
 }
 
 .icon-hours {
@@ -879,8 +879,8 @@ function sprintStatusClass(status) {
 }
 
 .icon-cost {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
 }
 
 .icon-budget {
@@ -1088,8 +1088,8 @@ function sprintStatusClass(status) {
 }
 
 .badge-primary {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
 }
 
 .badge-success {
@@ -1171,7 +1171,7 @@ function sprintStatusClass(status) {
   transition: width 0.4s ease;
 }
 
-.est-bar { background: #6366f1; }
+.est-bar { background: #2563EB; }
 .actual-bar { background: #10b981; }
 
 /* Distribution Stats */

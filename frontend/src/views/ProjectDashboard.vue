@@ -222,7 +222,7 @@ function getInitials(name) {
 .page-subtitle { font-size: 13px; color: #6b7280; margin: 2px 0 0 0; }
 
 .loading-container { display: flex; flex-direction: column; align-items: center; padding: 80px 0; }
-.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #2563EB; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { margin-top: 16px; color: #6b7280; font-size: 14px; }
 
@@ -296,7 +296,7 @@ function getInitials(name) {
 .team-list { display: flex; flex-direction: column; gap: 8px; }
 .team-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; transition: background 0.1s; }
 .team-row:hover { background: #f9fafb; }
-.team-avatar { width: 32px; height: 32px; border-radius: 50%; background: #6366f1; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.team-avatar { width: 32px; height: 32px; border-radius: 50%; background: #2563EB; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .team-info { flex: 1; }
 .team-name { display: block; font-size: 13px; font-weight: 500; color: #1a1a2e; }
 .team-role { display: block; font-size: 11px; color: #9ca3af; }
@@ -305,11 +305,11 @@ function getInitials(name) {
 .no-data-text { text-align: center; color: #9ca3af; font-size: 13px; padding: 20px 0; margin: 0; }
 
 /* Status chips */
-.chip-planning { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.chip-planning { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
 .chip-active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .chip-on-hold { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
 .chip-completed { background: rgba(5, 150, 105, 0.1); color: #059669; }
-.chip-planned { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.chip-planned { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
 .status-chip { display: inline-flex; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
 
 @media (max-width: 768px) {

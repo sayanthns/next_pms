@@ -85,7 +85,7 @@
                 {{ roleLabel(member.pms_role) }}
               </span>
               <div class="rate-display">
-                <span class="rate-currency">$</span>
+                <span class="rate-currency">₹</span>
                 <span class="rate-value">{{ member.hourly_rate || 0 }}</span>
                 <span class="rate-suffix">/hr</span>
               </div>
@@ -375,7 +375,7 @@ function formatTime(dtStr) {
 
 function getAvatarColor(email) {
   const colors = [
-    '#6366f1', '#14b8a6', '#F59E0B', '#EF4444',
+    '#2563EB', '#14b8a6', '#F59E0B', '#EF4444',
     '#3b82f6', '#8b5cf6', '#ec4899', '#10b981',
     '#f97316', '#06b6d4',
   ]
@@ -440,7 +440,7 @@ function getUserInitials(name) {
 
 function avatarStyle(user) {
   if (user.user_image) return {}
-  const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+  const colors = ['#2563EB', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
   const hash = (user.name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
   return { background: colors[hash % colors.length] }
 }
@@ -634,8 +634,8 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   padding: 5px 14px;
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
@@ -671,12 +671,12 @@ onMounted(() => {
 
 .tab-btn:hover {
   color: #374151;
-  background: rgba(99, 102, 241, 0.04);
+  background: rgba(37, 99, 235, 0.04);
 }
 
 .tab-btn.active {
-  color: #6366f1;
-  border-bottom-color: #6366f1;
+  color: #2563EB;
+  border-bottom-color: #2563EB;
 }
 
 .tab-btn svg {
@@ -696,7 +696,7 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -724,7 +724,7 @@ onMounted(() => {
   width: 18px;
   height: 18px;
   border: 2px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -841,7 +841,7 @@ onMounted(() => {
 
 .role-badge.inline { margin: 0; }
 
-.role-manager { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.role-manager { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
 .role-developer { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .role-viewer { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 .role-customer { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
@@ -897,7 +897,7 @@ onMounted(() => {
   transition: color 0.15s;
 }
 
-.member-card:hover .arrow-icon { color: #6366f1; }
+.member-card:hover .arrow-icon { color: #2563EB; }
 
 /* ═══════════════════════════════════════════════════════ */
 /* USER MANAGEMENT TAB                                    */
@@ -969,7 +969,7 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.filter-select:focus { border-color: #6366f1; }
+.filter-select:focus { border-color: #2563EB; }
 
 .filter-count {
   font-size: 12px;
@@ -1087,7 +1087,7 @@ onMounted(() => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.toggle-switch input:checked + .toggle-slider { background: #6366f1; }
+.toggle-switch input:checked + .toggle-slider { background: #2563EB; }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
 
 .role-select {
@@ -1103,7 +1103,7 @@ onMounted(() => {
   max-width: 160px;
 }
 
-.role-select:focus { border-color: #6366f1; }
+.role-select:focus { border-color: #2563EB; }
 .role-select:disabled { opacity: 0.5; cursor: not-allowed; }
 .no-access-label { color: #d1d5db; font-size: 13px; }
 
@@ -1177,8 +1177,8 @@ onMounted(() => {
 }
 
 .ai-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .toggle-wrap {
@@ -1200,7 +1200,7 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.toggle-wrap input[type="checkbox"]:checked { background: #6366f1; }
+.toggle-wrap input[type="checkbox"]:checked { background: #2563EB; }
 
 .toggle-wrap input[type="checkbox"]::after {
   content: '';
@@ -1243,8 +1243,8 @@ onMounted(() => {
 }
 
 .ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.ai-btn-save { background: #6366f1; color: #fff; }
-.ai-btn-save:hover:not(:disabled) { background: #4f46e5; }
+.ai-btn-save { background: #2563EB; color: #fff; }
+.ai-btn-save:hover:not(:disabled) { background: #1D4ED8; }
 .ai-btn-test { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
 .ai-btn-test:hover:not(:disabled) { background: #e5e7eb; }
 

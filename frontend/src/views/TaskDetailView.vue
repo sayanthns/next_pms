@@ -912,7 +912,7 @@ function statusSelectClass(status) {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -921,7 +921,7 @@ function statusSelectClass(status) {
   width: 24px;
   height: 24px;
   border: 2px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -1041,12 +1041,12 @@ function statusSelectClass(status) {
 }
 
 .btn-primary {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .btn-success {
@@ -1109,7 +1109,7 @@ function statusSelectClass(status) {
   appearance: auto;
 }
 
-.select-primary { color: #6366f1; border-color: rgba(99, 102, 241, 0.3); }
+.select-primary { color: #2563EB; border-color: rgba(37, 99, 235, 0.3); }
 .select-success { color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
 .select-warning { color: #F59E0B; border-color: rgba(245, 158, 11, 0.3); }
 .select-info { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
@@ -1163,7 +1163,7 @@ function statusSelectClass(status) {
 
 .info-link {
   font-size: 14px;
-  color: #6366f1;
+  color: #2563EB;
   text-decoration: none;
   font-weight: 500;
 }
@@ -1308,7 +1308,7 @@ function statusSelectClass(status) {
   font-size: 10px;
 }
 
-.badge-primary { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.badge-primary { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
 .badge-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .badge-warning { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
 .badge-info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
@@ -1381,7 +1381,7 @@ function statusSelectClass(status) {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -1440,8 +1440,8 @@ function statusSelectClass(status) {
 }
 
 .edit-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .edit-textarea {
@@ -1459,8 +1459,8 @@ function statusSelectClass(status) {
 }
 
 .edit-textarea:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .edit-actions {
@@ -1547,7 +1547,7 @@ function statusSelectClass(status) {
 }
 
 .attachment-name:hover {
-  color: #6366f1;
+  color: #2563EB;
 }
 
 .attachment-meta {
@@ -1654,7 +1654,7 @@ function statusSelectClass(status) {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -1710,8 +1710,8 @@ function statusSelectClass(status) {
 }
 
 .ae-search-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .ae-dropdown {
@@ -1750,7 +1750,7 @@ function statusSelectClass(status) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -1782,7 +1782,7 @@ function statusSelectClass(status) {
 }
 
 .ae-option-check {
-  color: #6366f1;
+  color: #2563EB;
   font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;

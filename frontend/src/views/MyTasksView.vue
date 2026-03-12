@@ -316,7 +316,7 @@ onMounted(async () => {
 }
 
 .filter-select:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .filter-count {
@@ -327,7 +327,7 @@ onMounted(async () => {
 
 /* Loading */
 .loading-container { display: flex; flex-direction: column; align-items: center; padding: 80px 0; }
-.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #2563EB; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { margin-top: 16px; color: #6b7280; font-size: 14px; }
 
@@ -388,7 +388,7 @@ onMounted(async () => {
 
 .kanban-column.drop-highlight {
   background: #eef2ff;
-  border: 2px dashed #6366f1;
+  border: 2px dashed #2563EB;
   border-radius: 10px;
 }
 

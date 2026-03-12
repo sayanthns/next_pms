@@ -291,7 +291,7 @@ function statusClass(status) {
 
 .toggle-btn.active {
   background: #fff;
-  color: #6366f1;
+  color: #2563EB;
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -312,7 +312,7 @@ function statusClass(status) {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -354,12 +354,12 @@ function statusClass(status) {
 }
 
 .btn-primary {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .gantt-wrapper {
@@ -434,8 +434,8 @@ function statusClass(status) {
 }
 
 .badge-primary {
-  background: rgba(99, 102, 241, 0.1);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563EB;
 }
 
 .badge-success {

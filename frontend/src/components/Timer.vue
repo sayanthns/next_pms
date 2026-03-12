@@ -119,12 +119,12 @@ onUnmounted(() => {
 }
 
 .timer-start {
-  background: #6366f1;
+  background: #2563EB;
   color: white;
 }
 
 .timer-start:hover {
-  background: #4f46e5;
+  background: #1D4ED8;
 }
 
 .timer-stop {

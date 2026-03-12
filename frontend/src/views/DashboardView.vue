@@ -26,7 +26,7 @@
         <div class="summary-card">
           <div class="summary-card-top">
             <div class="summary-icon summary-icon-projects">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
               </svg>
             </div>
@@ -355,8 +355,8 @@ function statusBorderColor(status) {
   const colorMap = {
     'Active': '#10b981',
     'In Progress': '#10b981',
-    'Planning': '#6366f1',
-    'Planned': '#6366f1',
+    'Planning': '#2563EB',
+    'Planned': '#2563EB',
     'Completed': '#059669',
     'On Hold': '#F59E0B',
     'Cancelled': '#EF4444',
@@ -412,7 +412,7 @@ function getTaskStatusColor(status) {
   width: 36px;
   height: 36px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -440,7 +440,7 @@ function getTaskStatusColor(status) {
 
 .retry-button {
   padding: 8px 20px;
-  background-color: #6366f1;
+  background-color: #2563EB;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -451,7 +451,7 @@ function getTaskStatusColor(status) {
 }
 
 .retry-button:hover {
-  background-color: #4f46e5;
+  background-color: #1D4ED8;
 }
 
 /* Summary Cards */
@@ -492,7 +492,7 @@ function getTaskStatusColor(status) {
   flex-shrink: 0;
 }
 
-.summary-icon-projects { background: rgba(99, 102, 241, 0.1); }
+.summary-icon-projects { background: rgba(37, 99, 235, 0.1); }
 .summary-icon-active { background: rgba(245, 158, 11, 0.1); }
 .summary-icon-tasks { background: rgba(59, 130, 246, 0.1); }
 .summary-icon-done { background: rgba(16, 185, 129, 0.1); }
@@ -579,7 +579,7 @@ function getTaskStatusColor(status) {
 }
 
 .filter-dropdown:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .dash-section-count {
@@ -594,13 +594,13 @@ function getTaskStatusColor(status) {
 .dash-section-link {
   font-size: 13px;
   font-weight: 500;
-  color: #6366f1;
+  color: #2563EB;
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .dash-section-link:hover {
-  color: #4f46e5;
+  color: #1D4ED8;
 }
 
 .dash-empty {
@@ -716,7 +716,7 @@ function getTaskStatusColor(status) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: #6366f1;
+  background-color: #2563EB;
   color: #fff;
   font-size: 10px;
   font-weight: 600;

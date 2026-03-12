@@ -346,13 +346,13 @@ function statusBorderColor(status) {
 }
 
 .btn-primary {
-  background: #6366f1;
+  background: #2563EB;
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #4f46e5;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  background: #1D4ED8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .btn-icon {
@@ -412,8 +412,8 @@ function statusBorderColor(status) {
 }
 
 .search-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 .search-input::placeholder {
@@ -432,7 +432,7 @@ function statusBorderColor(status) {
 }
 
 .filter-select:focus {
-  border-color: #6366f1;
+  border-color: #2563EB;
 }
 
 .project-count {
@@ -481,7 +481,7 @@ function statusBorderColor(status) {
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #6366f1;
+  border-top-color: #2563EB;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -510,15 +510,15 @@ function statusBorderColor(status) {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #fff;
-  color: #6366f1;
+  color: #2563EB;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .btn-clear-filter:hover {
-  background: rgba(99, 102, 241, 0.05);
-  border-color: #6366f1;
+  background: rgba(37, 99, 235, 0.05);
+  border-color: #2563EB;
 }
 
 /* Grid View */
@@ -670,8 +670,8 @@ function statusBorderColor(status) {
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 6px;
-  background: rgba(99, 102, 241, 0.08);
-  color: #6366f1;
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563EB;
 }
 
 /* List/Table View */

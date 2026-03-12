@@ -84,7 +84,7 @@ defineEmits(['action'])
   align-items: center;
   gap: 6px;
   padding: 10px 20px;
-  background: #6366f1;
+  background: #2563EB;
   color: white;
   border: none;
   border-radius: 8px;
@@ -96,7 +96,7 @@ defineEmits(['action'])
 }
 
 .empty-state-btn:hover {
-  background: #4f46e5;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  background: #1D4ED8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 </style>

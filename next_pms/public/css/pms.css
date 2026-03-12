@@ -1,9 +1,9 @@
 /* Next PMS - Main Styles */
 
 :root {
-	--pms-primary: #5b4cf5;
-	--pms-primary-light: #7c6ff7;
-	--pms-primary-dark: #4a3cc4;
+	--pms-primary: #2563EB;
+	--pms-primary-light: #3B82F6;
+	--pms-primary-dark: #1D4ED8;
 	--pms-success: #22c55e;
 	--pms-warning: #f59e0b;
 	--pms-danger: #ef4444;

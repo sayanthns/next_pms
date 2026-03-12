@@ -3,7 +3,7 @@ import { ref, computed } from "vue";
 import { call } from "@/utils/frappe";
 
 export const useSettingsStore = defineStore("settings", () => {
-  const currency = ref("USD");
+  const currency = ref("INR");
   const roles = ref([]);
   const isAdmin = ref(false);
   const isManager = ref(false);
@@ -23,7 +23,7 @@ export const useSettingsStore = defineStore("settings", () => {
     try {
       const result = await call("next_pms.api.settings.get_pms_settings");
       if (result) {
-        currency.value = result.currency || "USD";
+        currency.value = result.currency || "INR";
         roles.value = result.roles || [];
         isAdmin.value = !!result.is_admin;
         isManager.value = !!result.is_manager;
@@ -47,8 +47,9 @@ export const useSettingsStore = defineStore("settings", () => {
 
   function formatCurrency(value) {
     const num = Number(value) || 0;
+    const locale = currency.value === "INR" ? "en-IN" : "en-US";
     try {
-      return new Intl.NumberFormat("en-US", {
+      return new Intl.NumberFormat(locale, {
         style: "currency",
         currency: currency.value,
         minimumFractionDigits: 0,
