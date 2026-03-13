@@ -75,7 +75,10 @@ export const useTaskStore = defineStore("tasks", () => {
 
   async function updateTaskStatus(taskName, newStatus) {
     try {
-      await setValue("PMS Task", taskName, "status", newStatus);
+      await call("next_pms.api.crud.update_task_status", {
+        task: taskName,
+        status: newStatus,
+      });
       const task = tasks.value.find((t) => t.name === taskName);
       if (task) task.status = newStatus;
       if (currentTask.value && currentTask.value.name === taskName) {

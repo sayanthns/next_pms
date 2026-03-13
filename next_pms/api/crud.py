@@ -191,6 +191,35 @@ def update_project(project, fields):
 
 
 @frappe.whitelist()
+def update_task_status(task, status):
+    """Update task status using doc.save() to trigger hooks (notifications, etc.)."""
+    valid_statuses = {"Backlog", "To Do", "In Progress", "In Review", "Done", "Cancelled"}
+    if status not in valid_statuses:
+        frappe.throw(f"Invalid status: {status}")
+
+    doc = frappe.get_doc("PMS Task", task)
+
+    # Permission check: admin, manager, owner, or assigned user
+    user = frappe.session.user
+    user_roles = set(frappe.get_roles(user))
+    is_admin = bool({"System Manager", "Administrator"} & user_roles)
+    is_manager = "PMS Manager" in user_roles
+    is_assigned = doc.assigned_to == user or any(
+        a.user == user for a in doc.get("assignees", [])
+    )
+    is_owner = doc.owner == user
+
+    if not (is_admin or is_manager or is_assigned or is_owner):
+        frappe.throw("You do not have permission to change this task's status.", frappe.PermissionError)
+
+    doc.status = status
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"success": True, "name": doc.name, "status": doc.status}
+
+
+@frappe.whitelist()
 def update_task(task, fields):
     """Update allowed task fields. Admin, owner, or PM/assignee can update."""
     if not can_modify_document("PMS Task", task):
