@@ -144,14 +144,39 @@ export const useTimerStore = defineStore("timer", () => {
     }
   }
 
+  function resetTimerState() {
+    isRunning.value = false;
+    stopElapsedCounter();
+    currentLog.value = null;
+    currentTask.value = null;
+    currentTaskTitle.value = "";
+    startTime.value = null;
+    elapsedSeconds.value = 0;
+    saveToLocalStorage();
+  }
+
   async function stopTimer() {
-    if (!currentLog.value) return;
+    if (!currentLog.value) {
+      // No log reference — try fetching from server to find any running timer
+      try {
+        const running = await call("next_pms.api.timer.get_running_timer");
+        if (running && running.log_name) {
+          currentLog.value = running.log_name;
+        } else {
+          // No running timer on server either — just reset UI
+          resetTimerState();
+          return;
+        }
+      } catch {
+        resetTimerState();
+        return;
+      }
+    }
+
     try {
       const result = await call("next_pms.api.timer.stop_timer", {
         log_name: currentLog.value,
       });
-      isRunning.value = false;
-      stopElapsedCounter();
       const stoppedData = {
         logName: currentLog.value,
         task: currentTask.value,
@@ -159,15 +184,15 @@ export const useTimerStore = defineStore("timer", () => {
         durationMinutes: result.duration_minutes,
         durationHours: result.duration_hours,
       };
-      currentLog.value = null;
-      currentTask.value = null;
-      currentTaskTitle.value = "";
-      startTime.value = null;
-      elapsedSeconds.value = 0;
-      saveToLocalStorage();
+      resetTimerState();
       eventBus.emit(EVENTS.TIMER_STOPPED, stoppedData);
       return stoppedData;
     } catch (error) {
+      // If stop failed (log not found, already stopped, etc.), reset UI anyway
+      console.error("Stop timer error:", error);
+      resetTimerState();
+      // Re-check if there's actually a running timer on server
+      fetchRunningTimer();
       throw error;
     }
   }

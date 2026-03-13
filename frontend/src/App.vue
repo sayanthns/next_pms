@@ -164,7 +164,7 @@
           <span class="timer-bar-task">{{ timerStore.currentTaskTitle || timerStore.currentTask }}</span>
           <span class="timer-bar-elapsed">{{ timerStore.elapsedFormatted }}</span>
         </div>
-        <button class="timer-bar-stop" @click="timerStore.stopTimer()">Stop</button>
+        <button class="timer-bar-stop" @click="handleGlobalStop">Stop</button>
       </div>
 
       <div class="content-area">
@@ -274,6 +274,14 @@ function formatCheckinTime(dt) {
   if (!dt) return ''
   const date = new Date(dt)
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+async function handleGlobalStop() {
+  try {
+    await timerStore.stopTimer()
+  } catch (err) {
+    console.error('Failed to stop timer:', err)
+  }
 }
 
 function handleKeydown(e) {
