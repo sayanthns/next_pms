@@ -105,6 +105,10 @@
         <div class="spinner"></div>
         <p class="loading-text">Loading report...</p>
       </div>
+      <div v-else-if="error" class="empty-state">
+        <p class="empty-text" style="color:#dc2626">{{ error }}</p>
+        <button class="btn btn-outline btn-sm" @click="fetchReport" style="margin-top:8px">Retry</button>
+      </div>
       <div v-else-if="!tasks.length" class="empty-state">
         <p class="empty-text">No tasks found matching the filters.</p>
       </div>
@@ -164,9 +168,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { call, getList } from '@/utils/frappe'
 
-const loading = ref(false)
+const loading = ref(true)
 const tasks = ref([])
 const summary = ref(null)
+const error = ref(null)
 const projectOptions = ref([])
 const userOptions = ref([])
 
@@ -200,6 +205,7 @@ async function loadFilterOptions() {
 
 async function fetchReport() {
   loading.value = true
+  error.value = null
   try {
     const activeFilters = {}
     Object.entries(filters).forEach(([k, v]) => { if (v) activeFilters[k] = v })
@@ -211,6 +217,7 @@ async function fetchReport() {
     summary.value = data.summary || null
   } catch (err) {
     console.error('Failed to fetch task report:', err)
+    error.value = err.message || 'Failed to load report'
     tasks.value = []
     summary.value = null
   } finally {
@@ -257,9 +264,9 @@ function priorityClass(priority) {
 </script>
 
 <style scoped>
-.task-report-view { padding: 24px; max-width: 1400px; margin: 0 auto; }
-.page-header { margin-bottom: 20px; }
-.page-title { font-size: 24px; font-weight: 700; color: #1e293b; }
+.task-report-view { padding: 16px 24px; max-width: 1400px; margin: 0 auto; }
+.page-header { margin-bottom: 12px; }
+.page-title { font-size: 22px; font-weight: 700; color: #1e293b; }
 .page-subtitle { font-size: 14px; color: #64748b; margin-top: 4px; }
 
 /* Filters */

@@ -905,6 +905,17 @@ def get_task_activity(task):
         except (json.JSONDecodeError, TypeError, KeyError):
             continue
 
+    # 3. Add last modified info if no version records found (fallback)
+    if len(activities) <= 1 and doc.modified_by:
+        modified_name = frappe.get_cached_value("User", doc.modified_by, "full_name") or doc.modified_by
+        activities.append({
+            "type": "modified",
+            "user": doc.modified_by,
+            "user_name": modified_name,
+            "timestamp": str(doc.modified),
+            "detail": f"last modified (status: {doc.status})",
+        })
+
     # Sort by timestamp descending (newest first)
     activities.sort(key=lambda a: a["timestamp"], reverse=True)
     return activities
