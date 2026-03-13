@@ -93,6 +93,11 @@ const routes = [
     meta: { requiresAnalytics: true },
   },
   {
+    path: "/task-report",
+    name: "TaskReport",
+    component: () => import("@/views/TaskReportView.vue"),
+  },
+  {
     path: "/user-management",
     redirect: "/team?tab=users",
   },

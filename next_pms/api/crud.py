@@ -824,3 +824,234 @@ def set_user_hourly_rate(user, rate):
     frappe.db.set_default("pms_hourly_rate", float(rate or 0), parent=user)
     frappe.db.commit()
     return {"success": True, "rate": float(rate or 0)}
+
+
+# ═══════════════════════════════════════════════════════════════
+# Task Activity Log
+# ═══════════════════════════════════════════════════════════════
+
+@frappe.whitelist()
+def get_task_activity(task):
+    """Return activity log for a task: creation, status changes, assignment changes."""
+    from frappe.utils import get_datetime
+
+    doc = frappe.get_doc("PMS Task", task)
+    activities = []
+
+    # 1. Task created
+    owner_name = frappe.get_cached_value("User", doc.owner, "full_name") or doc.owner
+    activities.append({
+        "type": "created",
+        "user": doc.owner,
+        "user_name": owner_name,
+        "timestamp": str(doc.creation),
+        "detail": f"created this task",
+    })
+
+    # 2. Get status/assignment changes from Version log
+    versions = frappe.get_all(
+        "Version",
+        filters={"ref_doctype": "PMS Task", "ref_docname": task},
+        fields=["data", "owner", "creation"],
+        order_by="creation asc",
+        limit_page_length=0,
+    )
+
+    for ver in versions:
+        try:
+            data = json.loads(ver.data) if isinstance(ver.data, str) else ver.data
+            changed = data.get("changed", [])
+            ver_user = frappe.get_cached_value("User", ver.owner, "full_name") or ver.owner
+
+            for change in changed:
+                if len(change) >= 3:
+                    field, old_val, new_val = change[0], change[1], change[2]
+                    if field == "status":
+                        activities.append({
+                            "type": "status_change",
+                            "user": ver.owner,
+                            "user_name": ver_user,
+                            "timestamp": str(ver.creation),
+                            "detail": f"changed status from {old_val} to {new_val}",
+                            "old_value": old_val,
+                            "new_value": new_val,
+                        })
+                    elif field == "assigned_to":
+                        new_name = frappe.get_cached_value("User", new_val, "full_name") if new_val else "nobody"
+                        activities.append({
+                            "type": "assignment",
+                            "user": ver.owner,
+                            "user_name": ver_user,
+                            "timestamp": str(ver.creation),
+                            "detail": f"assigned to {new_name}",
+                        })
+                    elif field == "reviewer":
+                        new_name = frappe.get_cached_value("User", new_val, "full_name") if new_val else "nobody"
+                        activities.append({
+                            "type": "reviewer_change",
+                            "user": ver.owner,
+                            "user_name": ver_user,
+                            "timestamp": str(ver.creation),
+                            "detail": f"set reviewer to {new_name}",
+                        })
+                    elif field == "sprint":
+                        activities.append({
+                            "type": "sprint_change",
+                            "user": ver.owner,
+                            "user_name": ver_user,
+                            "timestamp": str(ver.creation),
+                            "detail": f"moved to sprint {new_val or 'None'}",
+                        })
+        except (json.JSONDecodeError, TypeError, KeyError):
+            continue
+
+    # Sort by timestamp descending (newest first)
+    activities.sort(key=lambda a: a["timestamp"], reverse=True)
+    return activities
+
+
+@frappe.whitelist()
+def get_task_overtime_hours(task):
+    """Calculate hours spent after the due date for a task."""
+    from frappe.utils import get_datetime, getdate
+
+    doc = frappe.get_doc("PMS Task", task)
+    if not doc.due_date:
+        return {"overtime_hours": 0, "has_due_date": False}
+
+    due_date_end = get_datetime(str(doc.due_date) + " 23:59:59")
+
+    logs = frappe.get_all(
+        "PMS Time Log",
+        filters={"task": task, "is_running": 0},
+        fields=["start_time", "end_time", "duration_hours"],
+    )
+
+    overtime_seconds = 0
+    for log in logs:
+        if not log.end_time:
+            continue
+        start = get_datetime(log.start_time)
+        end = get_datetime(log.end_time)
+
+        if end > due_date_end:
+            # If the log started before due date, only count the part after
+            overtime_start = max(start, due_date_end)
+            overtime_seconds += (end - overtime_start).total_seconds()
+
+    overtime_hours = round(overtime_seconds / 3600, 2)
+    return {
+        "overtime_hours": overtime_hours,
+        "has_due_date": True,
+        "due_date": str(doc.due_date),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
+# Task Report
+# ═══════════════════════════════════════════════════════════════
+
+@frappe.whitelist()
+def get_task_report(filters=None):
+    """Get comprehensive task report with filters.
+    Filters: project, user, from_date, to_date, priority, task_type, status
+    """
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
+
+    db_filters = {}
+
+    if filters.get("project"):
+        db_filters["project"] = filters["project"]
+    if filters.get("priority"):
+        db_filters["priority"] = filters["priority"]
+    if filters.get("task_type"):
+        db_filters["task_type"] = filters["task_type"]
+    if filters.get("status"):
+        db_filters["status"] = filters["status"]
+
+    # Date range filter on creation or due_date
+    if filters.get("from_date"):
+        db_filters["creation"] = [">=", filters["from_date"]]
+    if filters.get("to_date"):
+        if "creation" in db_filters:
+            db_filters["creation"] = ["between", [filters["from_date"], filters["to_date"] + " 23:59:59"]]
+        else:
+            db_filters["creation"] = ["<=", filters["to_date"] + " 23:59:59"]
+
+    # User filter — tasks assigned to this user
+    user_filter = filters.get("user")
+
+    tasks = frappe.get_all(
+        "PMS Task",
+        filters=db_filters,
+        fields=[
+            "name", "task_title", "project", "status", "priority",
+            "task_type", "assigned_to", "due_date", "start_date",
+            "estimated_hours", "actual_hours", "is_billable",
+            "hourly_rate", "calculated_cost", "sprint", "reviewer",
+            "owner", "creation", "modified",
+        ],
+        order_by="creation desc",
+        limit_page_length=0,
+    )
+
+    # If user filter, find tasks assigned to this user
+    if user_filter:
+        assigned_tasks = set(frappe.get_all(
+            "PMS Task Assignee",
+            filters={"user": user_filter},
+            pluck="parent",
+        ))
+        # Also check legacy assigned_to
+        tasks = [t for t in tasks if t.name in assigned_tasks or t.assigned_to == user_filter]
+
+    # Enrich with assignee names, project names, time spent
+    for task in tasks:
+        task["owner_name"] = frappe.get_cached_value("User", task["owner"], "full_name") or task["owner"]
+        task["assigned_to_name"] = (
+            frappe.get_cached_value("User", task["assigned_to"], "full_name")
+            if task.get("assigned_to") else ""
+        )
+        # Get all assignees
+        assignees = frappe.get_all(
+            "PMS Task Assignee",
+            filters={"parent": task["name"]},
+            fields=["user"],
+        )
+        task["assignee_names"] = ", ".join(
+            frappe.get_cached_value("User", a.user, "full_name") or a.user
+            for a in assignees
+        ) if assignees else task.get("assigned_to_name", "")
+
+        # Project name
+        if task.get("project"):
+            task["project_name"] = frappe.get_cached_value("PMS Project", task["project"], "project_name") or task["project"]
+        else:
+            task["project_name"] = ""
+
+        task["creation"] = str(task["creation"])
+        task["modified"] = str(task["modified"])
+
+    # Summary stats
+    total_tasks = len(tasks)
+    total_estimated = sum(t.get("estimated_hours") or 0 for t in tasks)
+    total_actual = sum(t.get("actual_hours") or 0 for t in tasks)
+    total_cost = sum(t.get("calculated_cost") or 0 for t in tasks)
+
+    status_summary = {}
+    for t in tasks:
+        s = t.get("status", "Unknown")
+        status_summary[s] = status_summary.get(s, 0) + 1
+
+    return {
+        "tasks": tasks,
+        "summary": {
+            "total_tasks": total_tasks,
+            "total_estimated_hours": round(total_estimated, 2),
+            "total_actual_hours": round(total_actual, 2),
+            "total_cost": round(total_cost, 2),
+            "status_breakdown": status_summary,
+        },
+    }

@@ -272,6 +272,10 @@
             <span class="info-label">Actual Hours</span>
             <span class="info-value">{{ task.actual_hours || '-' }}</span>
           </div>
+          <div class="info-item" v-if="overtimeData && overtimeData.overtime_hours > 0">
+            <span class="info-label">Overtime (After Due Date)</span>
+            <span class="info-value overtime-value">{{ overtimeData.overtime_hours }}h</span>
+          </div>
         </div>
 
         <!-- Cost Section -->
@@ -413,6 +417,29 @@
           <h3 class="section-title">Comments</h3>
           <CommentThread :taskName="task.name" />
         </div>
+
+        <!-- Activity Log -->
+        <div class="section-card">
+          <h3 class="section-title">Activity Log</h3>
+          <div v-if="activityLoading" class="section-loading">
+            <div class="spinner-sm"></div>
+          </div>
+          <div v-else-if="activityLog.length" class="activity-list">
+            <div v-for="(act, idx) in activityLog" :key="idx" class="activity-item">
+              <div class="activity-icon" :class="activityIconClass(act.type)">
+                <svg v-if="act.type === 'created'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <svg v-else-if="act.type === 'status_change'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </div>
+              <div class="activity-content">
+                <span class="activity-user">{{ act.user_name }}</span>
+                <span class="activity-detail">{{ act.detail }}</span>
+                <span class="activity-time">{{ formatDateTime(act.timestamp) }}</span>
+              </div>
+            </div>
+          </div>
+          <p v-else class="no-data-text">No activity recorded.</p>
+        </div>
       </div>
     </template>
 
@@ -456,6 +483,9 @@ const timeLogs = ref([])
 const timeLogsLoading = ref(false)
 const subtasks = ref([])
 const markingDone = ref(false)
+const activityLog = ref([])
+const activityLoading = ref(false)
+const overtimeData = ref(null)
 
 // Edit mode
 const isEditing = ref(false)
@@ -703,10 +733,40 @@ watch(() => props.id, () => {
 
 async function loadTask() {
   await taskStore.fetchTask(props.id)
-  // Load time logs, subtasks, attachments in parallel
+  // Load time logs, subtasks, attachments, activity, overtime in parallel
   loadTimeLogs()
   loadSubtasks()
   loadAttachments()
+  loadActivityLog()
+  loadOvertimeHours()
+}
+
+async function loadActivityLog() {
+  activityLoading.value = true
+  try {
+    activityLog.value = await call('next_pms.api.crud.get_task_activity', { task: props.id })
+  } catch {
+    activityLog.value = []
+  } finally {
+    activityLoading.value = false
+  }
+}
+
+async function loadOvertimeHours() {
+  try {
+    overtimeData.value = await call('next_pms.api.crud.get_task_overtime_hours', { task: props.id })
+  } catch {
+    overtimeData.value = null
+  }
+}
+
+function activityIconClass(type) {
+  return {
+    'activity-icon-created': type === 'created',
+    'activity-icon-status': type === 'status_change',
+    'activity-icon-assign': type === 'assignment',
+    'activity-icon-other': !['created', 'status_change', 'assignment'].includes(type),
+  }
 }
 
 async function loadTimeLogs() {
@@ -1866,4 +1926,35 @@ function statusSelectClass(status) {
     grid-template-columns: 1fr;
   }
 }
+
+/* Activity Log */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f3f5;
+  align-items: flex-start;
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.activity-icon-created { background: #dcfce7; color: #16a34a; }
+.activity-icon-status { background: #dbeafe; color: #2563eb; }
+.activity-icon-assign { background: #fef3c7; color: #d97706; }
+.activity-icon-other { background: #f1f5f9; color: #64748b; }
+.activity-content { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; }
+.activity-user { font-weight: 600; font-size: 13px; color: #1e293b; }
+.activity-detail { font-size: 13px; color: #475569; }
+.activity-time { font-size: 11px; color: #94a3b8; margin-left: 4px; }
+
+/* Overtime */
+.overtime-value { color: #dc2626; font-weight: 600; }
 </style>
