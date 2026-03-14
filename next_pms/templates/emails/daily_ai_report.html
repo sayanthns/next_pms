@@ -1,55 +1,121 @@
-<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 700px; margin: 0 auto;">
-  <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 24px 28px; border-radius: 12px 12px 0 0;">
-    <h2 style="margin: 0 0 8px 0; font-size: 22px;">Daily AI Report</h2>
-    <p style="margin: 0; opacity: 0.9; font-size: 14px;">{{ report_date }}</p>
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 720px; margin: 0 auto; background: #ffffff;">
+
+  <!-- Header -->
+  <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 28px 32px; border-radius: 12px 12px 0 0;">
+    <h1 style="margin: 0 0 4px 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">NextPMS Daily Productivity Report</h1>
+    <p style="margin: 0; opacity: 0.85; font-size: 14px;">{{ report_date }}</p>
   </div>
 
-  <!-- Summary Stats -->
-  <div style="display: flex; border: 1px solid #e5e7eb; border-top: none;">
-    <div style="flex: 1; padding: 16px 20px; text-align: center; border-right: 1px solid #e5e7eb;">
-      <div style="font-size: 24px; font-weight: 700; color: #1a1a2e;">{{ overall.active_users or 0 }}</div>
-      <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Active Users</div>
-    </div>
-    <div style="flex: 1; padding: 16px 20px; text-align: center; border-right: 1px solid #e5e7eb;">
-      <div style="font-size: 24px; font-weight: 700; color: #1a1a2e;">{{ overall.total_time_logged or 0 }}h</div>
-      <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Hours Logged</div>
-    </div>
-    <div style="flex: 1; padding: 16px 20px; text-align: center; border-right: 1px solid #e5e7eb;">
-      <div style="font-size: 24px; font-weight: 700; color: #1a1a2e;">{{ overall.tasks_completed_today or 0 }}</div>
-      <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Tasks Done</div>
-    </div>
-    <div style="flex: 1; padding: 16px 20px; text-align: center;">
-      <div style="font-size: 24px; font-weight: 700; color: #1a1a2e;">{{ overall.active_projects or 0 }}</div>
-      <div style="font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Active Projects</div>
-    </div>
-  </div>
+  <!-- ─── Summary Stats ─── -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e7eb; border-top: none; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 18px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 25%;">
+        <div style="font-size: 28px; font-weight: 800; color: #6366f1;">{{ overall.active_users or 0 }}</div>
+        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Active Users</div>
+      </td>
+      <td style="padding: 18px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 25%;">
+        <div style="font-size: 28px; font-weight: 800; color: #059669;">{{ overall.total_time_logged or 0 }}h</div>
+        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Hours Logged</div>
+      </td>
+      <td style="padding: 18px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 25%;">
+        <div style="font-size: 28px; font-weight: 800; color: #2563eb;">{{ overall.tasks_completed_today or 0 }}</div>
+        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Tasks Done</div>
+      </td>
+      <td style="padding: 18px 12px; text-align: center; width: 25%;">
+        <div style="font-size: 28px; font-weight: 800; color: #d97706;">{{ overall.active_projects or 0 }}</div>
+        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Active Projects</div>
+      </td>
+    </tr>
+  </table>
 
-  <!-- AI Analysis -->
-  <div style="background: #f8f7ff; border: 1px solid #e5e7eb; border-top: none; padding: 24px 28px;">
-    <h3 style="margin: 0 0 12px 0; color: #6366f1; font-size: 16px;">
-      AI Analysis
-    </h3>
-    <div style="font-size: 14px; color: #374151; line-height: 1.7; white-space: pre-wrap;">{{ ai_analysis }}</div>
+  <!-- ─── AI Executive Summary ─── -->
+  {% if ai and ai.executive_summary %}
+  <div style="background: #f8f7ff; border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="width: 32px; vertical-align: top; padding-right: 12px;">
+        <div style="width: 32px; height: 32px; background: #6366f1; border-radius: 8px; text-align: center; line-height: 32px; font-size: 16px; color: white;">AI</div>
+      </td>
+      <td>
+        <div style="font-size: 14px; font-weight: 700; color: #6366f1; margin-bottom: 8px;">Executive Summary</div>
+        <div style="font-size: 13px; color: #374151; line-height: 1.7;">{{ ai.executive_summary }}</div>
+      </td>
+    </tr></table>
   </div>
+  {% elif ai_raw %}
+  <div style="background: #f8f7ff; border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #6366f1; margin-bottom: 8px;">AI Analysis</div>
+    <div style="font-size: 13px; color: #374151; line-height: 1.7; white-space: pre-wrap;">{{ ai_raw }}</div>
+  </div>
+  {% endif %}
 
-  <!-- User Activity Table -->
-  {% if user_activity %}
-  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 28px;">
-    <h3 style="margin: 0 0 16px 0; color: #1a1a2e; font-size: 16px;">User Activity</h3>
-    <table style="width: 100%; border-collapse: collapse;">
+  <!-- ─── AI User Assessments ─── -->
+  {% if ai and ai.user_assessments %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;">AI User Assessments</div>
+    {% for ua in ai.user_assessments %}
+    <div style="{% if not loop.last %}border-bottom: 1px solid #f3f4f6; margin-bottom: 12px; padding-bottom: 12px;{% endif %}">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="vertical-align: top;">
+          <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">{{ ua.name }}</div>
+        </td>
+        <td style="text-align: right; vertical-align: top; width: 140px;">
+          {% if ua.rating == 'Good' %}
+            <span style="background: #d1fae5; color: #065f46; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">Good</span>
+          {% elif ua.rating == 'Average' %}
+            <span style="background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">Average</span>
+          {% elif ua.rating == 'Needs Attention' %}
+            <span style="background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">Needs Attention</span>
+          {% elif ua.rating == 'Critical' %}
+            <span style="background: #dc2626; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">Critical</span>
+          {% else %}
+            <span style="background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px;">{{ ua.rating }}</span>
+          {% endif %}
+        </td>
+      </tr></table>
+      <div style="font-size: 12px; color: #6b7280; line-height: 1.6; margin-top: 4px;">{{ ua.summary }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ─── User Productivity Data Table ─── -->
+  {% if user_metrics %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;">User Productivity Data</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 12px;">
       <thead>
-        <tr style="background: #f9fafb;">
-          <th style="padding: 10px 12px; text-align: left; font-size: 11px; color: #6b7280; text-transform: uppercase; border-bottom: 1px solid #e5e7eb;">User</th>
-          <th style="padding: 10px 12px; text-align: center; font-size: 11px; color: #6b7280; text-transform: uppercase; border-bottom: 1px solid #e5e7eb;">Hours</th>
-          <th style="padding: 10px 12px; text-align: left; font-size: 11px; color: #6b7280; text-transform: uppercase; border-bottom: 1px solid #e5e7eb;">Tasks Worked On</th>
+        <tr style="background: #f1f0ff;">
+          <th style="padding: 10px 6px; text-align: left; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">User</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Check In</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Check Out</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Office Hrs</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Allocated</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Done</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Logged</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Efficiency</th>
         </tr>
       </thead>
       <tbody>
-        {% for user in user_activity %}
-        <tr>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; font-weight: 600; color: #1a1a2e; font-size: 13px;">{{ user.full_name }}</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; text-align: center; font-weight: 700; color: #6366f1; font-size: 14px;">{{ user.total_hours }}h</td>
-          <td style="padding: 10px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px; color: #374151;">{{ user.tasks_worked | join(', ') }}</td>
+        {% for u in user_metrics %}
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 10px 6px; font-weight: 600; color: #1a1a2e;">{{ u.full_name }}</td>
+          <td style="padding: 10px 6px; text-align: center; color: #374151; font-size: 11px;">{{ u.checkin_time }}</td>
+          <td style="padding: 10px 6px; text-align: center; color: #374151; font-size: 11px;">{{ u.checkout_time }}</td>
+          <td style="padding: 10px 6px; text-align: center; font-weight: 600; color: #059669;">{{ u.office_hours }}h</td>
+          <td style="padding: 10px 6px; text-align: center; color: #374151;">{{ u.tasks_allocated }}</td>
+          <td style="padding: 10px 6px; text-align: center; font-weight: 700; color: #2563eb;">{{ u.tasks_completed }}</td>
+          <td style="padding: 10px 6px; text-align: center; color: #374151;">{{ u.hours_logged_today }}h</td>
+          <td style="padding: 10px 6px; text-align: center; font-weight: 700;">
+            {% if u.productivity_pct >= 90 %}
+              <span style="color: #059669;">{{ u.productivity_pct }}%</span>
+            {% elif u.productivity_pct >= 60 %}
+              <span style="color: #d97706;">{{ u.productivity_pct }}%</span>
+            {% elif u.productivity_pct > 0 %}
+              <span style="color: #dc2626;">{{ u.productivity_pct }}%</span>
+            {% else %}
+              <span style="color: #9ca3af;">-</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -57,10 +123,209 @@
   </div>
   {% endif %}
 
-  <!-- Footer -->
-  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 16px 28px; border-radius: 0 0 12px 12px; background: #f9fafb;">
-    <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
-      This report was generated by Next PMS AI Assistant. Data is from {{ report_date }}.
+  <!-- ─── AI Bottlenecks & Risks ─── -->
+  {% if ai and ai.bottlenecks %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;">Bottlenecks &amp; Risk Flags</div>
+    {% for b in ai.bottlenecks %}
+    <div style="{% if not loop.last %}margin-bottom: 10px;{% endif %}">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="width: 70px; vertical-align: top;">
+          {% if b.severity == 'High' %}
+            <span style="background: #fee2e2; color: #991b1b; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">High</span>
+          {% elif b.severity == 'Medium' %}
+            <span style="background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">Medium</span>
+          {% else %}
+            <span style="background: #d1fae5; color: #065f46; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">Low</span>
+          {% endif %}
+        </td>
+        <td style="font-size: 13px; color: #374151; line-height: 1.5; padding-left: 8px;">{{ b.issue }}</td>
+      </tr></table>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ─── Process Flow Insights ─── -->
+  {% if process_mining and (process_mining.transitions or process_mining.skipped_stages or process_mining.rework_loops or process_mining.stale_tasks) %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;">Process Mining Insights</div>
+
+    {% if process_mining.transitions %}
+    <div style="margin-bottom: 16px;">
+      <div style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 8px;">Status Transitions Today ({{ process_mining.total_transitions }})</div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 12px;">
+        {% for transition, count in process_mining.transitions.items() %}
+        <tr>
+          <td style="padding: 5px 8px; color: #374151; border-bottom: 1px solid #f3f4f6;">{{ transition }}</td>
+          <td style="padding: 5px 8px; text-align: right; font-weight: 700; color: #6366f1; border-bottom: 1px solid #f3f4f6; width: 40px;">{{ count }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% endif %}
+
+    {% if process_mining.skipped_stages %}
+    <div style="background: #fef3c7; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 6px; text-transform: uppercase;">Skipped Stages</div>
+      {% for s in process_mining.skipped_stages %}
+      <div style="font-size: 12px; color: #78350f; margin-bottom: 4px;">
+        <strong>{{ s.task }}</strong>: {{ s.from }} &rarr; {{ s.to }} <span style="color: #92400e;">(skipped: {{ s.skipped | join(', ') }})</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if process_mining.rework_loops %}
+    <div style="background: #fee2e2; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: #991b1b; margin-bottom: 6px; text-transform: uppercase;">Rework Detected</div>
+      {% for r in process_mining.rework_loops %}
+      <div style="font-size: 12px; color: #7f1d1d; margin-bottom: 4px;">
+        <strong>{{ r.task }}</strong>: {{ r.from }} &rarr; {{ r.to }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if process_mining.stale_tasks %}
+    <div style="background: #fef9c3; border-radius: 8px; padding: 12px 16px;">
+      <div style="font-size: 11px; font-weight: 700; color: #854d0e; margin-bottom: 6px; text-transform: uppercase;">Stale Tasks (No Activity 3+ Days)</div>
+      {% for st in process_mining.stale_tasks %}
+      <div style="font-size: 12px; color: #713f12; margin-bottom: 4px;">
+        <strong>{{ st.task }}</strong> &mdash; {{ st.status }} ({{ st.days_stale }}d){% if st.assigned_to %} &bull; {{ st.assigned_to }}{% endif %}{% if st.project %} &bull; {{ st.project }}{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ─── AI Process & Time Insights ─── -->
+  {% if ai and (ai.process_insights or ai.time_analysis) %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    {% if ai.process_insights %}
+    <div style="{% if ai.time_analysis %}margin-bottom: 20px;{% endif %}">
+      <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px;">Process Flow Analysis</div>
+      {% for insight in ai.process_insights %}
+      <div style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 6px; padding-left: 16px; position: relative;">
+        <span style="position: absolute; left: 0; color: #6366f1; font-weight: 700;">&bull;</span>
+        {{ insight }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if ai.time_analysis %}
+    <div>
+      <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px;">Time Efficiency Analysis</div>
+      {% for insight in ai.time_analysis %}
+      <div style="font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 6px; padding-left: 16px; position: relative;">
+        <span style="position: absolute; left: 0; color: #059669; font-weight: 700;">&bull;</span>
+        {{ insight }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ─── Time Pattern Data ─── -->
+  {% if time_patterns %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;">Time Metrics</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 13px;">
+      <tr style="border-bottom: 1px solid #f3f4f6;">
+        <td style="padding: 10px 8px; color: #6b7280;">Peak Productivity Hour</td>
+        <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #059669;">{{ time_patterns.peak_hour }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f3f4f6;">
+        <td style="padding: 10px 8px; color: #6b7280;">Tasks Worked On</td>
+        <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: #2563eb;">{{ time_patterns.tasks_worked_on }}</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f3f4f6;">
+        <td style="padding: 10px 8px; color: #6b7280;">Avg Completion vs Estimate</td>
+        <td style="padding: 10px 8px; text-align: right; font-weight: 700;">
+          {% if time_patterns.avg_completion_ratio_pct > 0 %}
+            <span style="color: {% if time_patterns.avg_completion_ratio_pct <= 110 %}#059669{% elif time_patterns.avg_completion_ratio_pct <= 150 %}#d97706{% else %}#dc2626{% endif %};">{{ time_patterns.avg_completion_ratio_pct }}%</span>
+          {% else %}
+            <span style="color: #9ca3af;">N/A</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 8px; color: #6b7280;">Overtime (After 6 PM)</td>
+        <td style="padding: 10px 8px; text-align: right; font-weight: 700; color: {% if time_patterns.overtime_count > 0 %}#d97706{% else %}#059669{% endif %};">
+          {% if time_patterns.overtime_count > 0 %}
+            {{ time_patterns.overtime_count }} ({{ time_patterns.overtime_users | join(', ') }})
+          {% else %}
+            None
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ─── Project Summary ─── -->
+  {% if project_summary %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;">Project Summary</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 12px;">
+      <thead>
+        <tr style="background: #f9fafb;">
+          <th style="padding: 10px 8px; text-align: left; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Project</th>
+          <th style="padding: 10px 8px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Done Today</th>
+          <th style="padding: 10px 8px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Hours</th>
+          <th style="padding: 10px 8px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Open Tasks</th>
+          <th style="padding: 10px 8px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Budget</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in project_summary %}
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 10px 8px; font-weight: 600; color: #1a1a2e;">{{ p.project }}</td>
+          <td style="padding: 10px 8px; text-align: center; font-weight: 700; color: #2563eb;">{{ p.tasks_done_today }}</td>
+          <td style="padding: 10px 8px; text-align: center; color: #059669; font-weight: 600;">{{ p.hours_today }}h</td>
+          <td style="padding: 10px 8px; text-align: center; color: #374151;">{{ p.open_tasks }}</td>
+          <td style="padding: 10px 8px; text-align: center; font-weight: 700;">
+            {% if p.budget_pct > 90 %}
+              <span style="color: #dc2626;">{{ p.budget_pct }}%</span>
+            {% elif p.budget_pct > 70 %}
+              <span style="color: #d97706;">{{ p.budget_pct }}%</span>
+            {% elif p.budget_pct > 0 %}
+              <span style="color: #059669;">{{ p.budget_pct }}%</span>
+            {% else %}
+              <span style="color: #9ca3af;">-</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ─── AI Recommendations ─── -->
+  {% if ai and ai.recommendations %}
+  <div style="background: #f0fdf4; border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #065f46; margin-bottom: 16px;">Recommendations for Tomorrow</div>
+    {% for rec in ai.recommendations %}
+    <div style="margin-bottom: {% if loop.last %}0{% else %}12{% endif %}px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="width: 28px; vertical-align: top;">
+          <div style="width: 24px; height: 24px; background: #059669; color: white; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: 700;">{{ rec.priority }}</div>
+        </td>
+        <td style="font-size: 13px; color: #374151; line-height: 1.5; padding-left: 8px; vertical-align: top;">{{ rec.action }}</td>
+      </tr></table>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ─── Footer ─── -->
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 16px 32px; border-radius: 0 0 12px 12px; background: #f9fafb;">
+    <p style="margin: 0; font-size: 11px; color: #9ca3af; text-align: center;">
+      Generated by NextPMS AI &middot; Process Mining Analysis &middot; {{ report_date }}
     </p>
   </div>
 </div>

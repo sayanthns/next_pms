@@ -262,63 +262,12 @@ async function loadDashboard() {
   loading.value = true
   error.value = null
   try {
-    // Build task filters — developer only sees their assigned tasks
-    const taskFilters = { status: ['not in', ['Done', 'Cancelled']] }
-    const currentUser = window.frappe?.boot?.user?.name || window.pms_boot?.user || ''
-    if (settingsStore.isDeveloper && !settingsStore.isManager && !settingsStore.isAdmin) {
-      taskFilters.assigned_to = currentUser
-    }
+    // Single batch API call instead of 17+ individual calls
+    const data = await call('next_pms.api.dashboard.get_dashboard_data', {}, { cache: 10000 })
 
-    const [projectsData, myTasksData] = await Promise.all([
-      call('next_pms.api.dashboard.get_all_projects_summary'),
-      getList('PMS Task', {
-        fields: ['name', 'task_title', 'status', 'priority', 'project', 'due_date', 'assigned_to'],
-        filters: taskFilters,
-        orderBy: 'priority desc, due_date asc',
-        limit: 20,
-      }),
-    ])
-    projects.value = projectsData || []
-    myTasks.value = myTasksData || []
-
-    // Fetch team members for each project
-    const projectsWithDetails = await Promise.all(
-      (projectsData || []).map(async (project) => {
-        let teamMembers = []
-        try {
-          const members = await getList('PMS Project Team', {
-            filters: { parent: project.name },
-            fields: ['employee_name'],
-            limit: 0,
-          })
-          teamMembers = members.map((m) => m.employee_name)
-        } catch {
-          // team members not available
-        }
-        return {
-          ...project,
-          team_members: teamMembers,
-        }
-      })
-    )
-    projects.value = projectsWithDetails
-
-    // Fetch actual task counts by status
-    const counts = { 'Backlog': 0, 'To Do': 0, 'In Progress': 0, 'In Review': 0, 'Done': 0 }
-    const statuses = ['Backlog', 'To Do', 'In Progress', 'In Review', 'Done']
-    for (const status of statuses) {
-      try {
-        const list = await getList('PMS Task', {
-          fields: ['count(name) as cnt'],
-          filters: { status },
-          limit: 1,
-        })
-        counts[status] = list[0]?.cnt || 0
-      } catch {
-        counts[status] = 0
-      }
-    }
-    allTaskCounts.value = counts
+    projects.value = data.projects || []
+    myTasks.value = data.my_tasks || []
+    allTaskCounts.value = data.task_counts || { 'Backlog': 0, 'To Do': 0, 'In Progress': 0, 'In Review': 0, 'Done': 0 }
   } catch (e) {
     console.error('Failed to load dashboard:', e)
     error.value = 'Failed to load dashboard data. Please try again.'
@@ -410,13 +359,13 @@ function getTaskStatusColor(status) {
 .page-title {
   font-size: 26px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -432,8 +381,8 @@ function getTaskStatusColor(status) {
 .spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -444,7 +393,7 @@ function getTaskStatusColor(status) {
 
 .loading-text {
   margin-top: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -454,14 +403,14 @@ function getTaskStatusColor(status) {
 }
 
 .error-message {
-  color: #EF4444;
+  color: var(--color-danger);
   margin-bottom: 16px;
   font-size: 15px;
 }
 
 .retry-button {
   padding: 8px 20px;
-  background-color: #2563EB;
+  background-color: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -472,7 +421,7 @@ function getTaskStatusColor(status) {
 }
 
 .retry-button:hover {
-  background-color: #1D4ED8;
+  background-color: var(--color-primary-hover);
 }
 
 /* Summary Cards */
@@ -484,11 +433,11 @@ function getTaskStatusColor(status) {
 }
 
 .summary-card {
-  background: #fff;
-  border: 1px solid #f3f4f6;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 18px 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px var(--shadow-sm);
   transition: box-shadow 0.2s;
 }
 
@@ -513,10 +462,10 @@ function getTaskStatusColor(status) {
   flex-shrink: 0;
 }
 
-.summary-icon-projects { background: rgba(37, 99, 235, 0.1); }
-.summary-icon-active { background: rgba(245, 158, 11, 0.1); }
+.summary-icon-projects { background: var(--color-primary-bg); }
+.summary-icon-active { background: var(--color-warning-bg); }
 .summary-icon-tasks { background: rgba(59, 130, 246, 0.1); }
-.summary-icon-done { background: rgba(16, 185, 129, 0.1); }
+.summary-icon-done { background: var(--color-success-bg); }
 
 .summary-info {
   display: flex;
@@ -525,7 +474,7 @@ function getTaskStatusColor(status) {
 
 .summary-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
   margin-bottom: 2px;
 }
@@ -533,7 +482,7 @@ function getTaskStatusColor(status) {
 .summary-value {
   font-size: 26px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
@@ -544,25 +493,25 @@ function getTaskStatusColor(status) {
 }
 
 .trend-up {
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .trend-down {
-  color: #EF4444;
+  color: var(--color-danger);
 }
 
 .trend-neutral {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 /* Sections */
 .dash-section {
-  background: #fff;
-  border: 1px solid #f3f4f6;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px var(--shadow-sm);
 }
 
 .dash-section-header {
@@ -577,7 +526,7 @@ function getTaskStatusColor(status) {
 .dash-section-title {
   font-size: 17px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -589,23 +538,23 @@ function getTaskStatusColor(status) {
 
 .filter-dropdown {
   padding: 6px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   cursor: pointer;
   outline: none;
   transition: border-color 0.2s;
 }
 
 .filter-dropdown:focus {
-  border-color: #2563EB;
+  border-color: var(--color-primary);
 }
 
 .dash-section-count {
-  background: #e5e7eb;
-  color: #6b7280;
+  background: var(--border-default);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
   padding: 2px 8px;
@@ -615,19 +564,19 @@ function getTaskStatusColor(status) {
 .dash-section-link {
   font-size: 13px;
   font-weight: 500;
-  color: #2563EB;
+  color: var(--color-primary);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .dash-section-link:hover {
-  color: #1D4ED8;
+  color: var(--color-primary-hover);
 }
 
 .dash-empty {
   text-align: center;
   padding: 32px 20px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
@@ -639,12 +588,12 @@ function getTaskStatusColor(status) {
 }
 
 .project-overview-card {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 12px;
   padding: 20px;
-  border: 1px solid #f3f4f6;
-  border-left: 4px solid #9ca3af;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-light);
+  border-left: 4px solid var(--text-tertiary);
+  box-shadow: 0 1px 3px var(--shadow-sm);
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.2s;
 }
@@ -665,7 +614,7 @@ function getTaskStatusColor(status) {
 .project-card-name {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   line-height: 1.4;
 }
 
@@ -680,7 +629,7 @@ function getTaskStatusColor(status) {
 
 .project-card-client {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   margin-bottom: 10px;
 }
 
@@ -689,7 +638,7 @@ function getTaskStatusColor(status) {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 14px;
 }
 
@@ -703,7 +652,7 @@ function getTaskStatusColor(status) {
 .progress-bar-container {
   flex: 1;
   height: 6px;
-  background-color: #f3f4f6;
+  background-color: var(--border-light);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -717,7 +666,7 @@ function getTaskStatusColor(status) {
 .progress-label {
   font-size: 12px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   min-width: 36px;
   text-align: right;
 }
@@ -737,14 +686,14 @@ function getTaskStatusColor(status) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: #2563EB;
+  background-color: var(--color-primary);
   color: #fff;
   font-size: 10px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #fff;
+  border: 2px solid var(--bg-surface);
   position: relative;
 }
 
@@ -753,8 +702,8 @@ function getTaskStatusColor(status) {
 }
 
 .team-avatar-more {
-  background-color: #e5e7eb;
-  color: #6b7280;
+  background-color: var(--border-default);
+  color: var(--text-secondary);
   font-size: 9px;
 }
 
@@ -763,7 +712,7 @@ function getTaskStatusColor(status) {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 /* My Tasks */
@@ -779,7 +728,7 @@ function getTaskStatusColor(status) {
   gap: 14px;
   padding: 12px 16px;
   border-radius: 10px;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--border-light);
   text-decoration: none;
   transition: box-shadow 0.2s, transform 0.15s;
 }
@@ -807,7 +756,7 @@ function getTaskStatusColor(status) {
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #1a1a2e;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -816,12 +765,12 @@ function getTaskStatusColor(status) {
 .my-task-project {
   display: block;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   margin-top: 2px;
 }
 
 .task-due {
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .task-priority {
@@ -835,23 +784,23 @@ function getTaskStatusColor(status) {
 
 .priority-critical,
 .priority-urgent {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .priority-high {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .priority-medium {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #F59E0B;
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .priority-low {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  background-color: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 /* Responsive */

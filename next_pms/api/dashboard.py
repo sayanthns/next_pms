@@ -146,19 +146,105 @@ def get_all_projects_summary():
         order_by="modified desc",
     )
 
+    if not projects:
+        return projects
+
+    project_names = [p.name for p in projects]
+
+    # Batch load task counts in 2 queries instead of 2N
+    total_counts = {}
+    done_counts = {}
+    for row in frappe.db.sql(
+        "SELECT project, COUNT(*) as cnt FROM `tabPMS Task` WHERE project IN %s GROUP BY project",
+        [project_names], as_dict=True
+    ):
+        total_counts[row.project] = row.cnt
+
+    for row in frappe.db.sql(
+        "SELECT project, COUNT(*) as cnt FROM `tabPMS Task` WHERE project IN %s AND status='Done' GROUP BY project",
+        [project_names], as_dict=True
+    ):
+        done_counts[row.project] = row.cnt
+
+    # Batch load team members in 1 query
+    team_map = {}
+    team_rows = frappe.db.sql(
+        "SELECT parent, user FROM `tabPMS Project Member` WHERE parent IN %s",
+        [project_names], as_dict=True
+    )
+    for row in team_rows:
+        team_map.setdefault(row.parent, []).append(row.user)
+
     for project in projects:
-        # Add task count
-        project["total_tasks"] = frappe.db.count("PMS Task", {"project": project.name})
-        project["done_tasks"] = frappe.db.count(
-            "PMS Task", {"project": project.name, "status": "Done"}
-        )
+        project["total_tasks"] = total_counts.get(project.name, 0)
+        project["done_tasks"] = done_counts.get(project.name, 0)
         project["progress"] = (
             round((project["done_tasks"] / project["total_tasks"] * 100), 1)
             if project["total_tasks"]
             else 0
         )
+        project["team_members"] = team_map.get(project.name, [])
 
     return projects
+
+
+@frappe.whitelist()
+def get_dashboard_data():
+    """Single batch endpoint for the dashboard — returns projects, task counts, and tasks in ONE call."""
+    from frappe.utils import cint
+
+    # 1. Get projects summary (already optimized above)
+    projects = get_all_projects_summary()
+
+    # 2. Get task counts by status in a single query
+    user = frappe.session.user
+    from next_pms.api.permissions import is_admin_user
+    is_admin = is_admin_user()
+
+    # Determine if user is developer-only (sees only own tasks)
+    user_roles = frappe.get_roles()
+    is_manager = "PMS Manager" in user_roles
+    is_developer_only = "PMS Developer" in user_roles and not is_manager and not is_admin
+
+    task_count_filter = ""
+    task_filter_vals = []
+    if is_developer_only:
+        task_count_filter = "WHERE assigned_to = %s"
+        task_filter_vals = [user]
+
+    counts = {}
+    for row in frappe.db.sql(
+        f"SELECT status, COUNT(*) as cnt FROM `tabPMS Task` {task_count_filter} GROUP BY status",
+        task_filter_vals, as_dict=True
+    ):
+        counts[row.status] = row.cnt
+
+    task_counts = {
+        "Backlog": counts.get("Backlog", 0),
+        "To Do": counts.get("To Do", 0),
+        "In Progress": counts.get("In Progress", 0),
+        "In Review": counts.get("In Review", 0),
+        "Done": counts.get("Done", 0),
+    }
+
+    # 3. Get recent tasks for the user
+    task_filters = {"status": ["not in", ["Done", "Cancelled"]]}
+    if is_developer_only:
+        task_filters["assigned_to"] = user
+
+    my_tasks = frappe.get_all(
+        "PMS Task",
+        filters=task_filters,
+        fields=["name", "task_title", "status", "priority", "project", "due_date", "assigned_to"],
+        order_by="priority desc, due_date asc",
+        limit_page_length=20,
+    )
+
+    return {
+        "projects": projects,
+        "task_counts": task_counts,
+        "my_tasks": my_tasks,
+    }
 
 
 @frappe.whitelist()

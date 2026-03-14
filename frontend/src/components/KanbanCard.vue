@@ -183,8 +183,8 @@ function onDragEnd(event) {
 
 <style scoped>
 .kanban-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-left: 3px solid transparent;
   border-radius: 10px;
   padding: 12px 14px;
@@ -194,15 +194,15 @@ function onDragEnd(event) {
 }
 
 .kanban-card:hover {
-  border-color: #d1d5db;
-  border-left-color: #2563EB;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+  border-color: var(--border-default);
+  border-left-color: var(--color-primary);
+  box-shadow: 0 4px 12px var(--shadow-md);
 }
 
 .kanban-card.dragging {
   opacity: 0.5;
   transform: rotate(2deg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px var(--shadow-lg);
 }
 
 /* Row 1: Header — project tag + priority badge */
@@ -221,8 +221,8 @@ function onDragEnd(event) {
 .project-tag {
   font-size: 11px;
   font-weight: 500;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--text-secondary);
+  background: var(--bg-surface-hover);
   padding: 2px 8px;
   border-radius: 6px;
   max-width: 140px;
@@ -243,30 +243,30 @@ function onDragEnd(event) {
 }
 
 .priority-critical {
-  background: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .priority-high {
-  background: rgba(245, 158, 11, 0.1);
-  color: #F59E0B;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .priority-medium {
   background: rgba(251, 191, 36, 0.1);
-  color: #D97706;
+  color: var(--color-warning-hover);
 }
 
 .priority-low {
   background: rgba(156, 163, 175, 0.1);
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 /* Row 2: Title */
 .card-title {
   font-size: 13.5px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
   line-height: 1.45;
   margin-bottom: 8px;
   display: -webkit-box;
@@ -286,13 +286,13 @@ function onDragEnd(event) {
 .task-id {
   font-size: 11px;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
 }
 
 .meta-separator {
   font-size: 10px;
-  color: #d1d5db;
+  color: var(--text-placeholder);
   user-select: none;
 }
 
@@ -301,8 +301,8 @@ function onDragEnd(event) {
   font-weight: 500;
   padding: 1px 7px;
   border-radius: 4px;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
 }
 
 /* Row 4: Bottom row */
@@ -327,7 +327,7 @@ function onDragEnd(event) {
 
 .avatar-stack .avatar-initials {
   margin-left: -6px;
-  border: 2px solid #fff;
+  border: 2px solid var(--bg-surface);
 }
 
 .avatar-stack .avatar-initials:first-child {
@@ -355,7 +355,7 @@ function onDragEnd(event) {
 .avatar-color-4 { background: #DC2626; }
 
 .avatar-more {
-  background: #9ca3af !important;
+  background: var(--text-tertiary) !important;
   font-size: 9px;
   font-weight: 700;
 }
@@ -388,19 +388,19 @@ function onDragEnd(event) {
 }
 
 .due-normal {
-  background: #f3f4f6;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
 }
 
 /* Mini timer button */
 .mini-timer-btn {
   width: 26px;
   height: 26px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: #f9fafb;
-  color: #2563EB;
+  background: var(--bg-surface-active);
+  color: var(--color-primary);
   font-size: 10px;
   cursor: pointer;
   display: flex;
@@ -411,7 +411,7 @@ function onDragEnd(event) {
 }
 
 .mini-timer-btn:hover {
-  background: rgba(37, 99, 235, 0.05);
-  border-color: #2563EB;
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
 }
 </style>

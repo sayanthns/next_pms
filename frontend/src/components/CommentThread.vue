@@ -167,8 +167,8 @@ onMounted(() => {
 
 <style scoped>
 .comment-thread {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -178,20 +178,20 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .comment-thread-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
 }
 
 .comment-count {
   font-size: 11px;
   font-weight: 600;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
   padding: 2px 7px;
   border-radius: 10px;
 }
@@ -202,15 +202,15 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 24px 18px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
 .comment-loading-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -267,17 +267,17 @@ onMounted(() => {
 .comment-user {
   font-size: 13px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
 }
 
 .comment-time {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .comment-content {
   font-size: 13px;
-  color: #374151;
+  color: var(--text-primary);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -287,24 +287,24 @@ onMounted(() => {
 .comment-empty {
   padding: 32px 18px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
 /* Input area */
 .comment-input-area {
   padding: 12px 18px 14px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-light);
 }
 
 .comment-textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
   font-family: inherit;
-  color: #1e1e2e;
+  color: var(--text-primary);
   resize: vertical;
   min-height: 44px;
   line-height: 1.5;
@@ -312,13 +312,13 @@ onMounted(() => {
 }
 
 .comment-textarea::placeholder {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .comment-textarea:focus {
   outline: none;
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .comment-input-footer {
@@ -330,7 +330,7 @@ onMounted(() => {
 
 .comment-input-hint {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .comment-submit-btn {

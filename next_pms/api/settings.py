@@ -66,24 +66,29 @@ def get_ai_settings():
         doc = frappe.get_single("PMS AI Settings")
         has_key = bool(doc.ai_api_key)
         return {
-            "ai_provider": doc.ai_provider or "OpenAI",
+            "ai_provider": doc.ai_provider or "Claude",
             "ai_api_key_set": has_key,
-            "ai_model": doc.ai_model or "gpt-4o",
+            "ai_model": doc.ai_model or "claude-sonnet-4-20250514",
             "daily_report_enabled": bool(doc.daily_report_enabled),
             "daily_report_recipient": doc.daily_report_recipient or "",
+            "daily_report_recipients": doc.daily_report_recipients or "",
+            "report_detail_level": doc.report_detail_level or "Detailed",
         }
     except Exception:
         return {
-            "ai_provider": "OpenAI",
+            "ai_provider": "Claude",
             "ai_api_key_set": False,
-            "ai_model": "gpt-4o",
+            "ai_model": "claude-sonnet-4-20250514",
             "daily_report_enabled": False,
             "daily_report_recipient": "",
+            "daily_report_recipients": "",
+            "report_detail_level": "Detailed",
         }
 
 
 @frappe.whitelist()
-def save_ai_settings(provider=None, api_key=None, model=None, enabled=None, recipient=None):
+def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
+                      recipient=None, additional_recipients=None, detail_level=None):
     """Save AI settings. Admin only."""
     if not is_admin_user():
         frappe.throw("Only administrators can modify AI settings.", frappe.PermissionError)
@@ -104,6 +109,12 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None, reci
 
     if recipient is not None:
         doc.daily_report_recipient = recipient
+
+    if additional_recipients is not None:
+        doc.daily_report_recipients = additional_recipients
+
+    if detail_level is not None:
+        doc.report_detail_level = detail_level
 
     doc.save(ignore_permissions=True)
     frappe.db.commit()

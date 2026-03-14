@@ -145,6 +145,21 @@ def on_task_update(doc, method):
             }
         ).insert(ignore_permissions=True)
 
+        # Push pms_notification so the notification badge updates instantly
+        assigned_by_name = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+        frappe.publish_realtime(
+            "pms_notification",
+            {
+                "type": "task_assigned",
+                "task": doc.name,
+                "task_title": doc.task_title,
+                "project": doc.project,
+                "assigned_to": doc.assigned_to,
+                "changed_by": assigned_by_name,
+            },
+            user=doc.assigned_to,
+        )
+
 
 def _send_task_assigned_email(doc):
     """Send an email notification to the assigned user using the HTML template."""

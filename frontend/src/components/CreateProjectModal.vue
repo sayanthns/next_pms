@@ -167,28 +167,28 @@ async function handleSubmit() {
 .form-label {
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .required {
-  color: #EF4444;
+  color: var(--color-danger);
 }
 
 .form-input {
   padding: 9px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 14px;
-  color: #1a1a2e;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   transition: border-color 0.15s;
   outline: none;
   font-family: inherit;
 }
 
 .form-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .form-textarea {

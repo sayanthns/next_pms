@@ -8,6 +8,14 @@
 {% block banner %}{% endblock %}
 
 {% block head_include %}
+<!-- PWA Meta Tags -->
+<meta name="theme-color" content="#2563EB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Next PMS">
+<link rel="manifest" href="/assets/next_pms/manifest.json">
+<link rel="apple-touch-icon" href="/assets/next_pms/icons/icon-192x192.png">
+
 {% if has_frontend %}
 {% for css in css_files %}
 <link rel="stylesheet" crossorigin href="/assets/next_pms/frontend/assets/{{ css }}">
@@ -41,6 +49,17 @@
 
 <script>
 	window["pms_boot"] = {{ boot_data }};
+
+	// Initialize Frappe Socket.IO for realtime notifications in the SPA
+	document.addEventListener('DOMContentLoaded', function() {
+		if (window.frappe && window.frappe.socketio && !window.frappe.socketio.socket) {
+			try {
+				frappe.socketio.init(frappe.socketio.get_host());
+			} catch(e) {
+				console.warn('Socket.IO init failed:', e);
+			}
+		}
+	});
 </script>
 
 {% if has_frontend %}
@@ -52,4 +71,19 @@
 	<p>Run <code>cd frontend && npm run build</code> to build the SPA.</p>
 </div>
 {% endif %}
+
+<!-- PWA Service Worker Registration -->
+<script>
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', function() {
+		navigator.serviceWorker.register('/assets/next_pms/js/sw.js', { scope: '/next-pms/' })
+			.then(function(reg) {
+				console.log('Next PMS SW registered, scope:', reg.scope);
+			})
+			.catch(function(err) {
+				console.warn('Next PMS SW registration failed:', err);
+			});
+	});
+}
+</script>
 {% endblock %}

@@ -58,7 +58,7 @@ defineEmits(['confirm', 'cancel'])
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,7 +66,7 @@ defineEmits(['confirm', 'cancel'])
 }
 
 .confirm-dialog {
-  background: #fff;
+  background: var(--bg-surface);
   border-radius: 16px;
   padding: 28px;
   width: 440px;
@@ -95,25 +95,25 @@ defineEmits(['confirm', 'cancel'])
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563EB;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .confirm-icon.danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .confirm-title {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .confirm-message {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   line-height: 1.6;
   margin: 0 0 8px 0;
 }
@@ -159,12 +159,12 @@ defineEmits(['confirm', 'cancel'])
 }
 
 .cbtn-cancel {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .cbtn-cancel:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: var(--border-default);
 }
 
 .cbtn-primary {

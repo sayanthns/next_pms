@@ -322,13 +322,13 @@ function statusBorderColor(status) {
 .page-title {
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 2px 0 0 0;
 }
 
@@ -346,12 +346,12 @@ function statusBorderColor(status) {
 }
 
 .btn-primary {
-  background: #2563EB;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #1D4ED8;
+  background: var(--color-primary-hover);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
@@ -396,55 +396,55 @@ function statusBorderColor(status) {
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .search-input {
   width: 100%;
   padding: 8px 12px 8px 34px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   transition: border-color 0.15s;
   outline: none;
 }
 
 .search-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-bg);
 }
 
 .search-input::placeholder {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .filter-select {
   padding: 8px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   cursor: pointer;
   outline: none;
 }
 
 .filter-select:focus {
-  border-color: #2563EB;
+  border-color: var(--color-primary);
 }
 
 .project-count {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   white-space: nowrap;
 }
 
 .view-toggle {
   display: flex;
   gap: 0;
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
   border-radius: 8px;
   padding: 3px;
 }
@@ -456,15 +456,15 @@ function statusBorderColor(status) {
   padding: 6px 10px;
   border: none;
   background: transparent;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.15s;
 }
 
 .view-toggle button.active {
-  background: #ffffff;
-  color: #1a1a2e;
+  background: var(--bg-surface);
+  color: var(--text-primary);
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
@@ -480,8 +480,8 @@ function statusBorderColor(status) {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -492,7 +492,7 @@ function statusBorderColor(status) {
 
 .loading-text {
   margin-top: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -500,25 +500,25 @@ function statusBorderColor(status) {
 .empty-filter {
   text-align: center;
   padding: 60px 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .btn-clear-filter {
   margin-top: 12px;
   padding: 8px 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
-  background: #fff;
-  color: #2563EB;
+  background: var(--bg-surface);
+  color: var(--color-primary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
 }
 
 .btn-clear-filter:hover {
-  background: rgba(37, 99, 235, 0.05);
-  border-color: #2563EB;
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
 }
 
 /* Grid View */
@@ -529,14 +529,14 @@ function statusBorderColor(status) {
 }
 
 .project-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid #9ca3af;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-left: 4px solid var(--text-tertiary);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px var(--shadow-sm);
 }
 
 .project-card:hover {
@@ -554,7 +554,7 @@ function statusBorderColor(status) {
 .project-name {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
   flex: 1;
   margin-right: 12px;
@@ -577,19 +577,19 @@ function statusBorderColor(status) {
 .badge-warning { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
 .badge-danger { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
 .badge-done { background: rgba(16, 185, 129, 0.15); color: #059669; }
-.badge-default { background: #f3f4f6; color: #6b7280; }
+.badge-default { background: var(--bg-surface-hover); color: var(--text-secondary); }
 
 .project-client {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0 0 10px 0;
 }
 
 .project-client svg {
-  color: #9ca3af;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -601,7 +601,7 @@ function statusBorderColor(status) {
 
 .detail-item {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .progress-section {
@@ -617,18 +617,18 @@ function statusBorderColor(status) {
 
 .task-count {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .progress-pct {
   font-size: 12px;
   font-weight: 600;
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .progress-bar {
   height: 5px;
-  background: #e5e7eb;
+  background: var(--border-default);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -645,7 +645,7 @@ function statusBorderColor(status) {
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-light);
 }
 
 .task-summary {
@@ -653,7 +653,7 @@ function statusBorderColor(status) {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .summary-dot {
@@ -662,25 +662,25 @@ function statusBorderColor(status) {
   border-radius: 50%;
 }
 
-.dot-success { background: #10b981; }
-.dot-warning { background: #F59E0B; }
+.dot-success { background: var(--color-success); }
+.dot-warning { background: var(--color-warning); }
 
 .budget-chip {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 6px;
-  background: rgba(37, 99, 235, 0.08);
-  color: #2563EB;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 /* List/Table View */
 .project-table-wrap {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 3px var(--shadow-sm);
 }
 
 .project-table {
@@ -693,18 +693,18 @@ function statusBorderColor(status) {
   padding: 12px 16px;
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-surface-active);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .project-table td {
   padding: 14px 16px;
   font-size: 13px;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .project-row {
@@ -713,7 +713,7 @@ function statusBorderColor(status) {
 }
 
 .project-row:hover {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .project-row:last-child td {
@@ -736,19 +736,19 @@ function statusBorderColor(status) {
 .table-name {
   display: block;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .table-date {
   display: block;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   margin-top: 2px;
 }
 
 .table-client {
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .table-progress {
@@ -761,7 +761,7 @@ function statusBorderColor(status) {
 .progress-bar-mini {
   flex: 1;
   height: 5px;
-  background: #e5e7eb;
+  background: var(--border-default);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -775,18 +775,18 @@ function statusBorderColor(status) {
 .table-pct {
   font-size: 12px;
   font-weight: 600;
-  color: #10b981;
+  color: var(--color-success);
   white-space: nowrap;
 }
 
 .table-tasks {
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .table-budget {
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 /* Responsive */

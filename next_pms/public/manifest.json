@@ -1,0 +1,29 @@
+{
+  "name": "Next PMS",
+  "short_name": "Next PMS",
+  "description": "IT Project Management System",
+  "start_url": "/next-pms/",
+  "scope": "/next-pms/",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#2563EB",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/assets/next_pms/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/next_pms/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/next_pms/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

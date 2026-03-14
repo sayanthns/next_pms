@@ -10,7 +10,10 @@
         "ai_model",
         "column_break_1",
         "daily_report_enabled",
-        "daily_report_recipient"
+        "daily_report_recipient",
+        "section_break_report",
+        "daily_report_recipients",
+        "report_detail_level"
     ],
     "fields": [
         {
@@ -18,7 +21,7 @@
             "fieldtype": "Select",
             "label": "AI Provider",
             "options": "OpenAI\nClaude",
-            "default": "OpenAI",
+            "default": "Claude",
             "reqd": 0
         },
         {
@@ -31,7 +34,7 @@
             "fieldname": "ai_model",
             "fieldtype": "Data",
             "label": "Model",
-            "default": "gpt-4o",
+            "default": "claude-sonnet-4-20250514",
             "reqd": 0
         },
         {
@@ -47,8 +50,26 @@
         {
             "fieldname": "daily_report_recipient",
             "fieldtype": "Data",
-            "label": "Report Recipient Email",
+            "label": "Primary Recipient Email",
             "default": "sayanth@enfono.in"
+        },
+        {
+            "fieldname": "section_break_report",
+            "fieldtype": "Section Break",
+            "label": "Report Configuration"
+        },
+        {
+            "fieldname": "daily_report_recipients",
+            "fieldtype": "Small Text",
+            "label": "Additional Recipients (comma-separated emails)",
+            "description": "Comma-separated list of emails to receive the daily report"
+        },
+        {
+            "fieldname": "report_detail_level",
+            "fieldtype": "Select",
+            "label": "Report Detail Level",
+            "options": "Summary\nDetailed\nFull",
+            "default": "Detailed"
         }
     ],
     "index_web_pages_for_search": 0,

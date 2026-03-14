@@ -1,0 +1,151 @@
+/*
+ * Next PMS — Theme Variables
+ * Light theme (default) + Dark theme override
+ */
+
+:root {
+  /* Backgrounds */
+  --bg-primary: #f0f2f5;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f3f4f6;
+  --bg-surface-active: #f9fafb;
+  --bg-input: #ffffff;
+
+  /* Text */
+  --text-primary: #1e1e2e;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-placeholder: #d1d5db;
+  --text-on-primary: #ffffff;
+
+  /* Borders */
+  --border-default: #e5e7eb;
+  --border-light: #f3f4f6;
+
+  /* Shadows */
+  --shadow-sm: rgba(0, 0, 0, 0.04);
+  --shadow-md: rgba(0, 0, 0, 0.07);
+  --shadow-lg: rgba(0, 0, 0, 0.12);
+
+  /* Primary (Blue) */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-bg: rgba(37, 99, 235, 0.1);
+  --color-primary-bg-hover: rgba(37, 99, 235, 0.15);
+
+  /* Success (Green) */
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+
+  /* Warning (Amber) */
+  --color-warning: #F59E0B;
+  --color-warning-hover: #D97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+
+  /* Danger (Red) */
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+
+  /* Overlay */
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+
+  /* Scrollbar */
+  --scrollbar-track: #f3f4f6;
+  --scrollbar-thumb: #d1d5db;
+  --scrollbar-thumb-hover: #9ca3af;
+}
+
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-primary: #0f1117;
+  --bg-surface: #1a1d2e;
+  --bg-surface-hover: #252836;
+  --bg-surface-active: #1e2130;
+  --bg-input: #1a1d2e;
+
+  /* Text */
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-placeholder: #4b5563;
+  --text-on-primary: #ffffff;
+
+  /* Borders */
+  --border-default: #2d3348;
+  --border-light: #252836;
+
+  /* Shadows */
+  --shadow-sm: rgba(0, 0, 0, 0.15);
+  --shadow-md: rgba(0, 0, 0, 0.3);
+  --shadow-lg: rgba(0, 0, 0, 0.4);
+
+  /* Primary (Blue — slightly brighter for dark bg) */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563EB;
+  --color-primary-bg: rgba(59, 130, 246, 0.15);
+  --color-primary-bg-hover: rgba(59, 130, 246, 0.25);
+
+  /* Success */
+  --color-success: #34d399;
+  --color-success-hover: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.15);
+
+  /* Warning */
+  --color-warning: #fbbf24;
+  --color-warning-hover: #F59E0B;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+
+  /* Danger */
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+
+  /* Overlay */
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+
+  /* Scrollbar */
+  --scrollbar-track: #1a1d2e;
+  --scrollbar-thumb: #3d4259;
+  --scrollbar-thumb-hover: #4b5563;
+}
+
+/* Apply theme to body */
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Scrollbar theming */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Input/select/textarea in dark mode */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-placeholder);
+}

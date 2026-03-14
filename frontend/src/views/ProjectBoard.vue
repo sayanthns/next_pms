@@ -215,13 +215,13 @@ function onStartTimer(task) {
 .page-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 4px 0 0 0;
 }
 
@@ -236,8 +236,8 @@ function onStartTimer(task) {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -248,7 +248,7 @@ function onStartTimer(task) {
 
 .loading-text {
   margin-top: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -262,7 +262,7 @@ function onStartTimer(task) {
 
 .kanban-column {
   flex: 0 0 280px;
-  background: #f9fafb;
+  background: var(--bg-surface-active);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -271,7 +271,7 @@ function onStartTimer(task) {
 }
 
 .kanban-column.drop-highlight {
-  background: rgba(37, 99, 235, 0.05);
+  background: var(--color-primary-bg);
   box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.3);
 }
 
@@ -299,7 +299,7 @@ function onStartTimer(task) {
 .column-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -316,11 +316,11 @@ function onStartTimer(task) {
   min-width: 24px;
   height: 24px;
   padding: 0 6px;
-  background: #e5e7eb;
+  background: var(--border-default);
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .column-add-btn {
@@ -330,9 +330,9 @@ function onStartTimer(task) {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  color: #6b7280;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -341,9 +341,9 @@ function onStartTimer(task) {
 }
 
 .column-add-btn:hover {
-  border-color: #2563EB;
-  color: #2563EB;
-  background: rgba(37, 99, 235, 0.05);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 
 .column-body {
@@ -384,9 +384,9 @@ function onStartTimer(task) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1.5px solid #d1d5db;
-  background: #fff;
-  color: #9ca3af;
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -401,9 +401,9 @@ function onStartTimer(task) {
 }
 
 .quick-done-btn:hover {
-  border-color: #10b981;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: var(--color-success-bg);
 }
 
 .column-empty {
@@ -411,7 +411,7 @@ function onStartTimer(task) {
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 

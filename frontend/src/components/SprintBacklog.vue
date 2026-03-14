@@ -358,15 +358,15 @@ function taskStatusClass(status) {
 
 <style scoped>
 .sprint-backlog {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
   transition: box-shadow 0.2s ease;
 }
 
 .sprint-backlog:hover {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 4px var(--shadow-sm);
 }
 
 /* Sprint Header */
@@ -375,15 +375,15 @@ function taskStatusClass(status) {
   justify-content: space-between;
   align-items: center;
   padding: 14px 20px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-surface-active);
+  border-bottom: 1px solid var(--border-default);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s ease;
 }
 
 .sprint-header:hover {
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
 }
 
 .sprint-header-left {
@@ -406,7 +406,7 @@ function taskStatusClass(status) {
   height: 20px;
   border: none;
   background: transparent;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   cursor: pointer;
   transition: transform 0.2s ease;
   transform: rotate(90deg);
@@ -420,25 +420,25 @@ function taskStatusClass(status) {
 .sprint-name {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .sprint-dates {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .task-count {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 /* Progress Section */
 .sprint-progress-section {
   padding: 12px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .progress-info {
@@ -450,18 +450,18 @@ function taskStatusClass(status) {
 
 .progress-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .progress-pct {
   font-size: 12px;
   font-weight: 600;
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .progress-bar {
   height: 6px;
-  background: #e5e7eb;
+  background: var(--border-default);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -492,17 +492,17 @@ function taskStatusClass(status) {
   text-align: left;
   font-size: 11px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .task-table td {
   padding: 10px 12px;
   font-size: 13px;
-  color: #374151;
-  border-bottom: 1px solid #f9fafb;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--bg-surface-active);
   vertical-align: middle;
 }
 
@@ -520,7 +520,7 @@ function taskStatusClass(status) {
 }
 
 .task-row.drag-over {
-  border-top: 2px solid #2563EB;
+  border-top: 2px solid var(--color-primary);
 }
 
 /* Column widths */
@@ -538,12 +538,12 @@ function taskStatusClass(status) {
   align-items: center;
   justify-content: center;
   cursor: grab;
-  color: #d1d5db;
+  color: var(--text-placeholder);
   transition: color 0.15s ease;
 }
 
 .drag-handle:hover {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 /* Priority dot */
@@ -561,7 +561,7 @@ function taskStatusClass(status) {
 
 /* Task title link */
 .task-title-link {
-  color: #1a1a2e;
+  color: var(--text-primary);
   text-decoration: none;
   font-weight: 500;
   font-size: 13px;
@@ -569,7 +569,7 @@ function taskStatusClass(status) {
 }
 
 .task-title-link:hover {
-  color: #2563EB;
+  color: var(--color-primary);
 }
 
 /* Status badges */
@@ -590,13 +590,13 @@ function taskStatusClass(status) {
   font-size: 10px;
 }
 
-.badge-primary { background: rgba(37, 99, 235, 0.1); color: #2563EB; }
-.badge-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.badge-warning { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+.badge-primary { background: var(--color-primary-bg); color: var(--color-primary); }
+.badge-success { background: var(--color-success-bg); color: var(--color-success); }
+.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
 .badge-info { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
-.badge-danger { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
-.badge-default { background: #f3f4f6; color: #6b7280; }
-.badge-muted { background: #f3f4f6; color: #9ca3af; }
+.badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
+.badge-default { background: var(--bg-surface-hover); color: var(--text-secondary); }
+.badge-muted { background: var(--bg-surface-hover); color: var(--text-tertiary); }
 
 /* Assignee avatar */
 .assignee-avatar {
@@ -613,7 +613,7 @@ function taskStatusClass(status) {
 }
 
 .unassigned {
-  color: #d1d5db;
+  color: var(--text-placeholder);
   font-size: 12px;
 }
 
@@ -621,11 +621,11 @@ function taskStatusClass(status) {
 .hours-value {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .hours-empty {
-  color: #d1d5db;
+  color: var(--text-placeholder);
   font-size: 12px;
 }
 
@@ -633,9 +633,9 @@ function taskStatusClass(status) {
 .empty-tasks {
   padding: 32px 20px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 
 /* Add task section */
@@ -648,10 +648,10 @@ function taskStatusClass(status) {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--border-default);
   border-radius: 6px;
   background: transparent;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -659,9 +659,9 @@ function taskStatusClass(status) {
 }
 
 .btn-add-task:hover {
-  border-color: #2563EB;
-  color: #2563EB;
-  background: rgba(37, 99, 235, 0.04);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 
 /* Inline add form */
@@ -676,46 +676,46 @@ function taskStatusClass(status) {
   flex: 1;
   min-width: 200px;
   padding: 8px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   font-size: 13px;
-  color: #374151;
+  color: var(--text-primary);
   outline: none;
   transition: border-color 0.2s ease;
 }
 
 .add-task-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .add-task-select {
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   font-size: 13px;
-  color: #374151;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   outline: none;
   cursor: pointer;
 }
 
 .add-task-select:focus {
-  border-color: #2563EB;
+  border-color: var(--color-primary);
 }
 
 .add-task-hours {
   width: 90px;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   font-size: 13px;
-  color: #374151;
+  color: var(--text-primary);
   outline: none;
 }
 
 .add-task-hours:focus {
-  border-color: #2563EB;
+  border-color: var(--color-primary);
 }
 
 .btn-add-confirm {
@@ -736,10 +736,10 @@ function taskStatusClass(status) {
 
 .btn-add-cancel {
   padding: 8px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: #fff;
-  color: #6b7280;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -747,7 +747,7 @@ function taskStatusClass(status) {
 }
 
 .btn-add-cancel:hover {
-  background: #f9fafb;
-  color: #374151;
+  background: var(--bg-surface-active);
+  color: var(--text-primary);
 }
 </style>

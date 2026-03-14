@@ -465,6 +465,7 @@ import { useTaskStore } from '@/store/tasks'
 import { useSettingsStore } from '@/store/settings'
 import { getList, call } from '@/utils/frappe'
 import { useRealtime } from '@/utils/realtime'
+import { eventBus, EVENTS } from '@/utils/eventBus'
 import Timer from '@/components/Timer.vue'
 import CommentThread from '@/components/CommentThread.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -720,17 +721,30 @@ async function confirmDeleteTask() {
   }
 }
 
-// Real-time: refresh task when it's updated by another user
+// Real-time: refresh task when it's updated by another user (via Socket.IO)
 useRealtime('task_updated', (data) => {
   if (data?.task === props.id) loadTask()
 })
 
+// Local event bus: refresh activity log when current user changes status/task
+function onLocalTaskChange(data) {
+  if (data?.task === props.id) {
+    // Reload activity log after a short delay to let the Version record be created
+    setTimeout(() => loadActivityLog(), 500)
+  }
+}
+
 onMounted(() => {
   loadTask()
+  // Join the project room for realtime updates once task is loaded
+  eventBus.on(EVENTS.TASK_STATUS_CHANGED, onLocalTaskChange)
+  eventBus.on(EVENTS.TASK_UPDATED, onLocalTaskChange)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleAssigneeOutsideClick)
+  eventBus.off(EVENTS.TASK_STATUS_CHANGED, onLocalTaskChange)
+  eventBus.off(EVENTS.TASK_UPDATED, onLocalTaskChange)
 })
 
 watch(() => props.id, () => {
@@ -1038,8 +1052,8 @@ function statusSelectClass(status) {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -1047,8 +1061,8 @@ function statusSelectClass(status) {
 .spinner-sm {
   width: 24px;
   height: 24px;
-  border: 2px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -1059,7 +1073,7 @@ function statusSelectClass(status) {
 
 .loading-text {
   margin-top: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -1071,7 +1085,7 @@ function statusSelectClass(status) {
 }
 
 .error-text {
-  color: #EF4444;
+  color: var(--color-danger);
   font-size: 14px;
   margin-bottom: 16px;
 }
@@ -1084,8 +1098,8 @@ function statusSelectClass(status) {
 
 /* Header */
 .task-header {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 20px;
 }
@@ -1134,14 +1148,14 @@ function statusSelectClass(status) {
 }
 
 .priority-low {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
 }
 
 .task-title {
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
   line-height: 1.3;
 }
@@ -1191,18 +1205,18 @@ function statusSelectClass(status) {
 }
 
 .btn-outline {
-  background: #fff;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
 }
 
 .btn-outline:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
+  background: var(--bg-surface-active);
+  border-color: var(--text-tertiary);
 }
 
 .btn-danger-outline {
-  background: #fff;
+  background: var(--bg-surface);
   color: #EF4444;
   border: 1px solid #fecaca;
 }
@@ -1221,12 +1235,12 @@ function statusSelectClass(status) {
 .field-label {
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .status-select {
   padding: 6px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -1241,12 +1255,12 @@ function statusSelectClass(status) {
 .select-warning { color: #F59E0B; border-color: rgba(245, 158, 11, 0.3); }
 .select-info { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
 .select-danger { color: #EF4444; border-color: rgba(239, 68, 68, 0.3); }
-.select-default { color: #6b7280; border-color: #d1d5db; }
+.select-default { color: var(--text-secondary); border-color: var(--border-default); }
 
 /* Timer */
 .timer-section {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 16px 20px;
 }
@@ -1256,14 +1270,14 @@ function statusSelectClass(status) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1px;
-  background: #e5e7eb;
-  border: 1px solid #e5e7eb;
+  background: var(--border-default);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
 }
 
 .info-item {
-  background: #fff;
+  background: var(--bg-surface);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -1273,24 +1287,24 @@ function statusSelectClass(status) {
 .info-label {
   font-size: 11px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .info-value {
   font-size: 14px;
-  color: #1a1a2e;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
 .info-value.overdue {
-  color: #EF4444;
+  color: var(--color-danger);
 }
 
 .info-link {
   font-size: 14px;
-  color: #2563EB;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -1301,8 +1315,8 @@ function statusSelectClass(status) {
 
 /* Section Cards */
 .section-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 20px;
 }
@@ -1310,7 +1324,7 @@ function statusSelectClass(status) {
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0 0 16px 0;
 }
 
@@ -1335,14 +1349,14 @@ function statusSelectClass(status) {
 
 .cost-label {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-weight: 500;
 }
 
 .cost-value {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 .billable-badge {
@@ -1359,14 +1373,14 @@ function statusSelectClass(status) {
 }
 
 .billable-no {
-  background: #f3f4f6;
-  color: #9ca3af;
+  background: var(--bg-surface-hover);
+  color: var(--text-tertiary);
 }
 
 /* Description */
 .description-content {
   font-size: 14px;
-  color: #374151;
+  color: var(--text-primary);
   line-height: 1.7;
 }
 
@@ -1398,7 +1412,7 @@ function statusSelectClass(status) {
 }
 
 .subtask-row:hover {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .priority-dot {
@@ -1411,12 +1425,12 @@ function statusSelectClass(status) {
 .dot-urgent { background: #EF4444; }
 .dot-high { background: #F59E0B; }
 .dot-medium { background: #FBBF24; }
-.dot-low { background: #9ca3af; }
+.dot-low { background: var(--text-tertiary); }
 
 .subtask-title {
   flex: 1;
   font-size: 14px;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 .status-badge {
@@ -1440,7 +1454,7 @@ function statusSelectClass(status) {
 .badge-warning { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
 .badge-info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 .badge-danger { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
-.badge-default { background: #f3f4f6; color: #6b7280; }
+.badge-default { background: var(--bg-surface-hover); color: var(--text-secondary); }
 
 /* Time Log Table */
 .time-log-table-wrap {
@@ -1453,7 +1467,7 @@ function statusSelectClass(status) {
 }
 
 .time-log-table thead {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .time-log-table th {
@@ -1461,21 +1475,21 @@ function statusSelectClass(status) {
   text-align: left;
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .time-log-table td {
   padding: 10px 14px;
   font-size: 13px;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .no-data-text {
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
   text-align: center;
   padding: 16px 0;
@@ -1528,7 +1542,7 @@ function statusSelectClass(status) {
 .edit-form {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-default);
 }
 
 .edit-form-grid {
@@ -1550,34 +1564,34 @@ function statusSelectClass(status) {
 .edit-label {
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .edit-input {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #1a1a2e;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   transition: border-color 0.2s;
   outline: none;
 }
 
 .edit-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .edit-textarea {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #1a1a2e;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
@@ -1586,8 +1600,8 @@ function statusSelectClass(status) {
 }
 
 .edit-textarea:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .edit-actions {
@@ -1595,7 +1609,7 @@ function statusSelectClass(status) {
   gap: 8px;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--border-light);
 }
 
 /* Attachments */
@@ -1633,25 +1647,25 @@ function statusSelectClass(status) {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   transition: background 0.15s, border-color 0.15s;
 }
 
 .attachment-item:hover {
-  background: #f9fafb;
-  border-color: #e5e7eb;
+  background: var(--bg-surface-active);
+  border-color: var(--border-default);
 }
 
 .attachment-icon {
   width: 36px;
   height: 36px;
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
@@ -1666,7 +1680,7 @@ function statusSelectClass(status) {
 .attachment-name {
   font-size: 13px;
   font-weight: 500;
-  color: #1a1a2e;
+  color: var(--text-primary);
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -1674,12 +1688,12 @@ function statusSelectClass(status) {
 }
 
 .attachment-name:hover {
-  color: #2563EB;
+  color: var(--color-primary);
 }
 
 .attachment-meta {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .attachment-actions {
@@ -1691,10 +1705,10 @@ function statusSelectClass(status) {
 .attach-action-btn {
   width: 28px;
   height: 28px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: #fff;
-  color: #6b7280;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1704,8 +1718,8 @@ function statusSelectClass(status) {
 }
 
 .attach-action-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .attach-delete:hover {
@@ -1720,7 +1734,7 @@ function statusSelectClass(status) {
   gap: 8px;
   padding: 10px 0;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 /* Assignee label row */
@@ -1735,9 +1749,9 @@ function statusSelectClass(status) {
   align-items: center;
   gap: 4px;
   background: none;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
@@ -1746,9 +1760,9 @@ function statusSelectClass(status) {
 }
 
 .assignee-edit-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #9ca3af;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
 }
 
 /* Assignee Editor */
@@ -1802,7 +1816,7 @@ function statusSelectClass(status) {
 .ae-chip-remove {
   background: none;
   border: none;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 16px;
   cursor: pointer;
   padding: 0 2px;
@@ -1817,7 +1831,7 @@ function statusSelectClass(status) {
 
 .ae-empty-msg {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .ae-search-wrap {
@@ -1827,18 +1841,18 @@ function statusSelectClass(status) {
 .ae-search-input {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #1a1a2e;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   outline: none;
   transition: border-color 0.2s;
 }
 
 .ae-search-input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
 }
 
 .ae-dropdown {
@@ -1848,8 +1862,8 @@ function statusSelectClass(status) {
   right: 0;
   max-height: 200px;
   overflow-y: auto;
-  background: #fff;
-  border: 1px solid #d1d5db;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 50;
@@ -1866,7 +1880,7 @@ function statusSelectClass(status) {
 }
 
 .ae-option:hover {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .ae-option.selected {
@@ -1896,20 +1910,20 @@ function statusSelectClass(status) {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 .ae-option-email {
   display: block;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .ae-option-check {
-  color: #2563EB;
+  color: var(--color-primary);
   font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;
@@ -1918,7 +1932,7 @@ function statusSelectClass(status) {
 .ae-option-empty {
   padding: 14px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
@@ -1962,5 +1976,5 @@ function statusSelectClass(status) {
 .activity-time { font-size: 11px; color: #94a3b8; margin-left: 4px; }
 
 /* Overtime */
-.overtime-value { color: #dc2626; font-weight: 600; }
+.overtime-value { color: var(--color-danger-hover); font-weight: 600; }
 </style>

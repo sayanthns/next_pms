@@ -67,13 +67,13 @@ defineEmits(['action'])
 .empty-state-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
 .empty-state-description {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   max-width: 360px;
   line-height: 1.5;
   margin-bottom: 20px;

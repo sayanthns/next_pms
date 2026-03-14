@@ -1,9 +1,42 @@
 /**
  * Frappe API utilities for Vue 3 SPA.
  * Wraps fetch calls to the Frappe backend.
+ * Includes request deduplication and short-lived TTL cache.
  */
 
 const BASE_URL = "";
+
+// --- Request deduplication & TTL cache ---
+const _inflightRequests = new Map(); // key -> Promise (dedup concurrent identical calls)
+const _responseCache = new Map();    // key -> { data, expiry }
+const DEFAULT_CACHE_TTL = 5000;      // 5 seconds
+
+function _cacheKey(method, args) {
+  return method + '::' + JSON.stringify(args);
+}
+
+function _getCached(key) {
+  const entry = _responseCache.get(key);
+  if (entry && Date.now() < entry.expiry) return entry.data;
+  if (entry) _responseCache.delete(key);
+  return undefined;
+}
+
+function _setCache(key, data, ttl = DEFAULT_CACHE_TTL) {
+  _responseCache.set(key, { data, expiry: Date.now() + ttl });
+}
+
+/** Clear all cached responses (call after mutations) */
+export function clearCache() {
+  _responseCache.clear();
+}
+
+/** Clear cache entries matching a method prefix */
+export function clearCacheFor(methodPrefix) {
+  for (const key of _responseCache.keys()) {
+    if (key.startsWith(methodPrefix)) _responseCache.delete(key);
+  }
+}
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
@@ -36,19 +69,54 @@ function getHeaders() {
   return headers;
 }
 
-export async function call(method, args = {}) {
-  const response = await fetch(`${BASE_URL}/api/method/${method}`, {
-    method: "POST",
-    headers: getHeaders(),
-    credentials: "include",
-    body: JSON.stringify(args),
-  });
-  const data = await response.json();
-  if (data.exc) {
-    const error = JSON.parse(data.exc);
-    throw new Error(error[error.length - 1] || "Server error");
+/**
+ * Call a Frappe whitelisted method.
+ * @param {string} method - Dotted method path
+ * @param {object} args - Method arguments
+ * @param {object} opts - Options: { cache: boolean|number } to enable TTL cache (ms)
+ */
+export async function call(method, args = {}, opts = {}) {
+  const key = _cacheKey(method, args);
+
+  // Check TTL cache (only for GET-style reads)
+  if (opts.cache) {
+    const cached = _getCached(key);
+    if (cached !== undefined) return cached;
   }
-  return data.message;
+
+  // Deduplicate concurrent identical requests
+  if (_inflightRequests.has(key)) {
+    return _inflightRequests.get(key);
+  }
+
+  const promise = (async () => {
+    const response = await fetch(`${BASE_URL}/api/method/${method}`, {
+      method: "POST",
+      headers: getHeaders(),
+      credentials: "include",
+      body: JSON.stringify(args),
+    });
+    const data = await response.json();
+    if (data.exc) {
+      const error = JSON.parse(data.exc);
+      throw new Error(error[error.length - 1] || "Server error");
+    }
+    return data.message;
+  })();
+
+  _inflightRequests.set(key, promise);
+
+  try {
+    const result = await promise;
+    // Cache the result if caching requested
+    if (opts.cache) {
+      const ttl = typeof opts.cache === 'number' ? opts.cache : DEFAULT_CACHE_TTL;
+      _setCache(key, result, ttl);
+    }
+    return result;
+  } finally {
+    _inflightRequests.delete(key);
+  }
 }
 
 export async function getList(doctype, options = {}) {

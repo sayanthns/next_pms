@@ -82,6 +82,19 @@
           </div>
         </div>
 
+        <!-- Theme Toggle -->
+        <div v-show="!isDesktopCollapsed" class="sidebar-theme-toggle" @click="toggleTheme" :title="theme === 'auto' ? 'Theme: Auto (System)' : theme === 'dark' ? 'Theme: Dark' : 'Theme: Light'">
+          <span class="nav-icon">
+            <!-- Sun icon (light mode) -->
+            <svg v-if="theme === 'light'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <!-- Moon icon (dark mode) -->
+            <svg v-else-if="theme === 'dark'" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <!-- Auto icon (system) -->
+            <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </span>
+          <span class="sidebar-theme-label">{{ theme === 'auto' ? 'Auto' : theme === 'dark' ? 'Dark' : 'Light' }}</span>
+        </div>
+
         <!-- Notification Bell in sidebar -->
         <div v-show="!isDesktopCollapsed" class="sidebar-notification" @click.stop="showNotifications = !showNotifications">
           <span class="sidebar-notif-icon">
@@ -163,6 +176,12 @@
 
     <!-- Main content -->
     <main class="main-content">
+      <!-- Offline banner -->
+      <div v-if="!isOnline" class="offline-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+        You are offline. Some features may be unavailable.
+      </div>
+
       <!-- Global timer bar -->
       <div v-if="timerStore.isRunning" class="global-timer-bar">
         <div class="timer-bar-info">
@@ -198,6 +217,8 @@ import { useTimerStore } from '@/store/timer'
 import { useNotificationStore } from '@/store/notifications'
 import { useSettingsStore } from '@/store/settings'
 import { useCheckinStore } from '@/store/checkin'
+import { useOnlineStatus } from '@/composables/useOnlineStatus'
+import { useTheme } from '@/composables/useTheme'
 // CreateProjectModal is used only in ProjectList.vue
 
 const route = useRoute()
@@ -206,6 +227,8 @@ const timerStore = useTimerStore()
 const notificationStore = useNotificationStore()
 const settingsStore = useSettingsStore()
 const checkinStore = useCheckinStore()
+const { isOnline } = useOnlineStatus()
+const { theme, isDark, toggleTheme } = useTheme()
 const sidebarCollapsed = ref(true)
 const showNotifications = ref(false)
 const showUserMenu = ref(false)
@@ -318,11 +341,30 @@ function onVisibilityChange() {
   if (document.visibilityState === 'visible') {
     checkinStore.fetchTodayCheckin()
     timerStore.fetchRunningTimer()
-    settingsStore.fetchSettings()
+    // Only force-refresh settings if stale (> 60s since last load)
+    settingsStore.fetchSettings(true)
+    _startPeriodicRefresh()
+  } else {
+    _stopPeriodicRefresh()
   }
 }
 
 let refreshInterval = null
+
+function _startPeriodicRefresh() {
+  if (refreshInterval) return
+  refreshInterval = setInterval(() => {
+    checkinStore.fetchTodayCheckin()
+    timerStore.fetchRunningTimer()
+  }, 60000)
+}
+
+function _stopPeriodicRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+    refreshInterval = null
+  }
+}
 
 onMounted(() => {
   settingsStore.fetchSettings()
@@ -333,11 +375,8 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('visibilitychange', onVisibilityChange)
 
-  // Periodic refresh every 60s for checkin and timer
-  refreshInterval = setInterval(() => {
-    checkinStore.fetchTodayCheckin()
-    timerStore.fetchRunningTimer()
-  }, 60000)
+  // Periodic refresh every 60s for checkin and timer (pauses when tab hidden)
+  _startPeriodicRefresh()
 
   if (window.innerWidth < 768) {
     sidebarCollapsed.value = true
@@ -351,7 +390,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('visibilitychange', onVisibilityChange)
   notificationStore.stopAutoRefresh()
-  if (refreshInterval) clearInterval(refreshInterval)
+  _stopPeriodicRefresh()
 })
 </script>
 
@@ -367,8 +406,8 @@ onUnmounted(() => {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #f0f2f5;
-  color: #1e1e2e;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -388,8 +427,8 @@ body {
 .sidebar {
   width: 240px;
   min-width: 240px;
-  background: #ffffff;
-  color: #64748b;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -397,7 +436,7 @@ body {
   left: 0;
   top: 0;
   z-index: 100;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--border-default);
   transition: transform 0.25s ease;
 }
 
@@ -406,7 +445,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 20px 18px 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .sidebar-header-actions {
@@ -446,7 +485,7 @@ body {
   display: none;
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 22px;
   cursor: pointer;
   padding: 4px 8px;
@@ -454,7 +493,7 @@ body {
 }
 
 .sidebar-toggle-mobile:hover {
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
 }
 
 /* ---- Navigation ---- */
@@ -474,7 +513,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   padding: 0 10px 10px;
 }
 
@@ -484,7 +523,7 @@ body {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #64748b;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
@@ -492,13 +531,13 @@ body {
 }
 
 .nav-link:hover {
-  background: #f3f4f6;
-  color: #1e1e2e;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .nav-link.active {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563EB;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -520,7 +559,7 @@ body {
   margin-bottom: 10px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: #f8f9fa;
+  background: var(--bg-surface-active);
 }
 
 .checkin-status {
@@ -560,7 +599,7 @@ body {
 .checkin-label {
   font-size: 12px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-secondary);
   flex: 1;
 }
 
@@ -568,7 +607,7 @@ body {
   width: 14px;
   height: 14px;
   border: 2px solid rgba(100, 116, 139, 0.3);
-  border-top-color: #64748b;
+  border-top-color: var(--text-secondary);
   border-radius: 50%;
   animation: spin-checkin 0.6s linear infinite;
 }
@@ -579,7 +618,7 @@ body {
 
 .checkin-time {
   font-size: 10px;
-  color: #64748b;
+  color: var(--text-secondary);
   padding-left: 16px;
   margin-top: 2px;
 }
@@ -587,7 +626,31 @@ body {
 /* ---- Sidebar Footer ---- */
 .sidebar-footer {
   padding: 14px 18px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-default);
+}
+
+/* ---- Theme Toggle ---- */
+.sidebar-theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 6px;
+}
+
+.sidebar-theme-toggle:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.sidebar-theme-label {
+  flex: 1;
 }
 
 
@@ -598,7 +661,7 @@ body {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: #64748b;
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -608,8 +671,8 @@ body {
 }
 
 .sidebar-notification:hover {
-  background: #f3f4f6;
-  color: #1e1e2e;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .sidebar-notif-icon {
@@ -651,10 +714,10 @@ body {
   position: absolute;
   width: 360px;
   max-height: 400px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 20px var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
 }
@@ -664,19 +727,19 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .notification-dropdown-title {
   font-size: 13px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
 }
 
 .notification-mark-all {
   background: none;
   border: none;
-  color: #2563EB;
+  color: var(--color-primary);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -685,7 +748,7 @@ body {
 }
 
 .notification-mark-all:hover {
-  background: rgba(37, 99, 235, 0.08);
+  background: var(--color-primary-bg);
 }
 
 .notification-loading,
@@ -693,7 +756,7 @@ body {
   padding: 24px;
   text-align: center;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .notification-list {
@@ -703,13 +766,13 @@ body {
 
 .notification-item {
   padding: 10px 14px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .notification-item:hover {
-  background: #f8f9fa;
+  background: var(--bg-surface-active);
 }
 
 .notification-item:last-child {
@@ -718,7 +781,7 @@ body {
 
 .notification-item-message {
   font-size: 13px;
-  color: #1e1e2e;
+  color: var(--text-primary);
   line-height: 1.4;
   margin-bottom: 4px;
 }
@@ -728,15 +791,15 @@ body {
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .notification-item-doctype {
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
   padding: 1px 6px;
   border-radius: 3px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .notification-item-time {
@@ -757,7 +820,7 @@ body {
 }
 
 .sidebar-user:hover {
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
 }
 
 .sidebar-user-avatar {
@@ -785,7 +848,7 @@ body {
 .sidebar-user-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -794,7 +857,7 @@ body {
 
 .sidebar-user-email {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-secondary);
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -802,13 +865,13 @@ body {
 }
 
 .sidebar-user-chevron {
-  color: #64748b;
+  color: var(--text-secondary);
   flex-shrink: 0;
   transition: transform 0.2s;
 }
 
 .sidebar-user:hover .sidebar-user-chevron {
-  color: #374151;
+  color: var(--text-primary);
 }
 
 /* User Menu Dropdown */
@@ -817,10 +880,10 @@ body {
   left: calc(100% + 8px);
   bottom: 0;
   width: 200px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 20px var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
   padding: 6px;
@@ -832,7 +895,7 @@ body {
   gap: 10px;
   padding: 9px 12px;
   border-radius: 6px;
-  color: #374151;
+  color: var(--text-primary);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
@@ -841,22 +904,22 @@ body {
 }
 
 .user-menu-item:hover {
-  background: #f3f4f6;
-  color: #1e1e2e;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .user-menu-item svg {
   flex-shrink: 0;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .user-menu-item:hover svg {
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .user-menu-divider {
   height: 1px;
-  background: #e5e7eb;
+  background: var(--border-default);
   margin: 4px 0;
 }
 
@@ -877,6 +940,25 @@ body {
   color: #dc2626;
 }
 
+/* ---- Offline Banner ---- */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fbbf24;
+  color: #92400e;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.offline-banner svg {
+  flex-shrink: 0;
+}
+
 /* ---- Main Content ---- */
 .main-content {
   flex: 1;
@@ -884,7 +966,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #f0f2f5;
+  background: var(--bg-primary);
 }
 
 .content-area {
@@ -986,7 +1068,7 @@ body {
   display: none;
   background: none;
   border: none;
-  color: #64748b;
+  color: var(--text-secondary);
   font-size: 18px;
   cursor: pointer;
   padding: 4px 8px;
@@ -996,7 +1078,7 @@ body {
 }
 
 .sidebar-toggle-desktop:hover {
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
 }
 
 @media (min-width: 769px) {

@@ -393,20 +393,20 @@ onMounted(async () => {
 .page-title {
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 4px 0 0;
 }
 
 /* Active Timers */
 .active-timers-section {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 16px 20px;
 }
@@ -414,7 +414,7 @@ onMounted(async () => {
 .section-label {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0 0 14px;
   display: flex;
   align-items: center;
@@ -482,7 +482,7 @@ onMounted(async () => {
 .timer-user-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -490,7 +490,7 @@ onMounted(async () => {
 
 .timer-user-email {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -505,7 +505,7 @@ onMounted(async () => {
 
 .timer-task-link {
   font-size: 13px;
-  color: #2563EB;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -516,8 +516,8 @@ onMounted(async () => {
 
 .timer-project-tag {
   font-size: 10px;
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563EB;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
   padding: 2px 6px;
   border-radius: 4px;
   text-decoration: none;
@@ -531,7 +531,7 @@ onMounted(async () => {
   font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
   font-size: 16px;
   font-weight: 700;
-  color: #059669;
+  color: var(--color-success-hover);
 }
 
 /* Filters */
@@ -541,8 +541,8 @@ onMounted(async () => {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 12px 16px;
 }
@@ -557,11 +557,11 @@ onMounted(async () => {
 .filter-select,
 .filter-input {
   padding: 7px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   outline: none;
   transition: border-color 0.2s;
   min-width: 140px;
@@ -569,7 +569,7 @@ onMounted(async () => {
 
 .filter-select:focus,
 .filter-input:focus {
-  border-color: #2563EB;
+  border-color: var(--color-primary);
 }
 
 .filter-input {
@@ -578,19 +578,19 @@ onMounted(async () => {
 
 .btn-filter-clear {
   padding: 7px 16px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .btn-filter-clear:hover {
-  background: #e5e7eb;
-  color: #374151;
+  background: var(--border-default);
+  color: var(--text-primary);
 }
 
 /* Summary */
@@ -601,8 +601,8 @@ onMounted(async () => {
 }
 
 .summary-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   padding: 14px 18px;
   display: flex;
@@ -613,7 +613,7 @@ onMounted(async () => {
 .summary-label {
   font-size: 11px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -621,13 +621,13 @@ onMounted(async () => {
 .summary-value {
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 /* Table */
 .logs-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -642,7 +642,7 @@ onMounted(async () => {
 }
 
 .logs-table thead {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .logs-table th {
@@ -650,18 +650,18 @@ onMounted(async () => {
   text-align: left;
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-default);
   white-space: nowrap;
 }
 
 .logs-table td {
   padding: 10px 14px;
   font-size: 13px;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
   vertical-align: middle;
 }
 
@@ -670,7 +670,7 @@ onMounted(async () => {
 }
 
 .logs-table tr:hover {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .row-running {
@@ -703,7 +703,7 @@ onMounted(async () => {
 }
 
 .task-link {
-  color: #2563EB;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -713,21 +713,21 @@ onMounted(async () => {
 }
 
 .project-link {
-  color: #6b7280;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 12px;
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
   padding: 2px 8px;
   border-radius: 4px;
 }
 
 .project-link:hover {
-  color: #2563EB;
-  background: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 
 .text-muted {
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .text-nowrap {
@@ -746,7 +746,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #059669;
+  color: var(--color-success-hover);
   font-weight: 500;
   font-size: 12px;
 }
@@ -766,17 +766,17 @@ onMounted(async () => {
 }
 
 .tag-completed {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
 }
 
 .tl-delete-btn {
   width: 28px;
   height: 28px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: #fff;
-  color: #9ca3af;
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -786,7 +786,7 @@ onMounted(async () => {
 
 .tl-delete-btn:hover {
   background: #fef2f2;
-  color: #EF4444;
+  color: var(--color-danger);
   border-color: #fecaca;
 }
 
@@ -797,15 +797,15 @@ onMounted(async () => {
   justify-content: center;
   gap: 12px;
   padding: 14px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-default);
 }
 
 .btn-page {
   padding: 6px 14px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: #fff;
-  color: #374151;
+  background: var(--bg-surface);
+  color: var(--text-primary);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -813,7 +813,7 @@ onMounted(async () => {
 }
 
 .btn-page:hover:not(:disabled) {
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
 }
 
 .btn-page:disabled {
@@ -823,7 +823,7 @@ onMounted(async () => {
 
 .page-info {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 /* Loading / Empty */
@@ -838,8 +838,8 @@ onMounted(async () => {
 .spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -850,7 +850,7 @@ onMounted(async () => {
 
 .loading-text {
   margin-top: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -865,13 +865,13 @@ onMounted(async () => {
 .empty-text {
   font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   margin: 8px 0 0;
 }
 
 .empty-subtext {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   margin: 0;
 }
 
@@ -903,7 +903,7 @@ onMounted(async () => {
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563EB;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 </style>

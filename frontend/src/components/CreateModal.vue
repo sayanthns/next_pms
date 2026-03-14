@@ -40,7 +40,7 @@ defineEmits(['close', 'submit'])
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay-bg);
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
@@ -51,7 +51,7 @@ defineEmits(['close', 'submit'])
   width: 480px;
   max-width: 100%;
   height: 100vh;
-  background: #fff;
+  background: var(--bg-surface);
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
@@ -68,14 +68,14 @@ defineEmits(['close', 'submit'])
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-default);
   flex-shrink: 0;
 }
 
 .modal-title {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -83,7 +83,7 @@ defineEmits(['close', 'submit'])
   background: none;
   border: none;
   font-size: 24px;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
@@ -91,8 +91,8 @@ defineEmits(['close', 'submit'])
 }
 
 .modal-close:hover {
-  background: #f3f4f6;
-  color: #1a1a2e;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .modal-body {
@@ -106,7 +106,7 @@ defineEmits(['close', 'submit'])
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-default);
   flex-shrink: 0;
 }
 
@@ -138,12 +138,12 @@ defineEmits(['close', 'submit'])
 }
 
 .btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: var(--border-default);
 }
 
 .btn-spinner {

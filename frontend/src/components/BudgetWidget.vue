@@ -92,8 +92,8 @@ function formatCurrency(value) {
 
 <style scoped>
 .budget-widget {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   padding: 18px;
 }
@@ -108,7 +108,7 @@ function formatCurrency(value) {
 .budget-label {
   font-size: 14px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
 }
 
 .budget-percentage {
@@ -120,7 +120,7 @@ function formatCurrency(value) {
 /* Bar */
 .budget-bar {
   height: 8px;
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 16px;
@@ -133,15 +133,15 @@ function formatCurrency(value) {
 }
 
 .bar-success {
-  background: #10b981;
+  background: var(--color-success);
 }
 
 .bar-warning {
-  background: #F59E0B;
+  background: var(--color-warning);
 }
 
 .bar-danger {
-  background: #EF4444;
+  background: var(--color-danger);
 }
 
 /* Details */
@@ -160,7 +160,7 @@ function formatCurrency(value) {
 .budget-detail-label {
   font-size: 11px;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -168,19 +168,19 @@ function formatCurrency(value) {
 .budget-detail-value {
   font-size: 14px;
   font-weight: 600;
-  color: #1e1e2e;
+  color: var(--text-primary);
 }
 
 /* Color utility classes */
 .text-success {
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .text-warning {
-  color: #F59E0B;
+  color: var(--color-warning);
 }
 
 .text-danger {
-  color: #EF4444;
+  color: var(--color-danger);
 }
 </style>

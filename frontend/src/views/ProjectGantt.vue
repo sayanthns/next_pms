@@ -260,19 +260,19 @@ function statusClass(status) {
 .page-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 4px 0 0 0;
 }
 
 .view-toggle {
   display: flex;
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
   border-radius: 8px;
   padding: 3px;
 }
@@ -284,20 +284,20 @@ function statusClass(status) {
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .toggle-btn.active {
-  background: #fff;
-  color: #2563EB;
+  background: var(--bg-surface);
+  color: var(--color-primary);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .toggle-btn:hover:not(.active) {
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .loading-container {
@@ -311,8 +311,8 @@ function statusClass(status) {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -323,7 +323,7 @@ function statusClass(status) {
 
 .loading-text {
   margin-top: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -335,7 +335,7 @@ function statusClass(status) {
 }
 
 .error-text {
-  color: #EF4444;
+  color: var(--color-danger);
   font-size: 14px;
   margin-bottom: 16px;
 }
@@ -354,17 +354,17 @@ function statusClass(status) {
 }
 
 .btn-primary {
-  background: #2563EB;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: #1D4ED8;
+  background: var(--color-primary-hover);
 }
 
 .gantt-wrapper {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: auto;
 }
@@ -375,8 +375,8 @@ function statusClass(status) {
 
 /* Table Fallback */
 .table-fallback {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -387,7 +387,7 @@ function statusClass(status) {
 }
 
 .gantt-table thead {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .gantt-table th {
@@ -395,17 +395,17 @@ function statusClass(status) {
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .gantt-table td {
   padding: 12px 16px;
   font-size: 14px;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .table-row.clickable {
@@ -414,12 +414,12 @@ function statusClass(status) {
 }
 
 .table-row.clickable:hover {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .task-name-cell {
   font-weight: 500;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 .status-badge {
@@ -434,18 +434,18 @@ function statusClass(status) {
 }
 
 .badge-primary {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563EB;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .badge-success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #F59E0B;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .badge-info {
@@ -454,13 +454,13 @@ function statusClass(status) {
 }
 
 .badge-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .badge-default {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
 }
 
 .table-progress {
@@ -472,7 +472,7 @@ function statusClass(status) {
 .progress-bar-mini {
   flex: 1;
   height: 6px;
-  background: #e5e7eb;
+  background: var(--border-default);
   border-radius: 3px;
   overflow: hidden;
   min-width: 60px;
@@ -488,7 +488,7 @@ function statusClass(status) {
 .progress-text {
   font-size: 12px;
   font-weight: 600;
-  color: #10b981;
+  color: var(--color-success);
   min-width: 32px;
 }
 
@@ -500,7 +500,7 @@ function statusClass(status) {
 }
 
 .empty-text {
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 </style>

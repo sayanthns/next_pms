@@ -106,36 +106,70 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 30 seconds, pauses when tab is hidden
   let refreshInterval = null
+  let _visibilityHandler = null
+
   function startAutoRefresh() {
     requestNotificationPermission()
     fetchNotifications()
-    refreshInterval = setInterval(fetchNotifications, 30000)
+    _startPolling()
+
+    // Pause polling when tab is hidden, resume when visible
+    _visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications() // immediate fetch on tab focus
+        _startPolling()
+      } else {
+        _stopPolling()
+      }
+    }
+    document.addEventListener('visibilitychange', _visibilityHandler)
 
     // Listen for Frappe realtime push notifications
     if (window.frappe && window.frappe.realtime) {
       window.frappe.realtime.on('pms_notification', (data) => {
         playNotificationSound()
+
+        // Build notification title and body based on type
+        let title = 'Next PMS'
+        let body = 'You have a new notification'
+        if (data.type === 'task_status_changed') {
+          title = `Task ${data.new_status}: ${data.task_title}`
+          body = `${data.changed_by || 'Someone'} changed status to ${data.new_status}`
+        } else if (data.type === 'task_assigned') {
+          title = `Task Assigned: ${data.task_title}`
+          body = `${data.changed_by || 'Someone'} assigned you a task`
+        }
+
         showBrowserNotification(
-          data.type === 'task_status_changed'
-            ? `Task ${data.new_status}: ${data.task_title}`
-            : 'Next PMS',
-          data.changed_by
-            ? `${data.changed_by} changed status to ${data.new_status}`
-            : 'You have a new notification',
+          title,
+          body,
           data.task ? `#/task/${data.task}` : null
         )
-        // Refresh notification list
+        // Refresh notification list immediately
         fetchNotifications()
       })
     }
   }
 
-  function stopAutoRefresh() {
+  function _startPolling() {
+    if (refreshInterval) return // already running
+    refreshInterval = setInterval(fetchNotifications, 30000)
+  }
+
+  function _stopPolling() {
     if (refreshInterval) {
       clearInterval(refreshInterval)
       refreshInterval = null
+    }
+  }
+
+  function stopAutoRefresh() {
+    _stopPolling()
+    if (_visibilityHandler) {
+      document.removeEventListener('visibilitychange', _visibilityHandler)
+      _visibilityHandler = null
     }
     if (window.frappe && window.frappe.realtime) {
       window.frappe.realtime.off('pms_notification')

@@ -237,14 +237,14 @@ onMounted(() => loadMyTasks())
   margin-bottom: 16px;
 }
 
-.page-title { font-size: 22px; font-weight: 700; color: #1a1a2e; margin: 0; }
-.page-subtitle { font-size: 13px; color: #6b7280; margin: 2px 0 0 0; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.page-subtitle { font-size: 13px; color: var(--text-secondary); margin: 2px 0 0 0; }
 
 /* View Toggle */
 .view-toggle {
   display: flex;
   gap: 0;
-  background: #f3f4f6;
+  background: var(--bg-surface-hover);
   border-radius: 8px;
   padding: 3px;
 }
@@ -258,15 +258,15 @@ onMounted(() => loadMyTasks())
   background: transparent;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.15s;
 }
 
 .view-toggle button.active {
-  background: #ffffff;
-  color: #1a1a2e;
+  background: var(--bg-surface);
+  color: var(--text-primary);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
@@ -284,8 +284,8 @@ onMounted(() => loadMyTasks())
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 0 10px;
   flex: 1;
@@ -294,7 +294,7 @@ onMounted(() => loadMyTasks())
 }
 
 .search-icon {
-  color: #9ca3af;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -305,37 +305,37 @@ onMounted(() => loadMyTasks())
   padding: 8px 0;
   width: 100%;
   background: transparent;
-  color: #374151;
+  color: var(--text-primary);
 }
 
-.search-input::placeholder { color: #9ca3af; }
+.search-input::placeholder { color: var(--text-tertiary); }
 
 .filter-select {
   padding: 7px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   outline: none;
   cursor: pointer;
 }
 
 .filter-select:focus {
-  border-color: #2563EB;
+  border-color: var(--color-primary);
 }
 
 .filter-count {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 
 /* Loading */
 .loading-container { display: flex; flex-direction: column; align-items: center; padding: 80px 0; }
-.spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #2563EB; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner { width: 40px; height: 40px; border: 3px solid var(--border-default); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { margin-top: 16px; color: #6b7280; font-size: 14px; }
+.loading-text { margin-top: 16px; color: var(--text-secondary); font-size: 14px; }
 
 /* Kanban */
 .kanban-container {
@@ -348,7 +348,7 @@ onMounted(() => loadMyTasks())
 .kanban-column {
   flex: 1;
   min-width: 0;
-  background: #f8f9fa;
+  background: var(--bg-surface-active);
   border-radius: 10px;
   padding: 0;
 }
@@ -358,7 +358,7 @@ onMounted(() => loadMyTasks())
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-default);
 }
 
 .column-dot {
@@ -370,13 +370,13 @@ onMounted(() => loadMyTasks())
 .column-title {
   font-size: 13px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   white-space: nowrap;
 }
 
 .column-count {
-  background: #e5e7eb;
-  color: #6b7280;
+  background: var(--border-default);
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
   padding: 1px 7px;
@@ -394,21 +394,21 @@ onMounted(() => loadMyTasks())
 
 .kanban-column.drop-highlight {
   background: #eef2ff;
-  border: 2px dashed #2563EB;
+  border: 2px dashed var(--color-primary);
   border-radius: 10px;
 }
 
 .column-empty {
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
   padding: 30px 0;
 }
 
 /* List View */
 .task-table-wrap {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -423,18 +423,18 @@ onMounted(() => loadMyTasks())
   padding: 10px 14px;
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-surface-active);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .task-table td {
   padding: 10px 14px;
   font-size: 13px;
-  color: #374151;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .task-row {
@@ -443,7 +443,7 @@ onMounted(() => loadMyTasks())
 }
 
 .task-row:hover {
-  background: #f8f9fa;
+  background: var(--bg-surface-active);
 }
 
 .priority-dot {
@@ -457,14 +457,14 @@ onMounted(() => loadMyTasks())
 .task-id {
   display: block;
   font-size: 10px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-family: monospace;
 }
 
 .task-name {
   display: block;
   font-weight: 500;
-  color: #1a1a2e;
+  color: var(--text-primary);
 }
 
 .status-chip {
@@ -476,7 +476,7 @@ onMounted(() => loadMyTasks())
   text-transform: uppercase;
 }
 
-.chip-backlog { background: #f3f4f6; color: #6b7280; }
+.chip-backlog { background: var(--bg-surface-hover); color: var(--text-secondary); }
 .chip-to-do { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
 .chip-in-progress { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
 .chip-in-review { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
@@ -485,7 +485,7 @@ onMounted(() => loadMyTasks())
 .empty-state {
   text-align: center;
   padding: 60px 0;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 

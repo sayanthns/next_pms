@@ -19,9 +19,11 @@ export const useSettingsStore = defineStore("settings", () => {
   const featurePermissions = ref({});
   const loaded = ref(false);
 
-  async function fetchSettings() {
+  async function fetchSettings(force = false) {
+    // Skip if already loaded and not forced — avoids redundant API calls on every route change
+    if (loaded.value && !force) return;
     try {
-      const result = await call("next_pms.api.settings.get_pms_settings");
+      const result = await call("next_pms.api.settings.get_pms_settings", {}, { cache: 30000 });
       if (result) {
         currency.value = result.currency || "INR";
         roles.value = result.roles || [];

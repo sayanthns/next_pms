@@ -279,8 +279,8 @@ watch(colorBy, () => {
 
 <style scoped>
 .gantt-wrapper {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -290,14 +290,14 @@ watch(colorBy, () => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-surface-active);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .gantt-view-modes {
   display: flex;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 2px;
 }
@@ -309,7 +309,7 @@ watch(colorBy, () => {
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -321,8 +321,8 @@ watch(colorBy, () => {
 }
 
 .view-mode-btn:hover:not(.active) {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }
 
 .gantt-color-by {
@@ -334,23 +334,23 @@ watch(colorBy, () => {
 .gantt-color-by label {
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .gantt-color-by select {
   padding: 6px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   font-size: 13px;
-  color: #374151;
-  background: #fff;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   cursor: pointer;
   outline: none;
   transition: border-color 0.2s ease;
 }
 
 .gantt-color-by select:focus {
-  border-color: #2563EB;
+  border-color: var(--color-primary);
 }
 
 .gantt-container {
@@ -364,7 +364,7 @@ watch(colorBy, () => {
   align-items: center;
   justify-content: center;
   min-height: 200px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 </style>
@@ -449,14 +449,14 @@ watch(colorBy, () => {
 .gantt-popup-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin-bottom: 6px;
   line-height: 1.3;
 }
 
 .gantt-popup-meta {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
@@ -475,8 +475,8 @@ watch(colorBy, () => {
   letter-spacing: 0.3px;
   padding: 2px 8px;
   border-radius: 10px;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
 }
 
 .gantt-popup-assignee {
@@ -494,14 +494,14 @@ watch(colorBy, () => {
 
 .gantt-popup-progress {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-weight: 500;
 }
 
 /* Popup container override */
 .gantt-wrapper .popup-wrapper {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   overflow: hidden;

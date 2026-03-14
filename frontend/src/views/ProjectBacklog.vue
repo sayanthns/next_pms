@@ -396,13 +396,13 @@ function sprintStatusClass(status) {
 .page-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 4px 0 0 0;
 }
 
@@ -417,8 +417,8 @@ function sprintStatusClass(status) {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563EB;
+  border: 3px solid var(--border-default);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -429,7 +429,7 @@ function sprintStatusClass(status) {
 
 .loading-text {
   margin-top: 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -440,8 +440,8 @@ function sprintStatusClass(status) {
 }
 
 .sprint-section {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: 12px;
   overflow: hidden;
   transition: box-shadow 0.2s ease;
@@ -461,8 +461,8 @@ function sprintStatusClass(status) {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-surface-active);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .sprint-info {
@@ -474,24 +474,24 @@ function sprintStatusClass(status) {
 .sprint-name {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .sprint-dates {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
 }
 
 .sprint-task-count {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .sprint-progress {
   padding: 12px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .progress-info {
@@ -503,18 +503,18 @@ function sprintStatusClass(status) {
 
 .progress-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .progress-pct {
   font-size: 12px;
   font-weight: 600;
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .progress-bar {
   height: 6px;
-  background: #e5e7eb;
+  background: var(--border-default);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -541,7 +541,7 @@ function sprintStatusClass(status) {
 }
 
 .task-row:hover {
-  background: #f9fafb;
+  background: var(--bg-surface-active);
 }
 
 .task-row:active {
@@ -564,11 +564,11 @@ function sprintStatusClass(status) {
 }
 
 .priority-urgent {
-  background: #EF4444;
+  background: var(--color-danger);
 }
 
 .priority-high {
-  background: #F59E0B;
+  background: var(--color-warning);
 }
 
 .priority-medium {
@@ -576,12 +576,12 @@ function sprintStatusClass(status) {
 }
 
 .priority-low {
-  background: #9ca3af;
+  background: var(--text-tertiary);
 }
 
 .task-title-link {
   font-size: 14px;
-  color: #1a1a2e;
+  color: var(--text-primary);
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -589,7 +589,7 @@ function sprintStatusClass(status) {
 }
 
 .task-title-link:hover {
-  color: #2563EB;
+  color: var(--color-primary);
 }
 
 .task-right {
@@ -616,18 +616,18 @@ function sprintStatusClass(status) {
 }
 
 .badge-primary {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563EB;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
 }
 
 .badge-success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  background: var(--color-success-bg);
+  color: var(--color-success);
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #F59E0B;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .badge-info {
@@ -636,13 +636,13 @@ function sprintStatusClass(status) {
 }
 
 .badge-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #EF4444;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
 }
 
 .badge-default {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
 }
 
 .assignee {
@@ -652,7 +652,7 @@ function sprintStatusClass(status) {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #2563EB;
+  background: var(--color-primary);
   color: #fff;
   font-size: 10px;
   font-weight: 600;
@@ -660,14 +660,14 @@ function sprintStatusClass(status) {
 
 .est-hours {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-weight: 500;
 }
 
 .no-tasks {
   padding: 24px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
@@ -690,13 +690,13 @@ function sprintStatusClass(status) {
 }
 
 .btn-outline {
-  background: #fff;
-  color: #2563EB;
-  border: 1px solid #2563EB;
+  background: var(--bg-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .btn-outline:hover {
-  background: rgba(37, 99, 235, 0.05);
+  background: var(--color-primary-bg);
 }
 
 .sprint-header-actions {
@@ -709,10 +709,10 @@ function sprintStatusClass(status) {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
-  background: #fff;
-  color: #6b7280;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -720,8 +720,8 @@ function sprintStatusClass(status) {
 }
 
 .add-task-btn:hover {
-  border-color: #2563EB;
-  color: #2563EB;
-  background: rgba(37, 99, 235, 0.05);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 </style>

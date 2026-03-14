@@ -852,7 +852,7 @@ def get_task_activity(task):
     # 2. Get status/assignment changes from Version log
     versions = frappe.get_all(
         "Version",
-        filters={"ref_doctype": "PMS Task", "ref_docname": task},
+        filters={"ref_doctype": "PMS Task", "docname": task},
         fields=["data", "owner", "creation"],
         order_by="creation asc",
         limit_page_length=0,
@@ -867,6 +867,10 @@ def get_task_activity(task):
             for change in changed:
                 if len(change) >= 3:
                     field, old_val, new_val = change[0], change[1], change[2]
+
+                    # Resolve user-type fields to full names
+                    user_fields = {"assigned_to", "reviewer"}
+
                     if field == "status":
                         activities.append({
                             "type": "status_change",
@@ -877,23 +881,15 @@ def get_task_activity(task):
                             "old_value": old_val,
                             "new_value": new_val,
                         })
-                    elif field == "assigned_to":
+                    elif field in user_fields:
                         new_name = frappe.get_cached_value("User", new_val, "full_name") if new_val else "nobody"
+                        label = field.replace("_", " ")
                         activities.append({
-                            "type": "assignment",
+                            "type": "assignment" if field == "assigned_to" else f"{field}_change",
                             "user": ver.owner,
                             "user_name": ver_user,
                             "timestamp": str(ver.creation),
-                            "detail": f"assigned to {new_name}",
-                        })
-                    elif field == "reviewer":
-                        new_name = frappe.get_cached_value("User", new_val, "full_name") if new_val else "nobody"
-                        activities.append({
-                            "type": "reviewer_change",
-                            "user": ver.owner,
-                            "user_name": ver_user,
-                            "timestamp": str(ver.creation),
-                            "detail": f"set reviewer to {new_name}",
+                            "detail": f"set {label} to {new_name}",
                         })
                     elif field == "sprint":
                         activities.append({
@@ -902,6 +898,19 @@ def get_task_activity(task):
                             "user_name": ver_user,
                             "timestamp": str(ver.creation),
                             "detail": f"moved to sprint {new_val or 'None'}",
+                        })
+                    elif field in ("priority", "due_date", "start_date", "task_type",
+                                   "estimated_hours", "task_title", "description"):
+                        label = field.replace("_", " ")
+                        old_display = old_val if old_val else "empty"
+                        new_display = new_val if new_val else "empty"
+                        activities.append({
+                            "type": "field_change",
+                            "user": ver.owner,
+                            "user_name": ver_user,
+                            "timestamp": str(ver.creation),
+                            "detail": f"changed {label} from {old_display} to {new_display}",
+                            "field": field,
                         })
         except (json.JSONDecodeError, TypeError, KeyError):
             continue
@@ -967,10 +976,18 @@ def get_task_overtime_hours(task):
 def get_task_report(filters=None):
     """Get comprehensive task report with filters.
     Filters: project, user, from_date, to_date, priority, task_type, status
+    Role-based: Developers see only their own tasks. Managers/Admins see all.
     """
     if isinstance(filters, str):
         filters = json.loads(filters)
     filters = filters or {}
+
+    # Role-based access: developers only see their own tasks
+    current_user = frappe.session.user
+    user_roles = set(frappe.get_roles(current_user))
+    is_admin = bool({"System Manager", "Administrator"} & user_roles)
+    is_manager = "PMS Manager" in user_roles
+    is_developer_only = "PMS Developer" in user_roles and not is_manager and not is_admin
 
     db_filters = {}
 
@@ -982,6 +999,10 @@ def get_task_report(filters=None):
         db_filters["task_type"] = filters["task_type"]
     if filters.get("status"):
         db_filters["status"] = filters["status"]
+
+    # For developers, force filter to only their assigned tasks
+    if is_developer_only:
+        db_filters["assigned_to"] = current_user
 
     # Date range filter on creation
     from_date = filters.get("from_date")
@@ -996,17 +1017,23 @@ def get_task_report(filters=None):
     # User filter — tasks assigned to this user
     user_filter = filters.get("user")
 
+    # Build safe field list — only include fields that exist in the DB
+    base_fields = [
+        "name", "task_title", "project", "status", "priority",
+        "task_type", "assigned_to", "due_date", "start_date",
+        "estimated_hours", "actual_hours",
+        "owner", "creation", "modified",
+    ]
+    optional_fields = ["is_billable", "hourly_rate", "calculated_cost", "sprint", "reviewer"]
+    meta = frappe.get_meta("PMS Task")
+    existing_fieldnames = {f.fieldname for f in meta.fields}
+    safe_fields = base_fields + [f for f in optional_fields if f in existing_fieldnames]
+
     try:
         tasks = frappe.get_all(
             "PMS Task",
             filters=db_filters,
-            fields=[
-                "name", "task_title", "project", "status", "priority",
-                "task_type", "assigned_to", "due_date", "start_date",
-                "estimated_hours", "actual_hours", "is_billable",
-                "hourly_rate", "calculated_cost", "sprint", "reviewer",
-                "owner", "creation", "modified",
-            ],
+            fields=safe_fields,
             order_by="creation desc",
             limit_page_length=0,
         )
@@ -1014,7 +1041,30 @@ def get_task_report(filters=None):
         frappe.log_error(f"Task report query failed: {str(e)}", "Task Report Error")
         frappe.throw("Failed to fetch task report. Please try again.")
 
-    # If user filter, find tasks assigned to this user
+    # For developer-only users, also include tasks from the assignees child table
+    if is_developer_only:
+        child_assigned = set(frappe.get_all(
+            "PMS Task Assignee",
+            filters={"user": current_user},
+            pluck="parent",
+        ))
+        if child_assigned:
+            # Re-fetch tasks from child table that weren't caught by assigned_to filter
+            extra_filters = {k: v for k, v in db_filters.items() if k != "assigned_to"}
+            extra_filters["name"] = ["in", list(child_assigned)]
+            try:
+                extra_tasks = frappe.get_all(
+                    "PMS Task", filters=extra_filters, fields=safe_fields,
+                    order_by="creation desc", limit_page_length=0,
+                )
+                existing_names = {t.name for t in tasks}
+                for t in extra_tasks:
+                    if t.name not in existing_names:
+                        tasks.append(t)
+            except Exception:
+                pass
+
+    # If user filter (explicit from UI dropdown), find tasks assigned to this user
     if user_filter:
         assigned_tasks = set(frappe.get_all(
             "PMS Task Assignee",
