@@ -983,31 +983,36 @@ def get_task_report(filters=None):
     if filters.get("status"):
         db_filters["status"] = filters["status"]
 
-    # Date range filter on creation or due_date
-    if filters.get("from_date"):
-        db_filters["creation"] = [">=", filters["from_date"]]
-    if filters.get("to_date"):
-        if "creation" in db_filters:
-            db_filters["creation"] = ["between", [filters["from_date"], filters["to_date"] + " 23:59:59"]]
-        else:
-            db_filters["creation"] = ["<=", filters["to_date"] + " 23:59:59"]
+    # Date range filter on creation
+    from_date = filters.get("from_date")
+    to_date = filters.get("to_date")
+    if from_date and to_date:
+        db_filters["creation"] = ["between", [from_date, to_date + " 23:59:59"]]
+    elif from_date:
+        db_filters["creation"] = [">=", from_date]
+    elif to_date:
+        db_filters["creation"] = ["<=", to_date + " 23:59:59"]
 
     # User filter — tasks assigned to this user
     user_filter = filters.get("user")
 
-    tasks = frappe.get_all(
-        "PMS Task",
-        filters=db_filters,
-        fields=[
-            "name", "task_title", "project", "status", "priority",
-            "task_type", "assigned_to", "due_date", "start_date",
-            "estimated_hours", "actual_hours", "is_billable",
-            "hourly_rate", "calculated_cost", "sprint", "reviewer",
-            "owner", "creation", "modified",
-        ],
-        order_by="creation desc",
-        limit_page_length=0,
-    )
+    try:
+        tasks = frappe.get_all(
+            "PMS Task",
+            filters=db_filters,
+            fields=[
+                "name", "task_title", "project", "status", "priority",
+                "task_type", "assigned_to", "due_date", "start_date",
+                "estimated_hours", "actual_hours", "is_billable",
+                "hourly_rate", "calculated_cost", "sprint", "reviewer",
+                "owner", "creation", "modified",
+            ],
+            order_by="creation desc",
+            limit_page_length=0,
+        )
+    except Exception as e:
+        frappe.log_error(f"Task report query failed: {str(e)}", "Task Report Error")
+        frappe.throw("Failed to fetch task report. Please try again.")
 
     # If user filter, find tasks assigned to this user
     if user_filter:
@@ -1016,33 +1021,78 @@ def get_task_report(filters=None):
             filters={"user": user_filter},
             pluck="parent",
         ))
-        # Also check legacy assigned_to
         tasks = [t for t in tasks if t.name in assigned_tasks or t.assigned_to == user_filter]
 
-    # Enrich with assignee names, project names, time spent
+    # Batch-load user full names and project names to avoid N+1 queries
+    user_emails = set()
+    project_ids = set()
     for task in tasks:
-        task["owner_name"] = frappe.get_cached_value("User", task["owner"], "full_name") or task["owner"]
-        task["assigned_to_name"] = (
-            frappe.get_cached_value("User", task["assigned_to"], "full_name")
-            if task.get("assigned_to") else ""
-        )
-        # Get all assignees
-        assignees = frappe.get_all(
-            "PMS Task Assignee",
-            filters={"parent": task["name"]},
-            fields=["user"],
-        )
-        task["assignee_names"] = ", ".join(
-            frappe.get_cached_value("User", a.user, "full_name") or a.user
-            for a in assignees
-        ) if assignees else task.get("assigned_to_name", "")
-
-        # Project name
+        if task.get("owner"):
+            user_emails.add(task["owner"])
+        if task.get("assigned_to"):
+            user_emails.add(task["assigned_to"])
         if task.get("project"):
-            task["project_name"] = frappe.get_cached_value("PMS Project", task["project"], "project_name") or task["project"]
-        else:
-            task["project_name"] = ""
+            project_ids.add(task["project"])
 
+    # Load all user names at once
+    user_name_map = {}
+    if user_emails:
+        users = frappe.get_all(
+            "User",
+            filters={"name": ["in", list(user_emails)]},
+            fields=["name", "full_name"],
+        )
+        user_name_map = {u.name: u.full_name or u.name for u in users}
+
+    # Load all project names at once
+    project_name_map = {}
+    if project_ids:
+        projects = frappe.get_all(
+            "PMS Project",
+            filters={"name": ["in", list(project_ids)]},
+            fields=["name", "project_name"],
+        )
+        project_name_map = {p.name: p.project_name or p.name for p in projects}
+
+    # Load all assignees at once
+    task_names = [t["name"] for t in tasks]
+    assignee_map = {}
+    if task_names:
+        all_assignees = frappe.get_all(
+            "PMS Task Assignee",
+            filters={"parent": ["in", task_names]},
+            fields=["parent", "user"],
+        )
+        for a in all_assignees:
+            assignee_map.setdefault(a.parent, []).append(a.user)
+            user_emails.add(a.user)
+
+        # Re-fetch any new user names from assignees
+        missing_users = user_emails - set(user_name_map.keys())
+        if missing_users:
+            extra_users = frappe.get_all(
+                "User",
+                filters={"name": ["in", list(missing_users)]},
+                fields=["name", "full_name"],
+            )
+            for u in extra_users:
+                user_name_map[u.name] = u.full_name or u.name
+
+    # Enrich tasks
+    for task in tasks:
+        task["owner_name"] = user_name_map.get(task["owner"], task["owner"])
+        task["assigned_to_name"] = user_name_map.get(task.get("assigned_to", ""), "")
+
+        # Get assignee names from batch-loaded map
+        task_assignees = assignee_map.get(task["name"], [])
+        if task_assignees:
+            task["assignee_names"] = ", ".join(
+                user_name_map.get(u, u) for u in task_assignees
+            )
+        else:
+            task["assignee_names"] = task.get("assigned_to_name", "")
+
+        task["project_name"] = project_name_map.get(task.get("project", ""), "")
         task["creation"] = str(task["creation"])
         task["modified"] = str(task["modified"])
 
