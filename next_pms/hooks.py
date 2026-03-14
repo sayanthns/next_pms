@@ -12,6 +12,9 @@ app_include_js = ["/assets/next_pms/js/pms.bundle.js"]
 
 after_install = "next_pms.setup.install.after_install"
 
+# Add Service-Worker-Allowed header for PWA
+after_request = ["next_pms.utils.add_sw_headers"]
+
 doc_events = {
     "PMS Time Log": {
         "after_insert": "next_pms.next_pms.doctype.pms_time_log.pms_time_log.on_time_log_change",

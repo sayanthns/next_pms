@@ -1,6 +1,14 @@
 import frappe
 
 
+def add_sw_headers(response, **kwargs):
+    """Add Service-Worker-Allowed header when serving the SW via API."""
+    if frappe.request and "next_pms.api.pwa.sw" in (frappe.request.path or ""):
+        response.headers["Service-Worker-Allowed"] = "/next-pms/"
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
+
 def get_pms_url(doctype, name):
     """Return the Vue frontend URL for a PMS document.
 

@@ -10,8 +10,9 @@
 {% block head_include %}
 <!-- PWA Meta Tags -->
 <meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-title" content="Next PMS">
 <link rel="manifest" href="/assets/next_pms/manifest.json">
@@ -77,7 +78,7 @@
 <script>
 if ('serviceWorker' in navigator) {
 	window.addEventListener('load', function() {
-		navigator.serviceWorker.register('/assets/next_pms/js/sw.js', { scope: '/next-pms/' })
+		navigator.serviceWorker.register('/api/method/next_pms.api.pwa.sw', { scope: '/next-pms/' })
 			.then(function(reg) {
 				console.log('Next PMS SW registered, scope:', reg.scope);
 			})
