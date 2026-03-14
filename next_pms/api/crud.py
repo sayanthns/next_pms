@@ -231,6 +231,7 @@ def update_task(task, fields):
     allowed_fields = {
         "task_title", "priority", "status", "due_date",
         "estimated_hours", "task_type", "description", "is_billable",
+        "reviewer", "sprint",
     }
 
     doc = frappe.get_doc("PMS Task", task)
