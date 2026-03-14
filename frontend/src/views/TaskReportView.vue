@@ -126,7 +126,6 @@
               <th>Est. Hours</th>
               <th>Actual Hours</th>
               <th>Cost</th>
-              <th>Created By</th>
               <th>Created</th>
             </tr>
           </thead>
@@ -154,7 +153,6 @@
               <td class="text-right">{{ task.estimated_hours || '-' }}</td>
               <td class="text-right">{{ task.actual_hours || '-' }}</td>
               <td class="text-right">{{ task.calculated_cost ? formatCurrency(task.calculated_cost) : '-' }}</td>
-              <td>{{ task.owner_name }}</td>
               <td class="text-nowrap">{{ formatDate(task.creation) }}</td>
             </tr>
           </tbody>

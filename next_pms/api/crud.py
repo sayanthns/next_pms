@@ -327,11 +327,11 @@ def add_project_member(project, user, role=None, hourly_rate=None):
 
     # Send email notification to the added user
     try:
-        from frappe.utils import get_url_to_form
+        from next_pms.utils import get_pms_url
 
         added_by_name = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
         project_name = doc.project_name
-        project_url = get_url_to_form("PMS Project", project)
+        project_url = get_pms_url("PMS Project", project)
 
         message = frappe.render_template(
             "next_pms/templates/emails/member_added.html",

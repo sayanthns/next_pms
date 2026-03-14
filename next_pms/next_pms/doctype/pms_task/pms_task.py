@@ -3,7 +3,8 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import get_url_to_form, getdate
+from frappe.utils import getdate
+from next_pms.utils import get_pms_url
 
 
 class PMSTask(Document):
@@ -166,7 +167,7 @@ def _send_task_assigned_email(doc):
     try:
         project_name = frappe.db.get_value("PMS Project", doc.project, "project_name") or doc.project
         assigned_to_name = frappe.db.get_value("User", doc.assigned_to, "full_name") or doc.assigned_to
-        task_url = get_url_to_form("PMS Task", doc.name)
+        task_url = get_pms_url("PMS Task", doc.name)
 
         message = frappe.render_template(
             "next_pms/templates/emails/task_assigned.html",
@@ -199,7 +200,7 @@ def _send_task_status_change_notifications(doc, old_status):
         changed_by = frappe.session.user
         changed_by_name = frappe.db.get_value("User", changed_by, "full_name") or changed_by
         project_name = frappe.db.get_value("PMS Project", doc.project, "project_name") or doc.project
-        task_url = get_url_to_form("PMS Task", doc.name)
+        task_url = get_pms_url("PMS Task", doc.name)
 
         # Get all assignees from child table
         recipients = []

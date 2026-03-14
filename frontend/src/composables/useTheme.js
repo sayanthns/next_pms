@@ -25,7 +25,7 @@ function applyTheme(isDark) {
   // Update PWA theme-color meta tag
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) {
-    meta.setAttribute('content', isDark ? '#1a1d2e' : '#2563EB')
+    meta.setAttribute('content', isDark ? '#0f1117' : '#ffffff')
   }
 }
 

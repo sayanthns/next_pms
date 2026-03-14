@@ -1,5 +1,6 @@
 import frappe
-from frappe.utils import now_datetime, add_days, getdate, date_diff, get_datetime, get_url_to_form
+from frappe.utils import now_datetime, add_days, getdate, date_diff, get_datetime
+from next_pms.utils import get_pms_url
 
 
 def send_deadline_reminders():
@@ -18,7 +19,7 @@ def send_deadline_reminders():
     for task in tasks:
         assigned_to_name = frappe.db.get_value("User", task.assigned_to, "full_name") or task.assigned_to
         project_name = frappe.db.get_value("PMS Project", task.project, "project_name") or task.project
-        task_url = get_url_to_form("PMS Task", task.name)
+        task_url = get_pms_url("PMS Task", task.name)
 
         message = frappe.render_template(
             "next_pms/templates/emails/deadline_reminder.html",
@@ -70,7 +71,7 @@ def check_long_running_timers():
         task_title = frappe.db.get_value("PMS Task", log.task, "task_title")
         hours_running = (now_datetime() - get_datetime(log.start_time)).total_seconds() / 3600
         user_name = frappe.db.get_value("User", log.user, "full_name") or log.user
-        task_url = get_url_to_form("PMS Task", log.task)
+        task_url = get_pms_url("PMS Task", log.task)
 
         message = frappe.render_template(
             "next_pms/templates/emails/timer_reminder.html",
@@ -126,7 +127,7 @@ def check_budget_alerts():
             )
             used_budget = project.calculated_cost or 0
             remaining = (project.total_budget or 0) - used_budget
-            project_url = get_url_to_form("PMS Project", project.name)
+            project_url = get_pms_url("PMS Project", project.name)
 
             message = frappe.render_template(
                 "next_pms/templates/emails/budget_alert.html",
@@ -228,7 +229,7 @@ def send_weekly_summary():
 
             project_summaries.append({
                 "project_name": proj.project_name,
-                "project_url": get_url_to_form("PMS Project", proj.name),
+                "project_url": get_pms_url("PMS Project", proj.name),
                 "total_tasks": total_tasks,
                 "completed_tasks": completed_tasks,
                 "overdue_tasks": overdue_tasks,

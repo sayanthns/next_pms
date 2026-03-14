@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import get_url_to_form
+from next_pms.utils import get_pms_url
 
 
 class PMSComment(Document):
@@ -62,7 +62,7 @@ class PMSComment(Document):
             task = frappe.get_doc("PMS Task", self.task)
             commenter_name = frappe.db.get_value("User", self.user, "full_name") or self.user
             project_name = frappe.db.get_value("PMS Project", task.project, "project_name") or task.project
-            task_url = get_url_to_form("PMS Task", self.task)
+            task_url = get_pms_url("PMS Task", self.task)
 
             # Gather all assignees
             recipients = []

@@ -5,8 +5,9 @@
   "start_url": "/next-pms/",
   "scope": "/next-pms/",
   "display": "standalone",
-  "background_color": "#f0f2f5",
-  "theme_color": "#2563EB",
+  "display_override": ["standalone"],
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "any",
   "icons": [
     {
