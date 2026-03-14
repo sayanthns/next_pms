@@ -157,7 +157,7 @@
               <span>Settings</span>
             </a>
             <div class="user-menu-divider"></div>
-            <a href="/api/method/logout" class="user-menu-item user-menu-logout">
+            <a href="#" @click.prevent="handleLogout" class="user-menu-item user-menu-logout">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               <span>Log Out</span>
             </a>
@@ -294,7 +294,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             <span>Switch to Desk</span>
           </a>
-          <a href="/api/method/logout" class="more-sheet-item more-sheet-logout">
+          <a href="#" @click.prevent="handleLogout" class="more-sheet-item more-sheet-logout">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             <span>Log Out</span>
           </a>
@@ -355,6 +355,15 @@ const userInitials = computed(() => {
 function toggleSidebar() {
   isDesktopCollapsed.value = !isDesktopCollapsed.value
   localStorage.setItem('pms-sidebar-collapsed', isDesktopCollapsed.value)
+}
+
+async function handleLogout() {
+  try {
+    await fetch('/api/method/logout', { method: 'GET', credentials: 'include' })
+  } catch (e) {
+    // ignore network errors
+  }
+  window.location.href = '/login'
 }
 
 function timeAgo(dateString) {
