@@ -464,6 +464,7 @@ import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/store/tasks'
 import { useSettingsStore } from '@/store/settings'
 import { getList, call } from '@/utils/frappe'
+import { useRealtime } from '@/utils/realtime'
 import Timer from '@/components/Timer.vue'
 import CommentThread from '@/components/CommentThread.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -718,6 +719,11 @@ async function confirmDeleteTask() {
     deletingTask.value = false
   }
 }
+
+// Real-time: refresh task when it's updated by another user
+useRealtime('task_updated', (data) => {
+  if (data?.task === props.id) loadTask()
+})
 
 onMounted(() => {
   loadTask()

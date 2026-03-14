@@ -120,6 +120,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { call, getList, setValue } from '@/utils/frappe'
+import { useAutoRefresh } from '@/utils/realtime'
 import KanbanCard from '@/components/KanbanCard.vue'
 
 const router = useRouter()
@@ -207,7 +208,7 @@ async function onDrop(event, newStatus) {
   }
 }
 
-onMounted(async () => {
+async function loadMyTasks() {
   loading.value = true
   try {
     myTasks.value = await call('next_pms.api.crud.get_my_tasks', { limit: 200 })
@@ -216,7 +217,12 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+// Real-time: auto-refresh when tasks are updated by anyone
+useAutoRefresh(() => loadMyTasks())
+
+onMounted(() => loadMyTasks())
 </script>
 
 <style scoped>

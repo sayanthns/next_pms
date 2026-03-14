@@ -379,6 +379,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/store/projects'
 import { useSettingsStore } from '@/store/settings'
 import { call } from '@/utils/frappe'
+import { useAutoRefresh, joinRoom, leaveRoom } from '@/utils/realtime'
 import ProjectDashboard from '@/views/ProjectDashboard.vue'
 import ProjectBoard from '@/views/ProjectBoard.vue'
 import ProjectTaskList from '@/views/ProjectTaskList.vue'
@@ -779,7 +780,14 @@ async function loadProject() {
   }
 }
 
+// Real-time: auto-refresh when tasks change in this project
+useAutoRefresh(() => {
+  loadProject()
+}, { project: props.id })
+
 onMounted(async () => {
+  // Join the project room for Socket.IO events
+  joinRoom(`project_${props.id}`)
   await loadProject()
   loadUsers()
   // If arriving directly on a tab that needs data, load it now

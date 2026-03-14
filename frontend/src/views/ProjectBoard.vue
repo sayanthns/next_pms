@@ -85,6 +85,7 @@ import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/store/tasks'
 import { useTimerStore } from '@/store/timer'
 import { useSettingsStore } from '@/store/settings'
+import { useRealtime } from '@/utils/realtime'
 import KanbanCard from '@/components/KanbanCard.vue'
 import CreateTaskModal from '@/components/CreateTaskModal.vue'
 
@@ -124,6 +125,14 @@ const columns = [
   { status: 'In Review', label: 'In Review', color: '#3b82f6' },
   { status: 'Done', label: 'Done', color: '#10b981' },
 ]
+
+// Real-time: refresh board when tasks change via Socket.IO
+useRealtime('task_updated', (data) => {
+  if (data?.project === props.id) taskStore.fetchTasks(props.id)
+})
+useRealtime('task_assigned', (data) => {
+  if (data?.project === props.id) taskStore.fetchTasks(props.id)
+})
 
 onMounted(() => {
   taskStore.fetchTasks(props.id)

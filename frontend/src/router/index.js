@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import DashboardView from "@/views/DashboardView.vue";
-import ProjectList from "@/views/ProjectList.vue";
-import ProjectDetailView from "@/views/ProjectDetailView.vue";
-import TaskDetailView from "@/views/TaskDetailView.vue";
-import TeamView from "@/views/TeamView.vue";
-import UserDetailView from "@/views/UserDetailView.vue";
-import ReportsView from "@/views/ReportsView.vue";
+// Lazy-load all views for faster initial page load
+const DashboardView = () => import("@/views/DashboardView.vue");
+const ProjectList = () => import("@/views/ProjectList.vue");
+const ProjectDetailView = () => import("@/views/ProjectDetailView.vue");
+const TaskDetailView = () => import("@/views/TaskDetailView.vue");
+const TeamView = () => import("@/views/TeamView.vue");
+const UserDetailView = () => import("@/views/UserDetailView.vue");
+const ReportsView = () => import("@/views/ReportsView.vue");
 
 const routes = [
   {

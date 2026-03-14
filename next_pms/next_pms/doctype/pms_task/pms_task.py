@@ -64,20 +64,32 @@ class PMSTask(Document):
 def on_task_update(doc, method):
     """Called via hooks doc_events. Publishes real-time events and sends
     email notifications when tasks are updated or assigned."""
-    # Publish general task_updated event to the project room
+    event_data = {
+        "task": doc.name,
+        "task_title": doc.task_title,
+        "status": doc.status,
+        "project": doc.project,
+        "assigned_to": doc.assigned_to,
+        "priority": doc.priority,
+        "modified_by": frappe.session.user,
+    }
+
+    # Publish to the project room (for project detail / board views)
     frappe.publish_realtime(
-        "task_updated",
-        {
-            "task": doc.name,
-            "task_title": doc.task_title,
-            "status": doc.status,
-            "project": doc.project,
-            "assigned_to": doc.assigned_to,
-            "priority": doc.priority,
-            "modified_by": frappe.session.user,
-        },
-        room=f"project_{doc.project}",
+        "task_updated", event_data, room=f"project_{doc.project}",
     )
+
+    # Also publish to all assignees (for dashboard / my-tasks views)
+    notified_users = set()
+    for assignee in doc.get("assignees", []):
+        if assignee.user and assignee.user != frappe.session.user:
+            notified_users.add(assignee.user)
+    if doc.assigned_to and doc.assigned_to != frappe.session.user:
+        notified_users.add(doc.assigned_to)
+    if doc.reviewer and doc.reviewer != frappe.session.user:
+        notified_users.add(doc.reviewer)
+    for user in notified_users:
+        frappe.publish_realtime("task_updated", event_data, user=user)
 
     # Detect status change
     previous_status = getattr(doc, "_previous_status", None)

@@ -225,6 +225,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { call, getList } from '@/utils/frappe'
 import { useSettingsStore } from '@/store/settings'
 import { eventBus, EVENTS } from '@/utils/eventBus'
+import { useRealtime } from '@/utils/realtime'
 
 const settingsStore = useSettingsStore()
 const loading = ref(true)
@@ -237,6 +238,10 @@ const projectFilter = ref('all')
 function onDataChanged() {
   loadDashboard()
 }
+
+// Real-time: refresh when tasks change via Socket.IO (from other users)
+useRealtime('task_updated', onDataChanged)
+useRealtime('task_assigned', onDataChanged)
 
 onMounted(async () => {
   await loadDashboard()
