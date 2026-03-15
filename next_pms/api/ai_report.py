@@ -7,15 +7,17 @@ from collections import defaultdict
 
 
 @frappe.whitelist()
-def generate_daily_report():
+def generate_daily_report(test=False):
     """Generate and send the AI daily work summary email.
     Called by scheduler daily or manually via the settings UI.
     """
+    is_test = str(test).lower() in ("true", "1", "yes")
+
     settings = _get_ai_settings()
     if not settings:
         return {"success": False, "message": "AI settings not configured."}
 
-    if not settings.get("daily_report_enabled") and not frappe.flags.force_ai_report:
+    if not settings.get("daily_report_enabled") and not is_test and not frappe.flags.force_ai_report:
         return {"success": False, "message": "Daily report is disabled."}
 
     if not settings.get("ai_api_key"):

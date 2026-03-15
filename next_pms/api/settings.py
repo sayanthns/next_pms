@@ -105,7 +105,7 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
         doc.ai_model = model
 
     if enabled is not None:
-        doc.daily_report_enabled = 1 if enabled in (True, "true", "1", 1) else 0
+        doc.daily_report_enabled = 1 if str(enabled).lower() in ("true", "1", "yes") else 0
 
     if recipient is not None:
         doc.daily_report_recipient = recipient

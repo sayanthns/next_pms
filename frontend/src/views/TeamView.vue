@@ -598,7 +598,7 @@ async function saveAiSettings() {
 async function sendTestReport() {
   aiTesting.value = true
   try {
-    const result = await call('next_pms.api.ai_report.generate_daily_report')
+    const result = await call('next_pms.api.ai_report.generate_daily_report', { test: true })
     if (result && result.success) {
       showToast('Test report sent! Check your email.')
     } else {
