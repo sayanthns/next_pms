@@ -573,19 +573,18 @@ async function loadAiSettings() {
 async function saveAiSettings() {
   aiSaving.value = true
   try {
-    await call('next_pms.api.settings.save_ai_settings', {
+    const result = await call('next_pms.api.settings.save_ai_settings', {
       provider: aiSettings.value.provider,
       api_key: aiSettings.value.apiKey || '',
       model: aiSettings.value.model,
-      enabled: aiSettings.value.enabled,
+      enabled: aiSettings.value.enabled ? 'true' : 'false',
       recipient: aiSettings.value.recipient,
       additional_recipients: aiSettings.value.additionalRecipients || '',
       detail_level: aiSettings.value.detailLevel || 'Detailed',
     })
-    if (aiSettings.value.apiKey) {
-      aiSettings.value.apiKeySet = true
-      aiSettings.value.apiKey = ''
-    }
+    aiSettings.value.apiKey = ''
+    // Reload settings from server to confirm save
+    await loadAiSettings()
     showToast('AI settings saved successfully')
   } catch (e) {
     console.error('Failed to save AI settings:', e)
