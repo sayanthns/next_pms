@@ -63,7 +63,9 @@ def get_ai_settings():
         frappe.throw("Only administrators can view AI settings.", frappe.PermissionError)
 
     try:
-        doc = frappe.get_single("PMS AI Settings")
+        # Clear singleton cache to get fresh data
+        frappe.clear_document_cache("PMS AI Settings", "PMS AI Settings")
+        doc = frappe.get_doc("PMS AI Settings")
         has_key = bool(doc.ai_api_key)
         return {
             "ai_provider": doc.ai_provider or "Claude",
@@ -71,8 +73,8 @@ def get_ai_settings():
             "ai_model": doc.ai_model or "claude-sonnet-4-20250514",
             "daily_report_enabled": bool(doc.daily_report_enabled),
             "daily_report_recipient": doc.daily_report_recipient or "",
-            "daily_report_recipients": doc.daily_report_recipients or "",
-            "report_detail_level": doc.report_detail_level or "Detailed",
+            "daily_report_recipients": getattr(doc, "daily_report_recipients", "") or "",
+            "report_detail_level": getattr(doc, "report_detail_level", "Detailed") or "Detailed",
         }
     except Exception:
         return {
@@ -93,7 +95,8 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
     if not is_admin_user():
         frappe.throw("Only administrators can modify AI settings.", frappe.PermissionError)
 
-    doc = frappe.get_single("PMS AI Settings")
+    frappe.clear_document_cache("PMS AI Settings", "PMS AI Settings")
+    doc = frappe.get_doc("PMS AI Settings")
 
     if provider is not None:
         doc.ai_provider = provider
@@ -111,12 +114,15 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
         doc.daily_report_recipient = recipient
 
     if additional_recipients is not None:
-        doc.daily_report_recipients = additional_recipients
+        if hasattr(doc, "daily_report_recipients"):
+            doc.daily_report_recipients = additional_recipients
 
     if detail_level is not None:
-        doc.report_detail_level = detail_level
+        if hasattr(doc, "report_detail_level"):
+            doc.report_detail_level = detail_level
 
     doc.save(ignore_permissions=True)
     frappe.db.commit()
+    frappe.clear_document_cache("PMS AI Settings", "PMS AI Settings")
 
     return {"success": True, "message": "AI settings saved."}

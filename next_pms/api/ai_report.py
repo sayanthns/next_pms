@@ -67,15 +67,16 @@ def generate_daily_report(test=False):
 def _get_ai_settings():
     """Read AI settings from the Single DocType."""
     try:
-        doc = frappe.get_single("PMS AI Settings")
+        frappe.clear_document_cache("PMS AI Settings", "PMS AI Settings")
+        doc = frappe.get_doc("PMS AI Settings")
         return {
             "ai_provider": doc.ai_provider or "Claude",
             "ai_api_key": doc.get_password("ai_api_key") if doc.ai_api_key else None,
             "ai_model": doc.ai_model or "claude-sonnet-4-20250514",
             "daily_report_enabled": bool(doc.daily_report_enabled),
             "daily_report_recipient": doc.daily_report_recipient or "",
-            "daily_report_recipients": doc.daily_report_recipients or "",
-            "report_detail_level": doc.report_detail_level or "Detailed",
+            "daily_report_recipients": getattr(doc, "daily_report_recipients", "") or "",
+            "report_detail_level": getattr(doc, "report_detail_level", "Detailed") or "Detailed",
         }
     except Exception:
         return None
