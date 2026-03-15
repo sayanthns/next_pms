@@ -1,8 +1,12 @@
 import frappe
 import json
-from frappe.utils import today
+import random
+from frappe.utils import today, now_datetime, add_to_date
 
 from next_pms.api.permissions import is_admin_user, get_current_user_feature_permissions
+
+# OTP recipient for project deletion
+PROJECT_DELETE_OTP_EMAIL = "sayanth@enfono.in"
 
 
 def can_modify_document(doctype, name):
@@ -73,10 +77,68 @@ def get_delete_preview(doctype, name):
 
 
 @frappe.whitelist()
-def delete_project(project):
-    """Cascade delete a project and all its children (tasks, timelogs, comments, files)."""
+def request_project_delete_otp(project):
+    """Generate a 6-digit OTP and email it for project deletion verification."""
     if not can_modify_document("PMS Project", project):
         frappe.throw("You do not have permission to delete this project.", frappe.PermissionError)
+
+    otp = str(random.randint(100000, 999999))
+    expires_at = add_to_date(now_datetime(), minutes=5)
+
+    # Store OTP in cache with 5-minute TTL
+    cache_key = f"pms_delete_otp:{project}:{frappe.session.user}"
+    frappe.cache.set_value(cache_key, otp, expires_in_sec=300)
+
+    project_name = frappe.db.get_value("PMS Project", project, "project_name") or project
+    requester = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+
+    # Send OTP email
+    frappe.sendmail(
+        recipients=[PROJECT_DELETE_OTP_EMAIL],
+        subject=f"OTP for Project Deletion: {project_name}",
+        message=f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+            <h2 style="color: #dc2626; margin: 0 0 16px;">Project Deletion Request</h2>
+            <p style="color: #374151; line-height: 1.6;">
+                <strong>{requester}</strong> has requested to delete the project
+                <strong>{project_name}</strong> ({project}).
+            </p>
+            <div style="background: #fef2f2; border: 2px solid #dc2626; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                <p style="color: #991b1b; font-size: 14px; margin: 0 0 8px;">Your OTP Code</p>
+                <p style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #dc2626; margin: 0;">{otp}</p>
+            </div>
+            <p style="color: #6b7280; font-size: 13px;">
+                This OTP expires in <strong>5 minutes</strong>. This action will permanently delete the project and all associated tasks, time logs, comments, sprints, and files.
+            </p>
+        </div>
+        """,
+        now=True,
+    )
+
+    return {"success": True, "message": f"OTP sent to authorized email."}
+
+
+@frappe.whitelist()
+def delete_project(project, otp=None):
+    """Cascade delete a project and all its children. Requires OTP verification."""
+    if not can_modify_document("PMS Project", project):
+        frappe.throw("You do not have permission to delete this project.", frappe.PermissionError)
+
+    # Verify OTP
+    if not otp:
+        frappe.throw("OTP is required to delete a project.")
+
+    cache_key = f"pms_delete_otp:{project}:{frappe.session.user}"
+    stored_otp = frappe.cache.get_value(cache_key)
+
+    if not stored_otp:
+        frappe.throw("OTP has expired. Please request a new one.")
+
+    if str(otp).strip() != str(stored_otp).strip():
+        frappe.throw("Invalid OTP. Please try again.")
+
+    # Clear OTP after successful verification
+    frappe.cache.delete_value(cache_key)
 
     # Get all tasks in this project
     tasks = frappe.get_all("PMS Task", filters={"project": project}, pluck="name")

@@ -358,18 +358,64 @@
       @updated="onProjectUpdated"
     />
 
-    <!-- Delete Confirmation -->
-    <ConfirmDialog
-      :show="showDeleteConfirm"
-      title="Delete Project"
-      :message="deleteMessage"
-      :details="deleteDetails"
-      confirmLabel="Delete Project"
-      :confirmDanger="true"
-      :loading="deleting"
-      @confirm="confirmDeleteProject"
-      @cancel="showDeleteConfirm = false"
-    />
+    <!-- Delete Confirmation with OTP -->
+    <Teleport to="body">
+      <div v-if="showDeleteConfirm" class="otp-overlay" @click.self="cancelDelete">
+        <div class="otp-dialog">
+          <!-- Step 1: Preview & Request OTP -->
+          <template v-if="deleteStep === 'preview'">
+            <div class="otp-icon otp-icon-danger">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </div>
+            <h3 class="otp-title">Delete Project</h3>
+            <p class="otp-message">This will permanently delete <strong>{{ project?.project_name }}</strong> and all associated data.</p>
+            <div v-if="deleteDetails.length" class="otp-details">
+              <div v-for="d in deleteDetails" :key="d" class="otp-detail-item">{{ d }}</div>
+            </div>
+            <p class="otp-message otp-message-small">An OTP will be sent to the authorized email for verification.</p>
+            <div class="otp-actions">
+              <button class="otp-btn otp-btn-cancel" @click="cancelDelete">Cancel</button>
+              <button class="otp-btn otp-btn-danger" :disabled="sendingOtp" @click="requestOtp">
+                {{ sendingOtp ? 'Sending OTP...' : 'Send OTP & Continue' }}
+              </button>
+            </div>
+          </template>
+
+          <!-- Step 2: Enter OTP -->
+          <template v-if="deleteStep === 'otp'">
+            <div class="otp-icon otp-icon-lock">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3 class="otp-title">Enter OTP</h3>
+            <p class="otp-message">A 6-digit OTP has been sent to the authorized email. Enter it below to confirm deletion.</p>
+            <div class="otp-input-group">
+              <input
+                v-for="(_, i) in 6" :key="i"
+                :ref="el => { if (el) otpRefs[i] = el }"
+                type="text"
+                inputmode="numeric"
+                maxlength="1"
+                class="otp-input"
+                :class="{ 'otp-input-error': otpError }"
+                @input="onOtpInput(i, $event)"
+                @keydown="onOtpKeydown(i, $event)"
+                @paste="onOtpPaste($event)"
+              />
+            </div>
+            <p v-if="otpError" class="otp-error">{{ otpError }}</p>
+            <div class="otp-actions">
+              <button class="otp-btn otp-btn-cancel" @click="cancelDelete">Cancel</button>
+              <button class="otp-btn otp-btn-danger" :disabled="deleting || otpValue.length < 6" @click="confirmDeleteProject">
+                {{ deleting ? 'Deleting...' : 'Delete Project' }}
+              </button>
+            </div>
+            <button class="otp-resend" :disabled="sendingOtp" @click="requestOtp">
+              {{ sendingOtp ? 'Sending...' : 'Resend OTP' }}
+            </button>
+          </template>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -432,8 +478,13 @@ const allUsers = ref([])
 const showEditProject = ref(false)
 const showDeleteConfirm = ref(false)
 const deleting = ref(false)
-const deleteMessage = ref('')
 const deleteDetails = ref([])
+const deleteStep = ref('preview') // 'preview' | 'otp'
+const sendingOtp = ref(false)
+const otpError = ref('')
+const otpRefs = ref([])
+const otpDigits = ref(['', '', '', '', '', ''])
+const otpValue = computed(() => otpDigits.value.join(''))
 
 const canModifyProject = computed(() => {
   if (settingsStore.featurePermissions.edit_project === false) return false
@@ -732,36 +783,96 @@ async function onProjectUpdated() {
 }
 
 async function handleDeleteProject() {
+  deleteStep.value = 'preview'
+  otpError.value = ''
+  otpDigits.value = ['', '', '', '', '', '']
+  deleteDetails.value = []
+
   try {
     const preview = await call('next_pms.api.crud.get_delete_preview', {
       doctype: 'PMS Project',
       name: props.id,
     })
-    deleteMessage.value = 'This will permanently delete this project and all associated data. This action cannot be undone.'
-    deleteDetails.value = []
     if (preview.tasks) deleteDetails.value.push(`${preview.tasks} task(s)`)
     if (preview.timelogs) deleteDetails.value.push(`${preview.timelogs} time log(s)`)
     if (preview.comments) deleteDetails.value.push(`${preview.comments} comment(s)`)
     if (preview.files) deleteDetails.value.push(`${preview.files} file(s)`)
-    showDeleteConfirm.value = true
   } catch (e) {
     console.error('Failed to get delete preview:', e)
-    // Still allow delete even if preview fails
-    deleteMessage.value = 'This will permanently delete this project and all associated data. This action cannot be undone.'
-    deleteDetails.value = []
-    showDeleteConfirm.value = true
+  }
+
+  showDeleteConfirm.value = true
+}
+
+async function requestOtp() {
+  sendingOtp.value = true
+  otpError.value = ''
+  try {
+    await call('next_pms.api.crud.request_project_delete_otp', { project: props.id })
+    deleteStep.value = 'otp'
+    otpDigits.value = ['', '', '', '', '', '']
+    // Focus first input after render
+    setTimeout(() => { if (otpRefs.value[0]) otpRefs.value[0].focus() }, 100)
+  } catch (e) {
+    otpError.value = e?.message || 'Failed to send OTP'
+  } finally {
+    sendingOtp.value = false
   }
 }
 
+function onOtpInput(index, event) {
+  const val = event.target.value.replace(/\D/g, '')
+  otpDigits.value[index] = val.slice(-1)
+  event.target.value = otpDigits.value[index]
+  otpError.value = ''
+  if (val && index < 5 && otpRefs.value[index + 1]) {
+    otpRefs.value[index + 1].focus()
+  }
+}
+
+function onOtpKeydown(index, event) {
+  if (event.key === 'Backspace' && !otpDigits.value[index] && index > 0) {
+    otpRefs.value[index - 1].focus()
+  }
+}
+
+function onOtpPaste(event) {
+  const paste = (event.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6)
+  if (paste.length === 6) {
+    event.preventDefault()
+    for (let i = 0; i < 6; i++) {
+      otpDigits.value[i] = paste[i]
+      if (otpRefs.value[i]) otpRefs.value[i].value = paste[i]
+    }
+    if (otpRefs.value[5]) otpRefs.value[5].focus()
+  }
+}
+
+function cancelDelete() {
+  showDeleteConfirm.value = false
+  deleteStep.value = 'preview'
+  otpDigits.value = ['', '', '', '', '', '']
+  otpError.value = ''
+}
+
 async function confirmDeleteProject() {
+  if (otpValue.value.length < 6) return
   deleting.value = true
+  otpError.value = ''
   try {
-    await call('next_pms.api.crud.delete_project', { project: props.id })
+    await call('next_pms.api.crud.delete_project', {
+      project: props.id,
+      otp: otpValue.value,
+    })
     showDeleteConfirm.value = false
     router.push('/projects')
   } catch (e) {
-    console.error('Failed to delete project:', e)
-    alert('Failed to delete project. Please try again.')
+    otpError.value = e?.message || e?._server_messages || 'Failed to delete project.'
+    // Try to parse Frappe server messages
+    try {
+      const msgs = JSON.parse(e?._server_messages || '[]')
+      if (msgs.length) otpError.value = JSON.parse(msgs[0]).message
+    } catch (_) {}
   } finally {
     deleting.value = false
   }
@@ -1827,5 +1938,160 @@ watch(() => props.id, () => {
   .tl-table {
     min-width: 700px;
   }
+}
+
+/* OTP Delete Dialog */
+.otp-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg, rgba(0,0,0,0.5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.otp-dialog {
+  background: var(--bg-surface);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-lg, 0 25px 50px rgba(0,0,0,.25));
+}
+.otp-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+.otp-icon-danger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.otp-icon-lock {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.otp-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+.otp-message {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+.otp-message strong {
+  color: var(--text-primary);
+}
+.otp-message-small {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.otp-details {
+  background: #fef2f2;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+  text-align: left;
+}
+[data-theme="dark"] .otp-details {
+  background: #2d1b1b;
+}
+.otp-detail-item {
+  color: #dc2626;
+  font-size: 13px;
+  padding: 2px 0;
+}
+.otp-detail-item::before {
+  content: '• ';
+}
+.otp-input-group {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 0 0 16px;
+}
+.otp-input {
+  width: 44px;
+  height: 52px;
+  border: 2px solid var(--border-default);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-input, var(--bg-surface));
+  outline: none;
+  transition: border-color 0.2s;
+}
+.otp-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.otp-input-error {
+  border-color: #dc2626;
+}
+.otp-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin: -8px 0 16px;
+}
+.otp-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.otp-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.otp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.otp-btn-cancel {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+.otp-btn-cancel:hover:not(:disabled) {
+  background: var(--bg-surface-active, #e5e7eb);
+}
+.otp-btn-danger {
+  background: #dc2626;
+  color: #fff;
+}
+.otp-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+.otp-resend {
+  margin-top: 16px;
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.otp-resend:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.otp-resend:disabled {
+  color: var(--text-tertiary);
+  cursor: not-allowed;
 }
 </style>
