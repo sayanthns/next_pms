@@ -746,7 +746,10 @@ async function handleDeleteProject() {
     showDeleteConfirm.value = true
   } catch (e) {
     console.error('Failed to get delete preview:', e)
-    alert('Failed to check project dependencies.')
+    // Still allow delete even if preview fails
+    deleteMessage.value = 'This will permanently delete this project and all associated data. This action cannot be undone.'
+    deleteDetails.value = []
+    showDeleteConfirm.value = true
   }
 }
 

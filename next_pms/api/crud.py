@@ -49,10 +49,11 @@ def get_delete_preview(doctype, name):
 
     if doctype == "PMS Project":
         tasks = frappe.get_all("PMS Task", filters={"project": name}, pluck="name")
-        timelogs = frappe.db.count("PMS Time Log", {"project": name})
+        timelogs = 0
         comments = 0
         files_count = frappe.db.count("File", {"attached_to_doctype": "PMS Project", "attached_to_name": name})
         for t in tasks:
+            timelogs += frappe.db.count("PMS Time Log", {"task": t})
             comments += frappe.db.count("PMS Comment", {"task": t})
             files_count += frappe.db.count("File", {"attached_to_doctype": "PMS Task", "attached_to_name": t})
         result["tasks"] = len(tasks)
@@ -80,12 +81,7 @@ def delete_project(project):
     # Get all tasks in this project
     tasks = frappe.get_all("PMS Task", filters={"project": project}, pluck="name")
 
-    # Delete timelogs for the project
-    timelogs = frappe.get_all("PMS Time Log", filters={"project": project}, pluck="name")
-    for tl in timelogs:
-        frappe.delete_doc("PMS Time Log", tl, force=True, ignore_permissions=True)
-
-    # Delete comments and files for each task, then the tasks
+    # Delete timelogs, comments, files for each task, then the tasks
     for task_name in tasks:
         _delete_task_children(task_name)
         frappe.delete_doc("PMS Task", task_name, force=True, ignore_permissions=True)
