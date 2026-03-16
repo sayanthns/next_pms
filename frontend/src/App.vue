@@ -182,6 +182,18 @@
         You are offline. Some features may be unavailable.
       </div>
 
+      <!-- Push Notification Banner -->
+      <div v-if="notificationStore.showPushBanner" class="push-banner">
+        <div class="push-banner-content">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Enable push notifications to stay updated on tasks</span>
+        </div>
+        <div class="push-banner-actions">
+          <button class="push-banner-enable" @click="enablePush">Enable</button>
+          <button class="push-banner-dismiss" @click="notificationStore.dismissPushBanner()">Later</button>
+        </div>
+      </div>
+
       <!-- Global timer bar -->
       <div v-if="timerStore.isRunning" class="global-timer-bar">
         <div class="timer-bar-info">
@@ -445,6 +457,13 @@ function formatCheckinTime(dt) {
   if (!dt) return ''
   const date = new Date(dt)
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+async function enablePush() {
+  const success = await notificationStore.subscribeToPush()
+  if (!success) {
+    notificationStore.dismissPushBanner()
+  }
 }
 
 async function handleGlobalStop() {
@@ -1099,6 +1118,59 @@ body {
 
 .offline-banner svg {
   flex-shrink: 0;
+}
+
+/* Push Notification Banner */
+.push-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+  border-bottom: 1px solid #bfdbfe;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #1e40af;
+}
+.push-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.push-banner-content svg {
+  flex-shrink: 0;
+}
+.push-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.push-banner-enable {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.push-banner-enable:hover {
+  background: #1d4ed8;
+}
+.push-banner-dismiss {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+}
+.push-banner-dismiss:hover {
+  background: rgba(0,0,0,0.05);
 }
 
 /* ---- Main Content ---- */

@@ -119,13 +119,21 @@ export const useNotificationStore = defineStore('notifications', () => {
   let refreshInterval = null
   let _visibilityHandler = null
 
+  const pushSupported = ref(false)
+  const pushSubscribed = ref(false)
+  const pushDismissed = ref(localStorage.getItem('pms_push_dismissed') === '1')
+
   async function subscribeToPush() {
     try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false
+
+      // Request notification permission (required as user gesture on iOS)
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') return false
 
       // Get VAPID public key from server
       const vapidKey = await call('next_pms.api.push.get_vapid_public_key')
-      if (!vapidKey) return
+      if (!vapidKey) return false
 
       // Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready
@@ -152,18 +160,52 @@ export const useNotificationStore = defineStore('notifications', () => {
       await call('next_pms.api.push.save_push_subscription', {
         subscription: JSON.stringify(subscription.toJSON()),
       })
+      pushSubscribed.value = true
+      return true
     } catch (e) {
       console.warn('Push subscription failed:', e)
+      return false
     }
   }
 
+  async function checkPushState() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+      pushSupported.value = true
+
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready
+        const sub = await reg.pushManager.getSubscription()
+        if (sub) {
+          pushSubscribed.value = true
+        }
+      }
+    } catch (e) {
+      // Silently fail
+    }
+  }
+
+  function dismissPushBanner() {
+    pushDismissed.value = true
+    localStorage.setItem('pms_push_dismissed', '1')
+  }
+
+  // Whether to show the "Enable Notifications" banner
+  const showPushBanner = computed(() => {
+    return pushSupported.value && !pushSubscribed.value && !pushDismissed.value
+  })
+
   function startAutoRefresh() {
-    requestNotificationPermission()
     fetchNotifications()
     _startPolling()
 
-    // Subscribe to push notifications (non-blocking)
-    subscribeToPush()
+    // Check push notification state (non-blocking)
+    checkPushState()
+
+    // Auto-subscribe if permission already granted (non-blocking)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      subscribeToPush()
+    }
 
     // Pause polling when tab is hidden, resume when visible
     _visibilityHandler = () => {
@@ -235,5 +277,9 @@ export const useNotificationStore = defineStore('notifications', () => {
     markAllRead,
     startAutoRefresh,
     stopAutoRefresh,
+    subscribeToPush,
+    showPushBanner,
+    pushSubscribed,
+    dismissPushBanner,
   }
 })
