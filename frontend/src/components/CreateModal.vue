@@ -174,5 +174,8 @@ defineEmits(['close', 'submit'])
   .modal-panel {
     width: 100%;
   }
+  .modal-footer {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
 }
 </style>

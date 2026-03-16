@@ -270,12 +270,30 @@
           </div>
 
           <!-- Notifications -->
-          <div class="more-sheet-item" @click.stop="notificationStore.unreadCount > 0 && notificationStore.markAllRead()">
+          <div class="more-sheet-item" @click.stop="mobileNotifOpen = !mobileNotifOpen">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             <span>Notifications</span>
             <span v-if="notificationStore.unreadCount > 0" class="more-sheet-badge">
               {{ notificationStore.unreadCount > 9 ? '9+' : notificationStore.unreadCount }}
             </span>
+            <svg :class="{ 'chevron-open': mobileNotifOpen }" class="more-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div v-if="mobileNotifOpen" class="mobile-notif-list">
+            <div v-if="notificationStore.notifications.length === 0" class="mobile-notif-empty">No notifications</div>
+            <div
+              v-for="n in notificationStore.notifications.slice(0, 10)"
+              :key="n.name"
+              class="mobile-notif-item"
+              @click="handleMobileNotifClick(n)"
+            >
+              <div class="mobile-notif-msg">{{ n.subject }}</div>
+              <div class="mobile-notif-meta">{{ timeAgo(n.creation) }}</div>
+            </div>
+            <button
+              v-if="notificationStore.unreadCount > 0"
+              class="mobile-notif-mark-all"
+              @click.stop="notificationStore.markAllRead()"
+            >Mark all read</button>
           </div>
 
           <div class="more-sheet-divider"></div>
@@ -329,10 +347,12 @@ const sidebarCollapsed = ref(true)
 const showNotifications = ref(false)
 const showUserMenu = ref(false)
 const showMoreSheet = ref(false)
+const mobileNotifOpen = ref(false)
 
 // Auto-close More sheet on navigation
 watch(() => route.path, () => {
   showMoreSheet.value = false
+  mobileNotifOpen.value = false
 })
 // showCreateProject moved to ProjectList.vue
 const isDesktopCollapsed = ref(localStorage.getItem('pms-sidebar-collapsed') === 'true')
@@ -384,6 +404,17 @@ function timeAgo(dateString) {
 async function handleNotificationClick(n) {
   await notificationStore.markRead(n.name)
   showNotifications.value = false
+  if (n.document_type === 'PMS Task' && n.document_name) {
+    router.push(`/task/${n.document_name}`)
+  } else if (n.document_type === 'PMS Project' && n.document_name) {
+    router.push(`/project/${n.document_name}`)
+  }
+}
+
+async function handleMobileNotifClick(n) {
+  await notificationStore.markRead(n.name)
+  showMoreSheet.value = false
+  mobileNotifOpen.value = false
   if (n.document_type === 'PMS Task' && n.document_name) {
     router.push(`/task/${n.document_name}`)
   } else if (n.document_type === 'PMS Project' && n.document_name) {
@@ -1510,6 +1541,58 @@ body {
   .sheet-enter-from,
   .sheet-leave-to {
     transform: translateY(100%);
+  }
+
+  /* Mobile notification list */
+  .more-chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .more-chevron.chevron-open {
+    transform: rotate(180deg);
+  }
+  .mobile-notif-list {
+    padding: 0 12px 8px;
+  }
+  .mobile-notif-empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .mobile-notif-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .mobile-notif-item:active {
+    background: var(--bg-surface-hover);
+  }
+  .mobile-notif-msg {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+  .mobile-notif-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .mobile-notif-mark-all {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    border: none;
+    border-radius: 8px;
+    background: var(--bg-surface-hover);
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
   }
 }
 </style>

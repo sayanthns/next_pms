@@ -792,6 +792,14 @@ function statusBorderColor(status) {
 /* Responsive */
 @media (max-width: 768px) {
   .project-list { padding: 12px 0; }
+  .page-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
   .toolbar { flex-direction: column; align-items: stretch; }
   .toolbar-left { flex-direction: column; }
   .search-box { max-width: 100%; }

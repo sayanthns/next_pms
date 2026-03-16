@@ -418,4 +418,15 @@ function onStartTimer(task) {
 .column-empty p {
   margin: 0;
 }
+
+@media (max-width: 768px) {
+  .kanban-column {
+    flex: 0 0 85vw;
+    max-height: calc(100vh - 240px);
+  }
+  .kanban-container {
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 </style>
