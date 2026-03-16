@@ -87,8 +87,9 @@ def on_task_update(doc, method):
             notified_users.add(assignee.user)
     if doc.assigned_to and doc.assigned_to != frappe.session.user:
         notified_users.add(doc.assigned_to)
-    if doc.reviewer and doc.reviewer != frappe.session.user:
-        notified_users.add(doc.reviewer)
+    reviewer = getattr(doc, "reviewer", None)
+    if reviewer and reviewer != frappe.session.user:
+        notified_users.add(reviewer)
     for user in notified_users:
         frappe.publish_realtime("task_updated", event_data, user=user)
 
@@ -214,8 +215,9 @@ def _send_task_status_change_notifications(doc, old_status):
 
         # Notify the reviewer and project manager when In Review or Done
         if doc.status in ("In Review", "Done"):
-            if doc.reviewer and doc.reviewer not in recipients:
-                recipients.append(doc.reviewer)
+            reviewer = getattr(doc, "reviewer", None)
+            if reviewer and reviewer not in recipients:
+                recipients.append(reviewer)
             if doc.project:
                 pm = frappe.db.get_value("PMS Project", doc.project, "project_manager")
                 if pm and pm != changed_by and pm not in recipients:
