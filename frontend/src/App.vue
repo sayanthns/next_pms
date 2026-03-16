@@ -308,6 +308,12 @@
             >Mark all read</button>
           </div>
 
+          <!-- Enable Push Notifications -->
+          <div v-if="!notificationStore.pushSubscribed" class="more-sheet-item" @click="enablePush">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="12" y1="2" x2="12" y2="5"/></svg>
+            <span style="color: #2563eb; font-weight: 600;">Enable Push Notifications</span>
+          </div>
+
           <div class="more-sheet-divider"></div>
 
           <!-- User profile -->
