@@ -23,9 +23,6 @@ def get_project_files(project):
     )
 
     for f in files:
-        f["file_size_formatted"] = frappe.utils.formatters.format_value(
-            f["file_size"], {"fieldtype": "Int"}, doc=None
-        )
         f["uploaded_by"] = frappe.get_cached_value("User", f["owner"], "full_name") or f["owner"]
 
     return files
@@ -53,9 +50,6 @@ def get_task_files(task):
     )
 
     for f in files:
-        f["file_size_formatted"] = frappe.utils.formatters.format_value(
-            f["file_size"], {"fieldtype": "Int"}, doc=None
-        )
         f["uploaded_by"] = frappe.get_cached_value("User", f["owner"], "full_name") or f["owner"]
 
     return files
@@ -96,11 +90,20 @@ def upload_project_file(project):
         is_private=1,
     )
 
+    # Ensure attachment fields are set correctly
+    if file_doc.attached_to_doctype != "PMS Project" or file_doc.attached_to_name != project:
+        file_doc.attached_to_doctype = "PMS Project"
+        file_doc.attached_to_name = project
+        file_doc.save(ignore_permissions=True)
+
+    frappe.db.commit()
+
     return {
         "name": file_doc.name,
         "file_name": file_doc.file_name,
         "file_url": file_doc.file_url,
         "file_size": file_doc.file_size,
+        "owner": file_doc.owner,
     }
 
 
