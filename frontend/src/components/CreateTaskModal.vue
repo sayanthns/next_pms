@@ -153,12 +153,7 @@
 
       <div class="form-group">
         <label class="form-label">Description</label>
-        <textarea
-          v-model="form.description"
-          class="form-input form-textarea"
-          placeholder="Add task description, requirements, acceptance criteria..."
-          rows="4"
-        ></textarea>
+        <RichTextEditor v-model="form.description" />
       </div>
 
       <div class="form-group">
@@ -193,6 +188,7 @@
 import { ref, watch, nextTick, computed } from 'vue'
 import { call } from '@/utils/frappe'
 import CreateModal from './CreateModal.vue'
+import RichTextEditor from './RichTextEditor.vue'
 import { eventBus, EVENTS } from '@/utils/eventBus'
 
 const props = defineProps({
