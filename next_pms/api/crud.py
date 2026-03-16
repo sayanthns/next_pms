@@ -524,7 +524,7 @@ def create_task(
         "due_date": due_date,
         "task_type": task_type,
         "reviewer": reviewer,
-        "start_date": start_date or today(),
+        "start_date": start_date or (min(today(), due_date) if due_date else today()),
         "description": description or "",
         "assignees": [],
     }

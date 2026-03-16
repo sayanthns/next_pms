@@ -401,6 +401,8 @@ async function handleSubmit() {
     emit('created', result)
   } catch (e) {
     console.error('Failed to create task:', e)
+    const msg = e?.messages ? JSON.parse(e.messages)?.[0] : (e?.message || 'Failed to create task')
+    alert(typeof msg === 'string' ? msg : 'Failed to create task. Please try again.')
   } finally {
     saving.value = false
   }
