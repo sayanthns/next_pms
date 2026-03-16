@@ -119,7 +119,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { call, getList, setValue } from '@/utils/frappe'
+import { call, getList } from '@/utils/frappe'
 import { useAutoRefresh } from '@/utils/realtime'
 import KanbanCard from '@/components/KanbanCard.vue'
 
@@ -134,6 +134,7 @@ const filterStatus = ref('')
 const dragOverColumn = ref(null)
 
 const columns = [
+  { status: 'Backlog', label: 'Backlog', color: '#9ca3af' },
   { status: 'To Do', label: 'To Do', color: '#3b82f6' },
   { status: 'In Progress', label: 'In Progress', color: '#F59E0B' },
   { status: 'In Review', label: 'In Review', color: '#8b5cf6' },
@@ -200,8 +201,18 @@ async function onDrop(event, newStatus) {
     if (!data?.taskName) return
     const task = myTasks.value.find(t => t.name === data.taskName)
     if (task && task.status !== newStatus) {
+      const oldStatus = task.status
       task.status = newStatus
-      await setValue('PMS Task', data.taskName, 'status', newStatus)
+      try {
+        await call('next_pms.api.crud.update_task_status', {
+          task: data.taskName,
+          status: newStatus,
+        })
+      } catch (err) {
+        // Revert on failure
+        task.status = oldStatus
+        console.error('Status update failed:', err)
+      }
     }
   } catch (e) {
     console.error('Drop failed:', e)

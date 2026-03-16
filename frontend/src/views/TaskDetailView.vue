@@ -815,7 +815,15 @@ async function loadSubtasks() {
 
 async function onStatusChange(event) {
   const newStatus = event.target.value
-  await taskStore.updateTaskStatus(props.id, newStatus)
+  const oldStatus = task.value?.status
+  const success = await taskStore.updateTaskStatus(props.id, newStatus)
+  if (!success) {
+    // Revert select to old value if API failed
+    event.target.value = oldStatus
+  } else {
+    // Re-fetch task to ensure full sync
+    await taskStore.fetchTask(props.id)
+  }
 }
 
 async function onTimerStopped() {
@@ -926,13 +934,34 @@ async function handleAttachmentUpload(event) {
       formData.append('docname', props.id)
       formData.append('is_private', '1')
 
-      await fetch('/api/method/upload_file', {
+      const response = await fetch('/api/method/upload_file', {
         method: 'POST',
         headers: { 'X-Frappe-CSRF-Token': csrf },
         credentials: 'include',
         body: formData,
       })
+
+      // Read response to ensure upload completed and add file immediately
+      if (response.ok) {
+        try {
+          const result = await response.json()
+          const fileData = result?.message
+          if (fileData) {
+            attachments.value.unshift({
+              name: fileData.name,
+              file_name: fileData.file_name,
+              file_url: fileData.file_url,
+              file_size: fileData.file_size,
+              uploaded_by: fileData.owner || 'You',
+              creation: new Date().toISOString(),
+            })
+          }
+        } catch {
+          // Response parse failed, will reload below
+        }
+      }
     }
+    // Also reload from server to get complete data
     await loadAttachments()
   } catch (err) {
     console.error('Upload failed:', err)
