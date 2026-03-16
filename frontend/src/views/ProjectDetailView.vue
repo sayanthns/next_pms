@@ -311,7 +311,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="log in projectTimelogs" :key="log.name" :class="{ 'tl-row-running': log.is_running }">
+                <tr v-for="log in sortedProjectTimelogs" :key="log.name" :class="{ 'tl-row-running': log.is_running }">
                   <td>
                     <div class="tl-user-cell">
                       <span class="tl-user-avatar" :style="{ background: getAvatarColor(log.user) }">{{ getInitials(log.user_full_name || log.user) }}</span>
@@ -329,7 +329,10 @@
                     <span v-else>{{ log.end_time ? formatDateTime(log.end_time) : '-' }}</span>
                   </td>
                   <td class="tl-nowrap">
-                    <span v-if="log.duration_hours || log.duration_minutes">
+                    <span v-if="log.is_running" class="tl-running-elapsed">
+                      {{ liveElapsed(log.start_time) }}
+                    </span>
+                    <span v-else-if="log.duration_hours || log.duration_minutes">
                       {{ log.duration_hours || 0 }}h {{ log.duration_minutes ? (log.duration_minutes % 60) : 0 }}m
                     </span>
                     <span v-else class="tl-muted">-</span>
@@ -435,7 +438,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '@/store/projects'
 import { useSettingsStore } from '@/store/settings'
@@ -532,6 +535,29 @@ const timelogUserFilter = ref('')
 const timelogTaskFilter = ref('')
 const timelogUsers = ref([])
 const timelogTasks = ref([])
+
+// Live timer tick
+const nowTick = ref(Date.now())
+let tickInterval = null
+let refreshInterval = null
+
+const sortedProjectTimelogs = computed(() => {
+  return [...projectTimelogs.value].sort((a, b) => {
+    if (a.is_running && !b.is_running) return -1
+    if (!a.is_running && b.is_running) return 1
+    return 0
+  })
+})
+
+function liveElapsed(startTime) {
+  if (!startTime) return '00:00:00'
+  const startMs = new Date(startTime.replace(' ', 'T')).getTime()
+  const total = Math.max(0, Math.floor((nowTick.value - startMs) / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 const availableUsers = computed(() => {
   const existing = new Set((dashboard.value?.team_members || []).map(m => m.user))
@@ -974,6 +1000,19 @@ onMounted(async () => {
     loadProjectTimelogs()
     loadTimelogFilterOptions()
   }
+  // Tick every second for live elapsed timers
+  tickInterval = setInterval(() => { nowTick.value = Date.now() }, 1000)
+  // Auto-refresh timelogs every 30 seconds if on timelogs tab
+  refreshInterval = setInterval(() => {
+    if (activeTab.value === 'timelogs') {
+      loadProjectTimelogs()
+    }
+  }, 30000)
+})
+
+onBeforeUnmount(() => {
+  if (tickInterval) clearInterval(tickInterval)
+  if (refreshInterval) clearInterval(refreshInterval)
 })
 
 watch(() => props.id, () => {
@@ -1974,6 +2013,13 @@ watch(() => props.id, () => {
 .tl-tag-done {
   background: var(--color-primary-bg);
   color: var(--color-primary);
+}
+
+.tl-running-elapsed {
+  font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #10b981;
 }
 
 /* Empty State */

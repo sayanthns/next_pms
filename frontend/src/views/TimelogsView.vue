@@ -28,7 +28,7 @@
           </div>
           <div class="timer-card-elapsed">
             <span class="live-dot"></span>
-            {{ formatElapsed(timer.elapsed_seconds) }}
+            {{ liveElapsed(timer.start_time) }}
           </div>
         </div>
       </div>
@@ -113,7 +113,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="log in logs" :key="log.name" :class="{ 'row-running': log.is_running }">
+            <tr v-for="log in sortedLogs" :key="log.name" :class="{ 'row-running': log.is_running }">
               <td>
                 <div class="user-cell">
                   <span class="user-avatar-sm">{{ getInitials(log.user_full_name) }}</span>
@@ -139,7 +139,10 @@
                 <span v-else>{{ log.end_time ? formatDateTime(log.end_time) : '-' }}</span>
               </td>
               <td class="text-nowrap">
-                <span v-if="log.duration_hours || log.duration_minutes">
+                <span v-if="log.is_running" class="running-elapsed">
+                  {{ liveElapsed(log.start_time) }}
+                </span>
+                <span v-else-if="log.duration_hours || log.duration_minutes">
                   {{ log.duration_hours || 0 }}h {{ log.duration_minutes ? (log.duration_minutes % 60) : 0 }}m
                 </span>
                 <span v-else class="text-muted">-</span>
@@ -188,7 +191,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { call, getList } from '@/utils/frappe'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useSettingsStore } from '@/store/settings'
@@ -224,6 +227,30 @@ const filters = reactive({
 })
 
 const canViewAllTimelogs = computed(() => settingsStore.featurePermissions.view_all_timelogs !== false)
+
+// Live timer tick
+const nowTick = ref(Date.now())
+let tickInterval = null
+let refreshInterval = null
+
+// Sort running entries first
+const sortedLogs = computed(() => {
+  return [...logs.value].sort((a, b) => {
+    if (a.is_running && !b.is_running) return -1
+    if (!a.is_running && b.is_running) return 1
+    return 0
+  })
+})
+
+function liveElapsed(startTime) {
+  if (!startTime) return '00:00:00'
+  const startMs = new Date(startTime.replace(' ', 'T')).getTime()
+  const total = Math.max(0, Math.floor((nowTick.value - startMs) / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 const totalPages = computed(() => Math.ceil(totalCount.value / pageSize))
 
@@ -374,6 +401,18 @@ onMounted(async () => {
   await fetchFilterOptions()
   fetchLogs()
   fetchActiveTimers()
+  // Tick every second for live elapsed
+  tickInterval = setInterval(() => { nowTick.value = Date.now() }, 1000)
+  // Auto-refresh logs and active timers every 30 seconds
+  refreshInterval = setInterval(() => {
+    fetchLogs()
+    fetchActiveTimers()
+  }, 30000)
+})
+
+onBeforeUnmount(() => {
+  if (tickInterval) clearInterval(tickInterval)
+  if (refreshInterval) clearInterval(refreshInterval)
 })
 </script>
 
@@ -905,5 +944,12 @@ onMounted(async () => {
   font-weight: 600;
   background: var(--color-primary-bg);
   color: var(--color-primary);
+}
+
+.running-elapsed {
+  font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #10b981;
 }
 </style>
