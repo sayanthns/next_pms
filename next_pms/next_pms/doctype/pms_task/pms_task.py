@@ -162,6 +162,17 @@ def on_task_update(doc, method):
             user=doc.assigned_to,
         )
 
+        # Web Push notification for task assignment
+        from next_pms.api.push import send_push_to_users
+        task_url = f"/next-pms/task/{doc.name}"
+        send_push_to_users(
+            [doc.assigned_to],
+            title=f"Task Assigned: {doc.task_title}",
+            body=f"{assigned_by_name} assigned you a task",
+            url=task_url,
+            ignore_user=frappe.session.user,
+        )
+
 
 def _send_task_assigned_email(doc):
     """Send an email notification to the assigned user using the HTML template."""
@@ -273,6 +284,17 @@ def _send_task_status_change_notifications(doc, old_status):
                 },
                 user=user,
             )
+
+        # Web Push notifications for status change
+        from next_pms.api.push import send_push_to_users
+        push_url = f"/next-pms/task/{doc.name}"
+        send_push_to_users(
+            recipients,
+            title=f"Task {doc.status}: {doc.task_title}",
+            body=f"{changed_by_name} changed status to {doc.status}",
+            url=push_url,
+            ignore_user=changed_by,
+        )
 
     except Exception:
         frappe.log_error("PMS: Failed to send task status change notification")

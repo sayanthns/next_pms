@@ -1,1 +1,2 @@
-# next_pms has no additional Python dependencies beyond Frappe
+# next_pms dependencies
+pywebpush

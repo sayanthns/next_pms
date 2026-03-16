@@ -1,0 +1,58 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-03-16 22:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["user", "endpoint", "p256dh", "auth"],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "endpoint",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Endpoint",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "p256dh",
+   "fieldtype": "Small Text",
+   "label": "P256DH Key"
+  },
+  {
+   "fieldname": "auth",
+   "fieldtype": "Data",
+   "label": "Auth Key"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-03-16 22:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Next PMS",
+ "name": "PMS Push Subscription",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "track_changes": 0
+}

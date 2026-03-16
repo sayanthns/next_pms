@@ -110,10 +110,51 @@ export const useNotificationStore = defineStore('notifications', () => {
   let refreshInterval = null
   let _visibilityHandler = null
 
+  async function subscribeToPush() {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+
+      // Get VAPID public key from server
+      const vapidKey = await call('next_pms.api.push.get_vapid_public_key')
+      if (!vapidKey) return
+
+      // Wait for service worker to be ready
+      const registration = await navigator.serviceWorker.ready
+
+      // Check if already subscribed
+      let subscription = await registration.pushManager.getSubscription()
+      if (!subscription) {
+        // Convert VAPID key from base64url to Uint8Array
+        const padding = '='.repeat((4 - vapidKey.length % 4) % 4)
+        const base64 = (vapidKey + padding).replace(/-/g, '+').replace(/_/g, '/')
+        const rawData = atob(base64)
+        const applicationServerKey = new Uint8Array(rawData.length)
+        for (let i = 0; i < rawData.length; i++) {
+          applicationServerKey[i] = rawData.charCodeAt(i)
+        }
+
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey,
+        })
+      }
+
+      // Send subscription to server
+      await call('next_pms.api.push.save_push_subscription', {
+        subscription: JSON.stringify(subscription.toJSON()),
+      })
+    } catch (e) {
+      console.warn('Push subscription failed:', e)
+    }
+  }
+
   function startAutoRefresh() {
     requestNotificationPermission()
     fetchNotifications()
     _startPolling()
+
+    // Subscribe to push notifications (non-blocking)
+    subscribeToPush()
 
     // Pause polling when tab is hidden, resume when visible
     _visibilityHandler = () => {

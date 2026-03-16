@@ -86,6 +86,57 @@ async function cacheFirst(request, cacheName) {
   }
 }
 
+// ── Web Push Notifications ──────────────────────────────
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  let data;
+  try {
+    data = event.data.json();
+  } catch (e) {
+    data = { title: 'Next PMS', body: event.data.text() };
+  }
+
+  const options = {
+    body: data.body || '',
+    icon: data.icon || '/assets/next_pms/icons/icon-192x192.png',
+    badge: '/assets/next_pms/icons/icon-192x192.png',
+    tag: data.tag || 'pms-push-' + Date.now(),
+    data: { url: data.url || '/next-pms/' },
+    vibrate: [200, 100, 200],
+    requireInteraction: false,
+    actions: data.url ? [{ action: 'open', title: 'View' }] : [],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Next PMS', options)
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/next-pms/';
+  const fullUrl = new URL(url, self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Focus an existing window if one is open on the same origin
+      for (const client of windowClients) {
+        if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+          client.navigate(fullUrl);
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window
+      return clients.openWindow(fullUrl);
+    })
+  );
+});
+
+// ── Caching Strategies ──────────────────────────────────
+
 /**
  * Network-first for app shell: try network, update cache, fallback to cached shell.
  */
