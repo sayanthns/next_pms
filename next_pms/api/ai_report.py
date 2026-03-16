@@ -1,7 +1,7 @@
 import frappe
 import json
 import requests
-from frappe.utils import today, now_datetime, getdate, format_date
+from frappe.utils import today, now_datetime, getdate, format_date, add_days
 from next_pms.utils import get_pms_url
 from collections import defaultdict
 
@@ -27,8 +27,9 @@ def generate_daily_report(test=False):
     if not recipients:
         return {"success": False, "message": "No recipient email set."}
 
-    # Gather comprehensive work data
-    report_date = today()
+    # Gather comprehensive work data for YESTERDAY (report runs early morning,
+    # so the workday that just ended is the previous day)
+    report_date = str(add_days(today(), -1))
     work_data = get_daily_work_summary(report_date)
     user_metrics = _build_user_metrics(report_date)
     process_mining = _get_process_mining_data(report_date)

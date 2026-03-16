@@ -43,7 +43,11 @@ function showBrowserNotification(title, body, url) {
     })
     notification.onclick = () => {
       window.focus()
-      if (url) window.location.hash = url
+      if (url) {
+        // Use proper navigation for HTML5 history mode router
+        const fullPath = url.startsWith('/next-pms') ? url : '/next-pms' + url
+        window.location.href = fullPath
+      }
       notification.close()
     }
     // Auto close after 5 seconds
@@ -69,10 +73,15 @@ export const useNotificationStore = defineStore('notifications', () => {
         // New notification arrived
         const latest = newNotifications[0]
         playNotificationSound()
+        const notifUrl = latest.document_name
+          ? (latest.document_type === 'PMS Project'
+            ? `/project/${latest.document_name}`
+            : `/task/${latest.document_name}`)
+          : null
         showBrowserNotification(
           'Next PMS',
           latest.subject || 'You have a new notification',
-          latest.document_name ? `#/task/${latest.document_name}` : null
+          notifUrl
         )
       }
 
@@ -186,7 +195,7 @@ export const useNotificationStore = defineStore('notifications', () => {
         showBrowserNotification(
           title,
           body,
-          data.task ? `#/task/${data.task}` : null
+          data.task ? `/task/${data.task}` : null
         )
         // Refresh notification list immediately
         fetchNotifications()
