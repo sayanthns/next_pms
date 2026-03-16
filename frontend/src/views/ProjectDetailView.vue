@@ -329,9 +329,10 @@
                     <span v-else>{{ log.end_time ? formatDateTime(log.end_time) : '-' }}</span>
                   </td>
                   <td class="tl-nowrap">
-                    <span v-if="log.is_running" class="tl-running-elapsed">
-                      {{ liveElapsed(log.start_time) }}
+                    <span v-if="log.is_running && log.elapsed_seconds != null" class="tl-running-elapsed">
+                      {{ liveElapsedSeconds(log.elapsed_seconds) }}
                     </span>
+                    <span v-else-if="log.is_running" class="tl-running-elapsed">● Running</span>
                     <span v-else-if="log.duration_hours || log.duration_minutes">
                       {{ log.duration_hours || 0 }}h {{ log.duration_minutes ? (log.duration_minutes % 60) : 0 }}m
                     </span>
@@ -538,6 +539,7 @@ const timelogTasks = ref([])
 
 // Live timer tick
 const nowTick = ref(Date.now())
+const logsFetchedAt = ref(Date.now())
 let tickInterval = null
 let refreshInterval = null
 
@@ -549,10 +551,11 @@ const sortedProjectTimelogs = computed(() => {
   })
 })
 
-function liveElapsed(startTime) {
-  if (!startTime) return '00:00:00'
-  const startMs = new Date(startTime.replace(' ', 'T')).getTime()
-  const total = Math.max(0, Math.floor((nowTick.value - startMs) / 1000))
+// Timezone-safe live elapsed: uses server-provided elapsed_seconds + local tick offset
+function liveElapsedSeconds(baseElapsed) {
+  if (baseElapsed == null) return '00:00:00'
+  const extra = Math.max(0, Math.floor((nowTick.value - logsFetchedAt.value) / 1000))
+  const total = Math.max(0, baseElapsed + extra)
   const h = Math.floor(total / 3600)
   const m = Math.floor((total % 3600) / 60)
   const s = total % 60
@@ -831,6 +834,7 @@ async function loadProjectTimelogs() {
       offset: 0,
     })
     projectTimelogs.value = data.logs || []
+    logsFetchedAt.value = Date.now()
   } catch (e) {
     console.error('Failed to load project timelogs:', e)
     projectTimelogs.value = []

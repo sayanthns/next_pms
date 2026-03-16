@@ -262,6 +262,11 @@ def get_all_timelogs(filters=None, limit=100, offset=0):
         )
         log["start_time"] = str(log["start_time"]) if log["start_time"] else None
         log["end_time"] = str(log["end_time"]) if log["end_time"] else None
+        # Add elapsed_seconds for running entries (timezone-safe)
+        if log.get("is_running") and log.get("start_time"):
+            from frappe.utils import now_datetime, get_datetime, time_diff_in_seconds
+            elapsed = time_diff_in_seconds(now_datetime(), get_datetime(log["start_time"]))
+            log["elapsed_seconds"] = int(max(0, elapsed))
 
     return {"logs": logs, "total": total}
 
@@ -323,6 +328,33 @@ def get_active_timers():
         log["elapsed_seconds"] = int(elapsed)
 
     return running
+
+
+@frappe.whitelist()
+def get_task_timelogs(task):
+    """Get time logs for a specific task, with elapsed_seconds for running entries."""
+    if not frappe.db.exists("PMS Task", task):
+        frappe.throw("Task not found", frappe.DoesNotExistError)
+
+    logs = frappe.get_all(
+        "PMS Time Log",
+        filters={"task": task},
+        fields=[
+            "name", "user", "start_time", "end_time",
+            "duration_hours", "duration_minutes", "notes", "is_running",
+        ],
+        order_by="start_time desc",
+        limit_page_length=50,
+    )
+
+    for log in logs:
+        log["start_time"] = str(log["start_time"]) if log["start_time"] else None
+        log["end_time"] = str(log["end_time"]) if log["end_time"] else None
+        if log.get("is_running") and log.get("start_time"):
+            elapsed = time_diff_in_seconds(now_datetime(), get_datetime(log["start_time"]))
+            log["elapsed_seconds"] = int(max(0, elapsed))
+
+    return logs
 
 
 @frappe.whitelist()

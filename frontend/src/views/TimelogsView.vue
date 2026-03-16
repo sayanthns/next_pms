@@ -28,7 +28,7 @@
           </div>
           <div class="timer-card-elapsed">
             <span class="live-dot"></span>
-            {{ liveElapsed(timer.start_time) }}
+            {{ liveElapsedSeconds(timer.elapsed_seconds) }}
           </div>
         </div>
       </div>
@@ -139,9 +139,10 @@
                 <span v-else>{{ log.end_time ? formatDateTime(log.end_time) : '-' }}</span>
               </td>
               <td class="text-nowrap">
-                <span v-if="log.is_running" class="running-elapsed">
-                  {{ liveElapsed(log.start_time) }}
+                <span v-if="log.is_running && log.elapsed_seconds != null" class="running-elapsed">
+                  {{ liveElapsedSeconds(log.elapsed_seconds) }}
                 </span>
+                <span v-else-if="log.is_running" class="running-elapsed">● Running</span>
                 <span v-else-if="log.duration_hours || log.duration_minutes">
                   {{ log.duration_hours || 0 }}h {{ log.duration_minutes ? (log.duration_minutes % 60) : 0 }}m
                 </span>
@@ -230,6 +231,7 @@ const canViewAllTimelogs = computed(() => settingsStore.featurePermissions.view_
 
 // Live timer tick
 const nowTick = ref(Date.now())
+const timersFetchedAt = ref(Date.now())
 let tickInterval = null
 let refreshInterval = null
 
@@ -242,15 +244,18 @@ const sortedLogs = computed(() => {
   })
 })
 
-function liveElapsed(startTime) {
-  if (!startTime) return '00:00:00'
-  const startMs = new Date(startTime.replace(' ', 'T')).getTime()
-  const total = Math.max(0, Math.floor((nowTick.value - startMs) / 1000))
+// Timezone-safe elapsed: uses server-provided elapsed_seconds + local tick offset
+function liveElapsedSeconds(baseElapsed) {
+  if (!baseElapsed && baseElapsed !== 0) return '00:00:00'
+  const extra = Math.max(0, Math.floor((nowTick.value - timersFetchedAt.value) / 1000))
+  const total = Math.max(0, baseElapsed + extra)
   const h = Math.floor(total / 3600)
   const m = Math.floor((total % 3600) / 60)
   const s = total % 60
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
+
+
 
 const totalPages = computed(() => Math.ceil(totalCount.value / pageSize))
 
@@ -318,6 +323,7 @@ async function fetchLogs() {
     })
     logs.value = data.logs || []
     totalCount.value = data.total || 0
+    timersFetchedAt.value = Date.now()
   } catch (err) {
     console.error('Failed to fetch time logs:', err)
     logs.value = []
@@ -330,6 +336,7 @@ async function fetchActiveTimers() {
   if (!filterOptions.is_admin) return
   try {
     activeTimers.value = await call('next_pms.api.timer.get_active_timers')
+    timersFetchedAt.value = Date.now()
   } catch {
     activeTimers.value = []
   }

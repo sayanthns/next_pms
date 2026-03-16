@@ -364,9 +364,10 @@
                     <span v-else>-</span>
                   </td>
                   <td>
-                    <span v-if="log.is_running" class="running-elapsed">
-                      {{ liveElapsed(log.start_time) }}
+                    <span v-if="log.is_running && log.elapsed_seconds != null" class="running-elapsed">
+                      {{ liveElapsedSeconds(log.elapsed_seconds) }}
                     </span>
+                    <span v-else-if="log.is_running" class="running-elapsed">● Running</span>
                     <span v-else-if="log.duration_hours || log.duration_minutes">
                       {{ log.duration_hours || 0 }}h {{ log.duration_minutes || 0 }}m
                     </span>
@@ -508,6 +509,7 @@ const timerStore = useTimerStore()
 const timeLogs = ref([])
 const timeLogsLoading = ref(false)
 const nowTick = ref(Date.now())
+const logsFetchedAt = ref(Date.now())
 let tickInterval = null
 
 // Sorted time logs: running first, then by start_time desc
@@ -519,11 +521,11 @@ const sortedTimeLogs = computed(() => {
   })
 })
 
-// Live elapsed time for running entries
-function liveElapsed(startTime) {
-  if (!startTime) return '00:00:00'
-  const startMs = new Date(startTime.replace(' ', 'T')).getTime()
-  const total = Math.max(0, Math.floor((nowTick.value - startMs) / 1000))
+// Timezone-safe live elapsed: uses server-provided elapsed_seconds + local tick offset
+function liveElapsedSeconds(baseElapsed) {
+  if (baseElapsed == null) return '00:00:00'
+  const extra = Math.max(0, Math.floor((nowTick.value - logsFetchedAt.value) / 1000))
+  const total = Math.max(0, baseElapsed + extra)
   const h = Math.floor(total / 3600)
   const m = Math.floor((total % 3600) / 60)
   const s = total % 60
@@ -856,7 +858,8 @@ function activityIconClass(type) {
 async function loadTimeLogs() {
   timeLogsLoading.value = true
   try {
-    timeLogs.value = await taskStore.fetchTaskTimeLogs(props.id)
+    timeLogs.value = await call('next_pms.api.timer.get_task_timelogs', { task: props.id })
+    logsFetchedAt.value = Date.now()
   } catch {
     timeLogs.value = []
   } finally {
