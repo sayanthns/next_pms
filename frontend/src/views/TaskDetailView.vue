@@ -139,7 +139,7 @@
               </div>
               <div class="edit-field edit-field-wide">
                 <label class="edit-label">Description</label>
-                <textarea v-model="editForm.description" class="edit-textarea" rows="4"></textarea>
+                <RichTextEditor v-model="editForm.description" />
               </div>
             </div>
             <div class="edit-actions">
@@ -153,7 +153,7 @@
 
         <!-- Timer -->
         <div class="timer-section">
-          <Timer :taskName="task.name" :taskTitle="task.task_title" @timerStopped="onTimerStopped" />
+          <Timer :taskName="task.name" :taskTitle="task.task_title" @timerStopped="onTimerStopped" @timerStarted="onTimerStarted" />
         </div>
 
         <!-- Info Grid -->
@@ -341,7 +341,7 @@
           <div v-if="timeLogsLoading" class="section-loading">
             <div class="spinner-sm"></div>
           </div>
-          <div v-else-if="timeLogs.length" class="time-log-table-wrap">
+          <div v-else-if="sortedTimeLogs.length" class="time-log-table-wrap">
             <table class="time-log-table">
               <thead>
                 <tr>
@@ -353,12 +353,21 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="log in timeLogs" :key="log.name">
+                <tr v-for="log in sortedTimeLogs" :key="log.name" :class="{ 'time-log-running': log.is_running }">
                   <td>{{ log.user }}</td>
                   <td>{{ formatDateTime(log.start_time) }}</td>
-                  <td>{{ log.end_time ? formatDateTime(log.end_time) : (log.is_running ? 'Running...' : '-') }}</td>
                   <td>
-                    <span v-if="log.duration_hours || log.duration_minutes">
+                    <span v-if="log.end_time">{{ formatDateTime(log.end_time) }}</span>
+                    <span v-else-if="log.is_running" class="running-badge">
+                      <span class="running-dot"></span> Running
+                    </span>
+                    <span v-else>-</span>
+                  </td>
+                  <td>
+                    <span v-if="log.is_running" class="running-elapsed">
+                      {{ liveElapsed(log.start_time) }}
+                    </span>
+                    <span v-else-if="log.duration_hours || log.duration_minutes">
                       {{ log.duration_hours || 0 }}h {{ log.duration_minutes || 0 }}m
                     </span>
                     <span v-else>-</span>
@@ -406,11 +415,23 @@
             </div>
           </div>
           <div v-else class="no-data-text">No attachments yet.</div>
-          <div v-if="uploadingAttachment" class="upload-progress">
-            <div class="spinner-sm"></div>
-            <span>Uploading...</span>
+          <div v-if="uploadingAttachment" class="upload-progress-bar">
+            <div class="upload-progress-info">
+              <svg class="upload-spin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4m-3.93 7.07l-2.83-2.83M7.76 7.76L4.93 4.93"/></svg>
+              <span>Uploading... {{ uploadProgress }}%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+            </div>
           </div>
         </div>
+
+        <!-- Toast -->
+        <Transition name="toast">
+          <div v-if="toast.show" class="toast" :class="'toast-' + toast.type">
+            {{ toast.message }}
+          </div>
+        </Transition>
 
         <!-- Comments -->
         <div class="section-card">
@@ -463,12 +484,14 @@ import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/store/tasks'
 import { useSettingsStore } from '@/store/settings'
+import { useTimerStore } from '@/store/timer'
 import { getList, call } from '@/utils/frappe'
 import { useRealtime } from '@/utils/realtime'
 import { eventBus, EVENTS } from '@/utils/eventBus'
 import Timer from '@/components/Timer.vue'
 import CommentThread from '@/components/CommentThread.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import RichTextEditor from '@/components/RichTextEditor.vue'
 
 const props = defineProps({
   id: {
@@ -480,9 +503,32 @@ const props = defineProps({
 const router = useRouter()
 const taskStore = useTaskStore()
 const settingsStore = useSettingsStore()
+const timerStore = useTimerStore()
 
 const timeLogs = ref([])
 const timeLogsLoading = ref(false)
+const nowTick = ref(Date.now())
+let tickInterval = null
+
+// Sorted time logs: running first, then by start_time desc
+const sortedTimeLogs = computed(() => {
+  return [...timeLogs.value].sort((a, b) => {
+    if (a.is_running && !b.is_running) return -1
+    if (!a.is_running && b.is_running) return 1
+    return 0 // keep original server order (start_time desc)
+  })
+})
+
+// Live elapsed time for running entries
+function liveElapsed(startTime) {
+  if (!startTime) return '00:00:00'
+  const startMs = new Date(startTime.replace(' ', 'T')).getTime()
+  const total = Math.max(0, Math.floor((nowTick.value - startMs) / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 const subtasks = ref([])
 const markingDone = ref(false)
 const activityLog = ref([])
@@ -560,7 +606,15 @@ const showAssigneeDropdown = ref(false)
 const attachments = ref([])
 const attachmentsLoading = ref(false)
 const uploadingAttachment = ref(false)
+const uploadProgress = ref(0)
 const attachInputRef = ref(null)
+
+// Toast
+const toast = ref({ show: false, message: '', type: 'success' })
+function showToast(message, type = 'success') {
+  toast.value = { show: true, message, type }
+  setTimeout(() => { toast.value.show = false }, 3000)
+}
 
 const task = computed(() => taskStore.currentTask)
 
@@ -739,13 +793,23 @@ onMounted(() => {
   // Join the project room for realtime updates once task is loaded
   eventBus.on(EVENTS.TASK_STATUS_CHANGED, onLocalTaskChange)
   eventBus.on(EVENTS.TASK_UPDATED, onLocalTaskChange)
+  // Tick every second for live running timer display
+  tickInterval = setInterval(() => { nowTick.value = Date.now() }, 1000)
+  // Auto-reload time logs when any timer stops
+  eventBus.on(EVENTS.TIMER_STOPPED, onTimerEvent)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleAssigneeOutsideClick)
   eventBus.off(EVENTS.TASK_STATUS_CHANGED, onLocalTaskChange)
   eventBus.off(EVENTS.TASK_UPDATED, onLocalTaskChange)
+  eventBus.off(EVENTS.TIMER_STOPPED, onTimerEvent)
+  if (tickInterval) clearInterval(tickInterval)
 })
+
+function onTimerEvent() {
+  loadTimeLogs()
+}
 
 watch(() => props.id, () => {
   loadTask()
@@ -824,6 +888,11 @@ async function onStatusChange(event) {
     // Re-fetch task to ensure full sync
     await taskStore.fetchTask(props.id)
   }
+}
+
+async function onTimerStarted() {
+  // Refresh time logs to show the new running entry
+  loadTimeLogs()
 }
 
 async function onTimerStopped() {
@@ -918,14 +987,39 @@ async function loadAttachments() {
   }
 }
 
+function uploadFileWithProgress(formData, csrf) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', '/api/method/upload_file')
+    if (csrf) xhr.setRequestHeader('X-Frappe-CSRF-Token', csrf)
+    xhr.withCredentials = true
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        uploadProgress.value = Math.round((e.loaded / e.total) * 100)
+      }
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText)) } catch { resolve(null) }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Network error'))
+    xhr.send(formData)
+  })
+}
+
 async function handleAttachmentUpload(event) {
   const files = event.target.files
   if (!files || !files.length) return
 
   uploadingAttachment.value = true
+  uploadProgress.value = 0
   const csrf = document.cookie.split('; ').find(r => r.startsWith('csrf_token='))?.split('=')[1]
     || window.pms_boot?.csrf_token || ''
 
+  let uploadedCount = 0
   try {
     for (const file of files) {
       const formData = new FormData()
@@ -934,39 +1028,29 @@ async function handleAttachmentUpload(event) {
       formData.append('docname', props.id)
       formData.append('is_private', '1')
 
-      const response = await fetch('/api/method/upload_file', {
-        method: 'POST',
-        headers: { 'X-Frappe-CSRF-Token': csrf },
-        credentials: 'include',
-        body: formData,
-      })
-
-      // Read response to ensure upload completed and add file immediately
-      if (response.ok) {
-        try {
-          const result = await response.json()
-          const fileData = result?.message
-          if (fileData) {
-            attachments.value.unshift({
-              name: fileData.name,
-              file_name: fileData.file_name,
-              file_url: fileData.file_url,
-              file_size: fileData.file_size,
-              uploaded_by: fileData.owner || 'You',
-              creation: new Date().toISOString(),
-            })
-          }
-        } catch {
-          // Response parse failed, will reload below
-        }
+      const result = await uploadFileWithProgress(formData, csrf)
+      const fileData = result?.message
+      if (fileData) {
+        attachments.value.unshift({
+          name: fileData.name,
+          file_name: fileData.file_name,
+          file_url: fileData.file_url,
+          file_size: fileData.file_size,
+          uploaded_by: fileData.owner || 'You',
+          creation: new Date().toISOString(),
+        })
+        uploadedCount++
       }
     }
-    // Also reload from server to get complete data
-    await loadAttachments()
+    if (uploadedCount) {
+      showToast(`${uploadedCount} file${uploadedCount > 1 ? 's' : ''} uploaded successfully`)
+    }
   } catch (err) {
     console.error('Upload failed:', err)
+    showToast('Upload failed. Please try again.', 'error')
   } finally {
     uploadingAttachment.value = false
+    uploadProgress.value = 0
     if (attachInputRef.value) attachInputRef.value.value = ''
   }
 }
@@ -1516,6 +1600,35 @@ function statusSelectClass(status) {
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-light);
 }
+.time-log-running {
+  background: rgba(16, 185, 129, 0.06);
+}
+.running-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #10b981;
+  font-weight: 500;
+  font-size: 12px;
+}
+.running-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.running-elapsed {
+  font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+  font-weight: 600;
+  color: #10b981;
+  font-size: 13px;
+}
 
 .no-data-text {
   color: var(--text-tertiary);
@@ -1757,14 +1870,54 @@ function statusSelectClass(status) {
   border-color: #fecaca;
 }
 
-.upload-progress {
+.upload-progress-bar {
+  padding: 12px 0 4px;
+}
+.upload-progress-info {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 0;
+  gap: 6px;
   font-size: 13px;
   color: var(--text-secondary);
+  margin-bottom: 6px;
 }
+.upload-spin-icon {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-subtle, #e5e7eb);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary, #2563eb);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.toast-success { background: var(--color-success, #10b981); }
+.toast-error { background: var(--color-danger, #ef4444); }
+.toast-enter-active { transition: all 0.3s ease; }
+.toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from { opacity: 0; transform: translateY(10px); }
+.toast-leave-to { opacity: 0; transform: translateY(10px); }
 
 /* Assignee label row */
 .info-label-row {

@@ -243,9 +243,18 @@
               </button>
             </div>
           </div>
-          <div v-else class="files-empty">
+          <div v-else-if="!uploadingFile" class="files-empty">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <p>No files uploaded yet.</p>
+          </div>
+          <div v-if="uploadingFile" class="upload-progress-bar">
+            <div class="upload-progress-info">
+              <svg class="upload-spin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4m0 12v4m-7.07-3.93l2.83-2.83m8.48-8.48l2.83-2.83M2 12h4m12 0h4m-3.93 7.07l-2.83-2.83M7.76 7.76L4.93 4.93"/></svg>
+              <span>Uploading... {{ uploadProgress }}%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+            </div>
           </div>
         </div>
 
@@ -416,6 +425,12 @@
         </div>
       </div>
     </Teleport>
+    <!-- Toast -->
+    <Transition name="toast">
+      <div v-if="toast.show" class="toast" :class="'toast-' + toast.type">
+        {{ toast.message }}
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -500,6 +515,15 @@ const canModifyProject = computed(() => {
 // Files state
 const projectFiles = ref([])
 const filesLoading = ref(false)
+const uploadingFile = ref(false)
+const uploadProgress = ref(0)
+
+// Toast
+const toast = ref({ show: false, message: '', type: 'success' })
+function showToast(message, type = 'success') {
+  toast.value = { show: true, message, type }
+  setTimeout(() => { toast.value.show = false }, 3000)
+}
 
 // Timelogs state
 const projectTimelogs = ref([])
@@ -657,33 +681,73 @@ async function loadProjectFiles() {
   }
 }
 
+function uploadFileWithProgress(url, formData, csrf) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', url)
+    if (csrf) xhr.setRequestHeader('X-Frappe-CSRF-Token', csrf)
+    xhr.withCredentials = true
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        uploadProgress.value = Math.round((e.loaded / e.total) * 100)
+      }
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText)) } catch { resolve(null) }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Network error'))
+    xhr.send(formData)
+  })
+}
+
 async function handleFileUpload(event) {
   const files = event.target.files
   if (!files || !files.length) return
 
-  for (const file of files) {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('project', props.id)
+  uploadingFile.value = true
+  uploadProgress.value = 0
+  const csrf = document.cookie.split('; ').find(c => c.startsWith('csrf_token='))?.split('=')[1]
+    || (window.frappe && window.frappe.csrf_token) || ''
 
-    try {
-      const csrf = document.cookie.split('; ').find(c => c.startsWith('csrf_token='))?.split('=')[1]
-        || (window.frappe && window.frappe.csrf_token) || ''
-      const resp = await fetch('/api/method/next_pms.api.files.upload_project_file', {
-        method: 'POST',
-        headers: csrf ? { 'X-Frappe-CSRF-Token': csrf } : {},
-        credentials: 'include',
-        body: formData,
-      })
-      const data = await resp.json()
-      if (data.exc) throw new Error('Upload failed')
-    } catch (e) {
-      console.error('Upload failed:', e)
-      alert('Failed to upload ' + file.name)
+  let uploadedCount = 0
+  try {
+    for (const file of files) {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('project', props.id)
+
+      const result = await uploadFileWithProgress(
+        '/api/method/next_pms.api.files.upload_project_file', formData, csrf
+      )
+      if (result?.exc) throw new Error('Upload failed')
+      const fileData = result?.message
+      if (fileData) {
+        projectFiles.value.unshift({
+          name: fileData.name,
+          file_name: fileData.file_name,
+          file_url: fileData.file_url,
+          file_size: fileData.file_size,
+          uploaded_by: fileData.owner || 'You',
+          creation: new Date().toISOString(),
+        })
+        uploadedCount++
+      }
     }
+    if (uploadedCount) {
+      showToast(`${uploadedCount} file${uploadedCount > 1 ? 's' : ''} uploaded successfully`)
+    }
+  } catch (e) {
+    console.error('Upload failed:', e)
+    showToast('Upload failed. Please try again.', 'error')
+  } finally {
+    uploadingFile.value = false
+    uploadProgress.value = 0
+    event.target.value = ''
   }
-  event.target.value = ''
-  await loadProjectFiles()
 }
 
 async function deleteFile(fileName) {
@@ -2094,4 +2158,54 @@ watch(() => props.id, () => {
   color: var(--text-tertiary);
   cursor: not-allowed;
 }
+
+/* Upload progress */
+.upload-progress-bar {
+  padding: 12px 0 4px;
+}
+.upload-progress-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.upload-spin-icon {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-subtle, #e5e7eb);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary, #2563eb);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.toast-success { background: var(--color-success, #10b981); }
+.toast-error { background: var(--color-danger, #ef4444); }
+.toast-enter-active { transition: all 0.3s ease; }
+.toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from { opacity: 0; transform: translateY(10px); }
+.toast-leave-to { opacity: 0; transform: translateY(10px); }
 </style>
