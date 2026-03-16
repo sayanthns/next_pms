@@ -51,6 +51,7 @@ defineEmits(['close', 'submit'])
   width: 480px;
   max-width: 100%;
   height: 100vh;
+  height: 100dvh;
   background: var(--bg-surface);
   display: flex;
   flex-direction: column;
