@@ -128,7 +128,7 @@
                   <option v-for="u in editTeamMembers" :key="u.name" :value="u.name">{{ u.full_name || u.name }}</option>
                 </select>
               </div>
-              <div class="edit-field">
+              <div class="edit-field" v-if="settingsStore.canViewFinance">
                 <label class="edit-label">Billable</label>
                 <select v-model="editForm.is_billable" class="edit-input">
                   <option :value="1">Yes</option>
@@ -276,8 +276,8 @@
           </div>
         </div>
 
-        <!-- Cost Section -->
-        <div class="section-card" v-if="task.hourly_rate || task.calculated_cost">
+        <!-- Cost Section (hidden from developers) -->
+        <div class="section-card" v-if="settingsStore.canViewFinance && (task.hourly_rate || task.calculated_cost)">
           <h3 class="section-title">Cost Information</h3>
           <div class="cost-grid">
             <div class="cost-item">

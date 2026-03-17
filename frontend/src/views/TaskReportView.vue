@@ -86,7 +86,7 @@
         <span class="summary-label">Actual Hours</span>
         <span class="summary-value">{{ summary.total_actual_hours }}h</span>
       </div>
-      <div class="summary-card">
+      <div class="summary-card" v-if="settingsStore.canViewFinance">
         <span class="summary-label">Total Cost</span>
         <span class="summary-value">{{ formatCurrency(summary.total_cost) }}</span>
       </div>
@@ -125,7 +125,7 @@
               <th>Due Date</th>
               <th>Est. Hours</th>
               <th>Actual Hours</th>
-              <th>Cost</th>
+              <th v-if="settingsStore.canViewFinance">Cost</th>
               <th>Created</th>
             </tr>
           </thead>
@@ -152,7 +152,7 @@
               <td class="text-nowrap">{{ formatDate(task.due_date) || '-' }}</td>
               <td class="text-right">{{ task.estimated_hours || '-' }}</td>
               <td class="text-right">{{ task.actual_hours || '-' }}</td>
-              <td class="text-right">{{ task.calculated_cost ? formatCurrency(task.calculated_cost) : '-' }}</td>
+              <td v-if="settingsStore.canViewFinance" class="text-right">{{ task.calculated_cost ? formatCurrency(task.calculated_cost) : '-' }}</td>
               <td class="text-nowrap">{{ formatDate(task.creation) }}</td>
             </tr>
           </tbody>
@@ -165,6 +165,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { call, getList } from '@/utils/frappe'
+import { useSettingsStore } from '@/store/settings'
+
+const settingsStore = useSettingsStore()
 
 const loading = ref(true)
 const tasks = ref([])

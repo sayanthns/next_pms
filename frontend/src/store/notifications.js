@@ -173,12 +173,25 @@ export const useNotificationStore = defineStore('notifications', () => {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
       pushSupported.value = true
 
+      // If permission is granted, check for active subscription
       if ('Notification' in window && Notification.permission === 'granted') {
         const reg = await navigator.serviceWorker.ready
         const sub = await reg.pushManager.getSubscription()
         if (sub) {
           pushSubscribed.value = true
+          // Also persist dismissal so banner never reappears for subscribed users
+          if (!pushDismissed.value) {
+            pushDismissed.value = true
+            localStorage.setItem('pms_push_dismissed', '1')
+          }
+          return
         }
+      }
+
+      // If permission was denied, don't show banner — user already made their choice
+      if ('Notification' in window && Notification.permission === 'denied') {
+        pushDismissed.value = true
+        localStorage.setItem('pms_push_dismissed', '1')
       }
     } catch (e) {
       // Silently fail
