@@ -11,6 +11,7 @@ class PMSComment(Document):
         self.notify_mentions()
         self.notify_task_owner()
         self.send_comment_email()
+        self.send_push_notifications()
 
     def notify_mentions(self):
         if self.mentions:
@@ -111,3 +112,81 @@ class PMSComment(Document):
 
         except Exception:
             frappe.log_error("PMS: Failed to send comment email notification")
+
+    def send_push_notifications(self):
+        """Send push notifications for comments and mentions."""
+        try:
+            from next_pms.api.push import send_push_to_user
+
+            task = frappe.get_doc("PMS Task", self.task)
+            commenter_name = frappe.db.get_value("User", self.user, "full_name") or self.user
+            task_url = f"/next-pms/task/{self.task}"
+
+            # Push to mentioned users
+            if self.mentions:
+                mentioned_users = [u.strip() for u in self.mentions.split(",") if u.strip()]
+                for user in mentioned_users:
+                    if user != self.user and frappe.db.exists("User", user):
+                        frappe.enqueue(
+                            "next_pms.api.push.send_push_to_user",
+                            user=user,
+                            title=f"Mentioned in: {task.task_title}",
+                            body=f"{commenter_name} mentioned you in a comment",
+                            url=task_url,
+                            ignore_user=self.user,
+                            queue="short",
+                            now=frappe.flags.in_test,
+                        )
+
+                        # Send email to mentioned user
+                        try:
+                            project_name = frappe.db.get_value(
+                                "PMS Project", task.project, "project_name"
+                            ) or task.project
+                            full_task_url = get_pms_url("PMS Task", self.task)
+                            message = frappe.render_template(
+                                "next_pms/templates/emails/task_comment.html",
+                                {
+                                    "task_title": task.task_title,
+                                    "project_name": project_name,
+                                    "commenter": commenter_name,
+                                    "comment_text": self.comment or "",
+                                    "task_url": full_task_url,
+                                },
+                            )
+                            frappe.sendmail(
+                                recipients=[user],
+                                subject=f"You were mentioned in: {task.task_title}",
+                                message=message,
+                                now=False,
+                            )
+                        except Exception:
+                            frappe.log_error("PMS: Failed to send mention email")
+
+            # Push to all task assignees (except commenter and already-mentioned users)
+            mentioned = set()
+            if self.mentions:
+                mentioned = {u.strip() for u in self.mentions.split(",") if u.strip()}
+
+            push_recipients = set()
+            for assignee in task.get("assignees", []):
+                if assignee.user and assignee.user != self.user and assignee.user not in mentioned:
+                    push_recipients.add(assignee.user)
+
+            if task.assigned_to and task.assigned_to != self.user and task.assigned_to not in mentioned:
+                push_recipients.add(task.assigned_to)
+
+            for user in push_recipients:
+                frappe.enqueue(
+                    "next_pms.api.push.send_push_to_user",
+                    user=user,
+                    title=f"New Comment: {task.task_title}",
+                    body=f"{commenter_name} commented on a task",
+                    url=task_url,
+                    ignore_user=self.user,
+                    queue="short",
+                    now=frappe.flags.in_test,
+                )
+
+        except Exception:
+            frappe.log_error("PMS: Failed to send comment push notifications")

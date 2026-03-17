@@ -383,16 +383,64 @@
         <div class="section-card">
           <div class="section-header-row">
             <h3 class="section-title" style="margin-bottom:0">Attachments</h3>
-            <label class="btn btn-sm btn-outline upload-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-              Upload
-              <input type="file" multiple @change="handleAttachmentUpload" class="file-input-hidden" ref="attachInputRef" />
-            </label>
+            <div class="attach-btn-group">
+              <label class="btn btn-sm btn-outline upload-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                File
+                <input type="file" multiple @change="handleAttachmentUpload" class="file-input-hidden" ref="attachInputRef" />
+              </label>
+              <button class="btn btn-sm btn-outline" @click="showLinkForm = !showLinkForm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Link
+              </button>
+            </div>
           </div>
+
+          <!-- Add link form -->
+          <div v-if="showLinkForm" class="link-form">
+            <input
+              v-model="linkUrl"
+              class="link-form-input"
+              placeholder="https://..."
+              type="url"
+              @keydown.enter="saveLink"
+            />
+            <input
+              v-model="linkTitle"
+              class="link-form-input"
+              placeholder="Title (optional)"
+              @keydown.enter="saveLink"
+            />
+            <div class="link-form-actions">
+              <button class="btn btn-sm btn-primary" :disabled="!linkUrl.trim() || savingLink" @click="saveLink">
+                {{ savingLink ? 'Saving...' : 'Save' }}
+              </button>
+              <button class="btn btn-sm btn-outline" @click="showLinkForm = false; linkUrl = ''; linkTitle = ''">Cancel</button>
+            </div>
+          </div>
+
           <div v-if="attachmentsLoading" class="section-loading">
             <div class="spinner-sm"></div>
           </div>
-          <div v-else-if="attachments.length" class="attachment-list">
+          <div v-else-if="attachments.length || linkAttachments.length" class="attachment-list">
+            <!-- Link attachments -->
+            <div v-for="link in linkAttachments" :key="'link-' + link.name" class="attachment-item">
+              <div class="attachment-icon attachment-icon-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <div class="attachment-info">
+                <a :href="link.url" target="_blank" rel="noopener" class="attachment-name">{{ link.title || link.url }}</a>
+                <span class="attachment-meta">
+                  {{ link.added_by_name }} &middot; {{ formatDate(link.creation) }}
+                </span>
+              </div>
+              <div class="attachment-actions">
+                <button class="attach-action-btn attach-delete" @click="deleteLinkAttachment(link.name)" title="Delete">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+            <!-- File attachments -->
             <div v-for="file in attachments" :key="file.name" class="attachment-item">
               <div class="attachment-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -435,7 +483,7 @@
         <!-- Comments -->
         <div class="section-card">
           <h3 class="section-title">Comments</h3>
-          <CommentThread :taskName="task.name" />
+          <CommentThread :taskName="task.name" :projectName="task.project" />
         </div>
 
         <!-- Activity Log -->
@@ -608,6 +656,13 @@ const attachmentsLoading = ref(false)
 const uploadingAttachment = ref(false)
 const uploadProgress = ref(0)
 const attachInputRef = ref(null)
+
+// Link attachments
+const linkAttachments = ref([])
+const showLinkForm = ref(false)
+const linkUrl = ref('')
+const linkTitle = ref('')
+const savingLink = ref(false)
 
 // Toast
 const toast = ref({ show: false, message: '', type: 'success' })
@@ -817,10 +872,11 @@ watch(() => props.id, () => {
 
 async function loadTask() {
   await taskStore.fetchTask(props.id)
-  // Load time logs, subtasks, attachments, activity, overtime in parallel
+  // Load time logs, subtasks, attachments, links, activity, overtime in parallel
   loadTimeLogs()
   loadSubtasks()
   loadAttachments()
+  loadLinkAttachments()
   loadActivityLog()
   loadOvertimeHours()
 }
@@ -1063,6 +1119,52 @@ async function deleteAttachment(fileName) {
     await loadAttachments()
   } catch (err) {
     console.error('Delete failed:', err)
+  }
+}
+
+// Link attachments
+async function loadLinkAttachments() {
+  try {
+    linkAttachments.value = await call('next_pms.api.files.get_task_links', { task: props.id })
+  } catch {
+    linkAttachments.value = []
+  }
+}
+
+async function saveLink() {
+  const url = linkUrl.value.trim()
+  if (!url || savingLink.value) return
+
+  savingLink.value = true
+  try {
+    const result = await call('next_pms.api.files.save_task_link', {
+      task: props.id,
+      url: url,
+      title: linkTitle.value.trim() || null,
+    })
+    if (result) {
+      linkAttachments.value.unshift(result)
+    }
+    linkUrl.value = ''
+    linkTitle.value = ''
+    showLinkForm.value = false
+    showToast('Link added successfully')
+  } catch (err) {
+    console.error('Failed to save link:', err)
+    showToast('Failed to save link', 'error')
+  } finally {
+    savingLink.value = false
+  }
+}
+
+async function deleteLinkAttachment(name) {
+  if (!confirm('Delete this link?')) return
+  try {
+    await call('next_pms.api.files.delete_task_link', { name })
+    linkAttachments.value = linkAttachments.value.filter(l => l.name !== name)
+    showToast('Link deleted')
+  } catch (err) {
+    console.error('Delete link failed:', err)
   }
 }
 
@@ -1757,6 +1859,11 @@ function statusSelectClass(status) {
   font-size: 12px;
 }
 
+.attach-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
 .upload-btn {
   display: inline-flex;
   align-items: center;
@@ -1766,6 +1873,42 @@ function statusSelectClass(status) {
 
 .file-input-hidden {
   display: none;
+}
+
+/* Link form */
+.link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.link-form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.link-form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-bg);
+}
+
+.link-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.attachment-icon-link {
+  background: rgba(37, 99, 235, 0.08) !important;
+  color: #2563EB !important;
 }
 
 .attachment-list {

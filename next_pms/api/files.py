@@ -108,6 +108,61 @@ def upload_project_file(project):
 
 
 @frappe.whitelist()
+def save_task_link(task, url, title=None):
+    """Save a link attachment for a task."""
+    if not frappe.db.exists("PMS Task", task):
+        frappe.throw("Task not found", frappe.DoesNotExistError)
+
+    doc = frappe.get_doc({
+        "doctype": "PMS Link Attachment",
+        "task": task,
+        "url": url,
+        "title": title or url,
+        "added_by": frappe.session.user,
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "name": doc.name,
+        "url": doc.url,
+        "title": doc.title,
+        "added_by_name": frappe.get_cached_value("User", doc.added_by, "full_name") or doc.added_by,
+        "creation": str(doc.creation),
+    }
+
+
+@frappe.whitelist()
+def get_task_links(task):
+    """Get all link attachments for a task."""
+    if not frappe.db.exists("PMS Task", task):
+        frappe.throw("Task not found", frappe.DoesNotExistError)
+
+    links = frappe.get_all(
+        "PMS Link Attachment",
+        filters={"task": task},
+        fields=["name", "url", "title", "added_by", "creation"],
+        order_by="creation desc",
+    )
+
+    for link in links:
+        link["added_by_name"] = frappe.get_cached_value(
+            "User", link["added_by"], "full_name"
+        ) or link.get("added_by", "")
+
+    return links
+
+
+@frappe.whitelist()
+def delete_task_link(name):
+    """Delete a link attachment."""
+    doc = frappe.get_doc("PMS Link Attachment", name)
+    doc.delete(ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True}
+
+
+@frappe.whitelist()
 def delete_project_file(file_name):
     """Delete a file attached to a project."""
     file_doc = frappe.get_doc("File", file_name)
