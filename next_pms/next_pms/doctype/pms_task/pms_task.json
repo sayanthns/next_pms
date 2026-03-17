@@ -31,7 +31,8 @@
         "reviewer",
         "section_break_hierarchy",
         "parent_task",
-        "attachments"
+        "attachments",
+        "created_by_customer"
     ],
     "fields": [
         {
@@ -100,7 +101,7 @@
             "fieldname": "task_type",
             "fieldtype": "Select",
             "label": "Task Type",
-            "options": "Feature\nBug\nImprovement\nResearch\nDocumentation\nMeeting\nBench Task\nR&D Task\nSupport",
+            "options": "Feature\nBug\nImprovement\nResearch\nDocumentation\nMeeting\nBench Task\nR&D Task\nSupport\nSupport Ticket",
             "default": "Feature"
         },
         {
@@ -195,6 +196,15 @@
             "fieldname": "attachments",
             "fieldtype": "Attach",
             "label": "Attachments"
+        },
+        {
+            "fieldname": "created_by_customer",
+            "fieldtype": "Check",
+            "label": "Created by Customer",
+            "default": "0",
+            "read_only": 1,
+            "hidden": 1,
+            "description": "Flag for tasks created via the client portal"
         }
     ],
     "index_web_pages_for_search": 1,
@@ -229,6 +239,10 @@
             "read": 1,
             "role": "System Manager",
             "write": 1
+        },
+        {
+            "read": 1,
+            "role": "PMS Customer"
         }
     ],
     "search_fields": "task_title, project, assigned_to",

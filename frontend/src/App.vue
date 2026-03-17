@@ -1,5 +1,8 @@
 <template>
-  <div class="app-layout" :class="{ 'sidebar-collapsed': sidebarCollapsed, 'sidebar-mini': isDesktopCollapsed }">
+  <!-- Portal routes get their own layout (no sidebar) -->
+  <router-view v-if="isPortalRoute" />
+
+  <div v-else class="app-layout" :class="{ 'sidebar-collapsed': sidebarCollapsed, 'sidebar-mini': isDesktopCollapsed }">
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -361,6 +364,7 @@ const settingsStore = useSettingsStore()
 const checkinStore = useCheckinStore()
 const { isOnline } = useOnlineStatus()
 const { theme, isDark, toggleTheme } = useTheme()
+const isPortalRoute = computed(() => route.path.startsWith('/portal'))
 const sidebarCollapsed = ref(true)
 const showNotifications = ref(false)
 const showUserMenu = ref(false)

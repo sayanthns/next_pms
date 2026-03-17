@@ -102,6 +102,30 @@ const routes = [
     path: "/user-management",
     redirect: "/team?tab=users",
   },
+  // ─── Client Portal Routes ───
+  {
+    path: "/portal",
+    component: () => import("@/views/portal/PortalLayout.vue"),
+    meta: { isPortal: true },
+    children: [
+      {
+        path: "",
+        name: "PortalDashboard",
+        component: () => import("@/views/portal/PortalDashboard.vue"),
+      },
+      {
+        path: "project/:id",
+        name: "PortalProject",
+        component: () => import("@/views/portal/PortalProject.vue"),
+        props: true,
+      },
+      {
+        path: "tickets",
+        name: "PortalTickets",
+        component: () => import("@/views/portal/PortalTickets.vue"),
+      },
+    ],
+  },
 ];
 
 const router = createRouter({

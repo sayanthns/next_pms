@@ -8,6 +8,7 @@
         "sprint_name",
         "project",
         "status",
+        "approval_status",
         "column_break_1",
         "start_date",
         "end_date",
@@ -37,6 +38,15 @@
             "options": "Planned\nActive\nCompleted",
             "default": "Planned",
             "in_list_view": 1
+        },
+        {
+            "fieldname": "approval_status",
+            "fieldtype": "Select",
+            "label": "Approval Status",
+            "options": "Pending\nReady for Review\nApproved\nChanges Requested",
+            "default": "Pending",
+            "in_list_view": 1,
+            "description": "Client portal milestone approval workflow"
         },
         {
             "fieldname": "column_break_1",
@@ -90,6 +100,10 @@
             "read": 1,
             "role": "System Manager",
             "write": 1
+        },
+        {
+            "read": 1,
+            "role": "PMS Customer"
         }
     ],
     "sort_field": "modified",
