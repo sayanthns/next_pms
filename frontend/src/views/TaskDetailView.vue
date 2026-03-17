@@ -1137,11 +1137,10 @@ async function saveLink() {
 
   savingLink.value = true
   try {
-    const result = await call('next_pms.api.files.save_task_link', {
-      task: props.id,
-      url: url,
-      title: linkTitle.value.trim() || null,
-    })
+    const args = { task: props.id, url: url }
+    const t = linkTitle.value.trim()
+    if (t) args.title = t
+    const result = await call('next_pms.api.files.save_task_link', args)
     if (result) {
       linkAttachments.value.unshift(result)
     }

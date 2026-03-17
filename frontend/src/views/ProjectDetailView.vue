@@ -222,14 +222,58 @@
         <div v-if="activeTab === 'files'" class="files-tab">
           <div class="files-header">
             <h3 class="files-title">Project Files</h3>
-            <label class="btn-upload">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Upload File
-              <input type="file" class="file-input-hidden" @change="handleFileUpload" multiple />
-            </label>
+            <div class="files-btn-group">
+              <label class="btn-upload">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                File
+                <input type="file" class="file-input-hidden" @change="handleFileUpload" multiple />
+              </label>
+              <button class="btn-link-attach" @click="showProjectLinkForm = !showProjectLinkForm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Link
+              </button>
+            </div>
           </div>
+
+          <!-- Link form -->
+          <div v-if="showProjectLinkForm" class="proj-link-form">
+            <input
+              v-model="projectLinkUrl"
+              class="proj-link-input"
+              placeholder="https://..."
+              type="url"
+              @keydown.enter="saveProjectLink"
+            />
+            <input
+              v-model="projectLinkTitle"
+              class="proj-link-input"
+              placeholder="Title (optional)"
+              @keydown.enter="saveProjectLink"
+            />
+            <div class="proj-link-actions">
+              <button class="btn-link-save" :disabled="!projectLinkUrl.trim() || savingProjectLink" @click="saveProjectLink">
+                {{ savingProjectLink ? 'Saving...' : 'Save' }}
+              </button>
+              <button class="btn-link-cancel" @click="showProjectLinkForm = false; projectLinkUrl = ''; projectLinkTitle = ''">Cancel</button>
+            </div>
+          </div>
+
           <div v-if="filesLoading" class="files-loading">Loading files...</div>
-          <div v-else-if="projectFiles.length" class="files-list">
+          <div v-else-if="projectFiles.length || projectLinks.length" class="files-list">
+            <!-- Link attachments -->
+            <div v-for="link in projectLinks" :key="'link-' + link.name" class="file-item">
+              <div class="file-icon file-icon-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </div>
+              <div class="file-info">
+                <a :href="link.url" target="_blank" rel="noopener" class="file-name">{{ link.title || link.url }}</a>
+                <span class="file-meta">{{ link.added_by_name }} &middot; {{ formatDate(link.creation) }}</span>
+              </div>
+              <button class="btn-delete-file" @click="deleteProjectLink(link.name)" title="Delete link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+            <!-- File attachments -->
             <div v-for="f in projectFiles" :key="f.name" class="file-item">
               <div class="file-icon">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -245,7 +289,7 @@
           </div>
           <div v-else-if="!uploadingFile" class="files-empty">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <p>No files uploaded yet.</p>
+            <p>No files or links added yet.</p>
           </div>
           <div v-if="uploadingFile" class="upload-progress-bar">
             <div class="upload-progress-info">
@@ -522,6 +566,13 @@ const filesLoading = ref(false)
 const uploadingFile = ref(false)
 const uploadProgress = ref(0)
 
+// Project links state
+const projectLinks = ref([])
+const showProjectLinkForm = ref(false)
+const projectLinkUrl = ref('')
+const projectLinkTitle = ref('')
+const savingProjectLink = ref(false)
+
 // Toast
 const toast = ref({ show: false, message: '', type: 'success' })
 function showToast(message, type = 'success') {
@@ -581,8 +632,9 @@ watch(() => route.query.view, (val) => {
 })
 
 watch(activeTab, (tab) => {
-  if (tab === 'files' && !projectFiles.value.length) {
+  if (tab === 'files' && !projectFiles.value.length && !projectLinks.value.length) {
     loadProjectFiles()
+    loadProjectLinks()
   }
   if (tab === 'timelogs' && !projectTimelogs.value.length) {
     loadProjectTimelogs()
@@ -786,6 +838,50 @@ async function deleteFile(fileName) {
     await loadProjectFiles()
   } catch (e) {
     alert('Failed to delete file')
+  }
+}
+
+async function loadProjectLinks() {
+  try {
+    projectLinks.value = await call('next_pms.api.files.get_project_links', { project: props.id })
+  } catch (e) {
+    console.error('Failed to load project links:', e)
+    projectLinks.value = []
+  }
+}
+
+async function saveProjectLink() {
+  const url = projectLinkUrl.value.trim()
+  if (!url) return
+  savingProjectLink.value = true
+  try {
+    const args = { project: props.id, url: url }
+    const t = projectLinkTitle.value.trim()
+    if (t) args.title = t
+    const result = await call('next_pms.api.files.save_project_link', args)
+    if (result) {
+      projectLinks.value.unshift(result)
+    }
+    projectLinkUrl.value = ''
+    projectLinkTitle.value = ''
+    showProjectLinkForm.value = false
+    showToast('Link added successfully')
+  } catch (e) {
+    console.error('Failed to save link:', e)
+    showToast('Failed to save link', 'error')
+  } finally {
+    savingProjectLink.value = false
+  }
+}
+
+async function deleteProjectLink(name) {
+  if (!confirm('Delete this link?')) return
+  try {
+    await call('next_pms.api.files.delete_project_link', { name })
+    projectLinks.value = projectLinks.value.filter(l => l.name !== name)
+    showToast('Link deleted')
+  } catch (e) {
+    alert('Failed to delete link')
   }
 }
 
@@ -999,7 +1095,7 @@ onMounted(async () => {
   await loadProject()
   loadUsers()
   // If arriving directly on a tab that needs data, load it now
-  if (activeTab.value === 'files') loadProjectFiles()
+  if (activeTab.value === 'files') { loadProjectFiles(); loadProjectLinks() }
   if (activeTab.value === 'timelogs') {
     loadProjectTimelogs()
     loadTimelogFilterOptions()
@@ -1774,6 +1870,95 @@ watch(() => props.id, () => {
   padding: 60px 0;
   color: var(--text-tertiary);
   font-size: 14px;
+}
+
+.files-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-link-attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-link-attach:hover {
+  background: var(--color-primary-bg, #eff6ff);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.proj-link-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+}
+
+.proj-link-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  box-sizing: border-box;
+}
+
+.proj-link-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-bg, rgba(37,99,235,0.1));
+}
+
+.proj-link-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-link-save {
+  padding: 6px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-link-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-link-cancel {
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.file-icon-link {
+  color: #2563EB;
 }
 
 /* Time Logs Tab */

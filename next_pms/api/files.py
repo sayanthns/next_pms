@@ -172,3 +172,58 @@ def delete_project_file(file_name):
 
     file_doc.delete()
     return {"success": True}
+
+
+@frappe.whitelist()
+def save_project_link(project, url, title=None):
+    """Save a link attachment for a project."""
+    check_project_access(project)
+
+    doc = frappe.get_doc({
+        "doctype": "PMS Link Attachment",
+        "project": project,
+        "url": url,
+        "title": title or url,
+        "added_by": frappe.session.user,
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "name": doc.name,
+        "url": doc.url,
+        "title": doc.title,
+        "added_by_name": frappe.get_cached_value("User", doc.added_by, "full_name") or doc.added_by,
+        "creation": str(doc.creation),
+    }
+
+
+@frappe.whitelist()
+def get_project_links(project):
+    """Get all link attachments for a project."""
+    check_project_access(project)
+
+    links = frappe.get_all(
+        "PMS Link Attachment",
+        filters={"project": project},
+        fields=["name", "url", "title", "added_by", "creation"],
+        order_by="creation desc",
+    )
+
+    for link in links:
+        link["added_by_name"] = frappe.get_cached_value(
+            "User", link["added_by"], "full_name"
+        ) or link.get("added_by", "")
+
+    return links
+
+
+@frappe.whitelist()
+def delete_project_link(name):
+    """Delete a project link attachment."""
+    doc = frappe.get_doc("PMS Link Attachment", name)
+    if doc.project:
+        check_project_access(doc.project)
+    doc.delete(ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True}

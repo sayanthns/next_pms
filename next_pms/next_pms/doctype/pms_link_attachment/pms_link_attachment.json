@@ -5,15 +5,21 @@
  "creation": "2026-03-17 03:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": ["task", "url", "title", "added_by"],
+ "field_order": ["task", "project", "url", "title", "added_by"],
  "fields": [
   {
    "fieldname": "task",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Task",
-   "options": "PMS Task",
-   "reqd": 1
+   "options": "PMS Task"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project",
+   "options": "PMS Project"
   },
   {
    "fieldname": "url",
@@ -38,7 +44,7 @@
  "index_web_pages_for_search": 0,
  "istable": 0,
  "links": [],
- "modified": "2026-03-17 03:00:00.000000",
+ "modified": "2026-03-17 04:00:00.000000",
  "modified_by": "Administrator",
  "module": "Next PMS",
  "name": "PMS Link Attachment",
