@@ -101,6 +101,7 @@ def send_push_to_user(user, title, body, url=None, ignore_user=None):
                 data=payload,
                 vapid_private_key=private_key,
                 vapid_claims=vapid_claims,
+                ttl=86400,  # Queue for 24 hours if user is offline
             )
         except Exception as e:
             error_str = str(e)

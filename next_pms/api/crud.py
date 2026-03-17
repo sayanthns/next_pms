@@ -1049,6 +1049,8 @@ def get_task_report(filters=None):
 
     db_filters = {}
 
+    if filters.get("search"):
+        db_filters["task_title"] = ["like", f"%{filters['search']}%"]
     if filters.get("project"):
         db_filters["project"] = filters["project"]
     if filters.get("priority"):
@@ -1186,6 +1188,9 @@ def get_task_report(filters=None):
             for u in extra_users:
                 user_name_map[u.name] = u.full_name or u.name
 
+    # Determine if current user can view finance data
+    can_view_finance = is_admin or is_manager
+
     # Enrich tasks
     for task in tasks:
         task["owner_name"] = user_name_map.get(task["owner"], task["owner"])
@@ -1204,11 +1209,17 @@ def get_task_report(filters=None):
         task["creation"] = str(task["creation"])
         task["modified"] = str(task["modified"])
 
+        # Strip finance fields for non-finance users
+        if not can_view_finance:
+            task.pop("hourly_rate", None)
+            task.pop("calculated_cost", None)
+            task.pop("is_billable", None)
+
     # Summary stats
     total_tasks = len(tasks)
     total_estimated = sum(t.get("estimated_hours") or 0 for t in tasks)
     total_actual = sum(t.get("actual_hours") or 0 for t in tasks)
-    total_cost = sum(t.get("calculated_cost") or 0 for t in tasks)
+    total_cost = sum(t.get("calculated_cost") or 0 for t in tasks) if can_view_finance else 0
 
     status_summary = {}
     for t in tasks:

@@ -8,6 +8,10 @@
     <!-- Filters -->
     <div class="filters-card">
       <div class="filters-grid">
+        <div class="filter-group filter-search">
+          <label class="filter-label">Search Task</label>
+          <input v-model="filters.search" type="text" class="filter-input" placeholder="Search by task name..." @input="onSearchInput" />
+        </div>
         <div class="filter-group">
           <label class="filter-label">Project</label>
           <select v-model="filters.project" class="filter-select" @change="fetchReport">
@@ -176,15 +180,25 @@ const error = ref(null)
 const projectOptions = ref([])
 const userOptions = ref([])
 
+// Default dates to today
+const today = new Date().toISOString().slice(0, 10)
+
 const filters = reactive({
+  search: '',
   project: '',
   user: '',
   status: '',
   priority: '',
   task_type: '',
-  from_date: '',
-  to_date: '',
+  from_date: today,
+  to_date: today,
 })
+
+let searchTimer = null
+function onSearchInput() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => fetchReport(), 400)
+}
 
 onMounted(async () => {
   // Load filter options and report in parallel
@@ -227,7 +241,14 @@ async function fetchReport() {
 }
 
 function clearFilters() {
-  Object.keys(filters).forEach(k => filters[k] = '')
+  filters.search = ''
+  filters.project = ''
+  filters.user = ''
+  filters.status = ''
+  filters.priority = ''
+  filters.task_type = ''
+  filters.from_date = today
+  filters.to_date = today
   fetchReport()
 }
 
@@ -279,6 +300,7 @@ function priorityClass(priority) {
   font-size: 13px; color: var(--text-primary); background: var(--bg-surface);
 }
 .filter-select:focus, .filter-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-bg); }
+.filter-search { grid-column: span 2; }
 .filter-actions { display: flex; align-items: flex-end; }
 
 /* Summary */
