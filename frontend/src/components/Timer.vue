@@ -24,19 +24,24 @@
     </button>
 
     <!-- No timer is running -->
-    <button
-      v-else
-      class="timer-btn timer-start"
-      @click="handleStart"
-    >
-      <span class="timer-play-icon">&#9654;</span>
-      <span>Start Timer</span>
-    </button>
+    <div v-else>
+      <div v-if="checkinWarning" class="checkin-warning">
+        <span class="checkin-warning-icon">&#9888;</span>
+        Please check in first before starting a timer.
+      </div>
+      <button
+        class="timer-btn timer-start"
+        @click="handleStart"
+      >
+        <span class="timer-play-icon">&#9654;</span>
+        <span>Start Timer</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useTimerStore } from '@/store/timer'
 
 const props = defineProps({
@@ -53,13 +58,20 @@ const props = defineProps({
 const emit = defineEmits(['timerStarted', 'timerStopped'])
 
 const timerStore = useTimerStore()
+const checkinWarning = ref(false)
 
 async function handleStart() {
   try {
+    checkinWarning.value = false
     await timerStore.startTimer(props.taskName)
     emit('timerStarted')
   } catch (error) {
-    console.error('Failed to start timer:', error)
+    if (error.message && error.message.toLowerCase().includes('check in')) {
+      checkinWarning.value = true
+      setTimeout(() => { checkinWarning.value = false }, 5000)
+    } else {
+      console.error('Failed to start timer:', error)
+    }
   }
 }
 
@@ -199,5 +211,29 @@ onUnmounted(() => {
   0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
   70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
   100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.checkin-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #92400e;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+.checkin-warning-icon {
+  font-size: 16px;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
