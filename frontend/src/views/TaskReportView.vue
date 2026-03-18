@@ -59,7 +59,7 @@
             <option value="Meeting">Meeting</option>
             <option value="Bench Task">Bench Task</option>
             <option value="R&D Task">R&amp;D Task</option>
-            <option value="Support">Support</option>
+            <option value="Support Ticket">Support Ticket</option>
           </select>
         </div>
         <div class="filter-group">

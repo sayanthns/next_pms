@@ -30,6 +30,15 @@
         User Management
       </button>
       <button
+        v-if="settingsStore.isAdmin || settingsStore.isManager"
+        class="tab-btn"
+        :class="{ active: activeTab === 'portal' }"
+        @click="activeTab = 'portal'"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        Client Portal
+      </button>
+      <button
         v-if="settingsStore.isAdmin"
         class="tab-btn"
         :class="{ active: activeTab === 'ai' }"
@@ -222,6 +231,189 @@
     </div>
 
     <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: Client Portal Management              -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div v-if="activeTab === 'portal'">
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-value">{{ portalAccessList.length }}</span>
+          <span class="stat-label">Total Access Records</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ portalAccessList.filter(a => a.is_active).length }}</span>
+          <span class="stat-label">Active Clients</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ portalAccessList.filter(a => !a.is_active).length }}</span>
+          <span class="stat-label">Revoked</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ new Set(portalAccessList.map(a => a.project)).size }}</span>
+          <span class="stat-label">Projects with Portal</span>
+        </div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="filters-bar">
+        <div class="search-box">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input v-model="portalSearch" type="text" placeholder="Search by email or project..." class="search-input" />
+        </div>
+        <select v-model="portalFilterProject" class="filter-select">
+          <option value="">All Projects</option>
+          <option v-for="p in portalProjects" :key="p" :value="p">{{ p }}</option>
+        </select>
+        <select v-model="portalFilterStatus" class="filter-select">
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="revoked">Revoked</option>
+        </select>
+        <button class="btn-invite-client" @click="showInviteDialog = true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Invite Client
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="portalLoading" class="loading-container">
+        <div class="spinner"></div>
+        <p class="loading-text">Loading portal access...</p>
+      </div>
+
+      <!-- Access Table -->
+      <div v-else-if="filteredPortalAccess.length" class="user-table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>Client Email</th>
+              <th>Project</th>
+              <th style="width: 100px; text-align: center">Status</th>
+              <th style="width: 130px">Last Login</th>
+              <th style="width: 200px; text-align: center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="access in filteredPortalAccess" :key="access.name" class="user-row">
+              <td>
+                <div class="user-cell">
+                  <span class="user-avatar" :style="{ background: getAvatarColor(access.client_email) }">
+                    {{ getInitials(access.client_email) }}
+                  </span>
+                  <span class="user-name">{{ access.client_email }}</span>
+                </div>
+              </td>
+              <td>
+                <router-link :to="`/project/${access.project}`" class="portal-project-link">
+                  {{ access.project_name || access.project }}
+                </router-link>
+              </td>
+              <td style="text-align: center">
+                <span class="portal-status-badge" :class="access.is_active ? 'portal-active' : 'portal-revoked'">
+                  {{ access.is_active ? 'Active' : 'Revoked' }}
+                </span>
+              </td>
+              <td class="last-active-cell">{{ access.last_login ? formatDateRelative(access.last_login) : 'Never' }}</td>
+              <td style="text-align: center">
+                <div class="portal-actions">
+                  <button
+                    class="portal-action-btn portal-btn-copy"
+                    @click="copyPortalLink(access)"
+                    title="Copy portal link"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    Link
+                  </button>
+                  <button
+                    v-if="access.is_active"
+                    class="portal-action-btn portal-btn-revoke"
+                    @click="revokeAccess(access)"
+                    :disabled="portalActioning === access.name"
+                    title="Revoke access"
+                  >
+                    Revoke
+                  </button>
+                  <button
+                    v-else
+                    class="portal-action-btn portal-btn-reactivate"
+                    @click="reactivateAccess(access)"
+                    :disabled="portalActioning === access.name"
+                    title="Reactivate access"
+                  >
+                    Reactivate
+                  </button>
+                  <button
+                    class="portal-action-btn portal-btn-regen"
+                    @click="regenerateToken(access)"
+                    :disabled="portalActioning === access.name"
+                    title="Regenerate token"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  </button>
+                  <button
+                    class="portal-action-btn portal-btn-delete"
+                    @click="deleteAccess(access)"
+                    :disabled="portalActioning === access.name"
+                    title="Delete permanently"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        <p>No client portal access records found.</p>
+        <button class="btn-invite-client" @click="showInviteDialog = true" style="margin-top: 8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Invite First Client
+        </button>
+      </div>
+
+      <!-- Grant Access Dialog -->
+      <div v-if="showInviteDialog" class="dialog-overlay" @click.self="showInviteDialog = false">
+        <div class="dialog-box">
+          <h3>Grant Portal Access</h3>
+          <p class="dialog-desc">Select a customer user and a portal-enabled project. The user will receive a link to access the project.</p>
+          <div class="form-group">
+            <label>Customer User</label>
+            <select v-model="inviteForm.user" class="form-input-portal">
+              <option value="">Select a customer</option>
+              <option v-for="u in customerUsers" :key="u.name" :value="u.name">{{ u.full_name || u.email }} ({{ u.email }})</option>
+            </select>
+            <small v-if="customerUsers.length === 0" class="form-hint">No users with PMS Customer role found. Assign the role from the User Management tab.</small>
+          </div>
+          <div class="form-group">
+            <label>Project</label>
+            <select v-model="inviteForm.project" class="form-input-portal">
+              <option value="">Select a project</option>
+              <option v-for="p in allProjectsList" :key="p.name" :value="p.name">{{ p.project_name || p.name }}</option>
+            </select>
+            <small v-if="allProjectsList.length === 0" class="form-hint">No portal-enabled projects. Enable portal in project settings first.</small>
+          </div>
+          <div class="dialog-actions">
+            <button class="btn-cancel-portal" @click="showInviteDialog = false">Cancel</button>
+            <button
+              class="btn-submit-portal"
+              @click="sendInvite"
+              :disabled="!inviteForm.project || !inviteForm.user || inviteSending"
+            >
+              {{ inviteSending ? 'Granting...' : 'Grant Access' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
     <!-- TAB: AI Settings (Admin only)              -->
     <!-- ═══════════════════════════════════════════ -->
     <div v-if="activeTab === 'ai'">
@@ -320,6 +512,9 @@ watch(activeTab, (tab) => {
   // Lazy-load data for tabs
   if (tab === 'users' && !allUsers.value.length && !usersLoading.value) {
     loadUsers()
+  }
+  if (tab === 'portal' && !portalDataLoaded.value) {
+    loadPortalAccess()
   }
   if (tab === 'ai' && !aiLoaded.value) {
     loadAiSettings()
@@ -611,6 +806,160 @@ async function sendTestReport() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+// CLIENT PORTAL TAB
+// ═══════════════════════════════════════════════════════════
+const portalLoading = ref(false)
+const portalAccessList = ref([])
+const portalSearch = ref('')
+const portalFilterProject = ref('')
+const portalFilterStatus = ref('')
+const portalActioning = ref('')
+const showInviteDialog = ref(false)
+const inviteSending = ref(false)
+const inviteForm = ref({ project: '', user: '' })
+const allProjectsList = ref([])
+const customerUsers = ref([])
+const portalDataLoaded = ref(false)
+
+const portalProjects = computed(() => {
+  const projects = new Set(portalAccessList.value.map(a => a.project_name || a.project))
+  return [...projects].sort()
+})
+
+const filteredPortalAccess = computed(() => {
+  let list = portalAccessList.value
+  if (portalSearch.value) {
+    const q = portalSearch.value.toLowerCase()
+    list = list.filter(a =>
+      (a.client_email || '').toLowerCase().includes(q) ||
+      (a.project_name || '').toLowerCase().includes(q) ||
+      (a.project || '').toLowerCase().includes(q)
+    )
+  }
+  if (portalFilterProject.value) {
+    list = list.filter(a => (a.project_name || a.project) === portalFilterProject.value)
+  }
+  if (portalFilterStatus.value === 'active') {
+    list = list.filter(a => a.is_active)
+  } else if (portalFilterStatus.value === 'revoked') {
+    list = list.filter(a => !a.is_active)
+  }
+  return list
+})
+
+async function loadPortalAccess() {
+  portalLoading.value = true
+  try {
+    const [accessRes, projectsRes, usersRes] = await Promise.all([
+      call('next_pms.api.portal.get_portal_access_list'),
+      call('next_pms.api.portal.get_portal_enabled_projects'),
+      call('next_pms.api.portal.get_customer_users'),
+    ])
+    portalAccessList.value = accessRes || []
+    allProjectsList.value = projectsRes || []
+    customerUsers.value = usersRes || []
+    portalDataLoaded.value = true
+  } catch (e) {
+    console.error('Failed to load portal access:', e)
+  } finally {
+    portalLoading.value = false
+  }
+}
+
+async function sendInvite() {
+  if (!inviteForm.value.project || !inviteForm.value.user || inviteSending.value) return
+  inviteSending.value = true
+  try {
+    await call('next_pms.api.portal.invite_client', {
+      project: inviteForm.value.project,
+      user: inviteForm.value.user,
+    })
+    const selectedUser = customerUsers.value.find(u => u.name === inviteForm.value.user)
+    showToast(`Access granted to ${selectedUser?.full_name || inviteForm.value.user}`)
+    showInviteDialog.value = false
+    inviteForm.value = { project: '', user: '' }
+    await loadPortalAccess()
+  } catch (e) {
+    console.error('Failed to grant access:', e)
+    showToast(e?.message || 'Failed to grant access', 'error')
+  } finally {
+    inviteSending.value = false
+  }
+}
+
+async function revokeAccess(access) {
+  if (!confirm(`Revoke portal access for ${access.client_email}?`)) return
+  portalActioning.value = access.name
+  try {
+    await call('next_pms.api.portal.revoke_portal_access', { access_name: access.name })
+    access.is_active = false
+    showToast(`Access revoked for ${access.client_email}`)
+  } catch (e) {
+    console.error('Failed to revoke:', e)
+    showToast('Failed to revoke access', 'error')
+  } finally {
+    portalActioning.value = ''
+  }
+}
+
+async function reactivateAccess(access) {
+  portalActioning.value = access.name
+  try {
+    await call('next_pms.api.portal.reactivate_portal_access', { access_name: access.name })
+    access.is_active = true
+    showToast(`Access reactivated for ${access.client_email}`)
+  } catch (e) {
+    console.error('Failed to reactivate:', e)
+    showToast('Failed to reactivate access', 'error')
+  } finally {
+    portalActioning.value = ''
+  }
+}
+
+async function regenerateToken(access) {
+  if (!confirm(`Regenerate token for ${access.client_email}? The old link will stop working.`)) return
+  portalActioning.value = access.name
+  try {
+    const res = await call('next_pms.api.portal.regenerate_portal_token', { access_name: access.name })
+    if (res?.access_token) {
+      access.access_token = res.access_token
+    }
+    showToast('Token regenerated. Copy the new link.')
+  } catch (e) {
+    console.error('Failed to regenerate token:', e)
+    showToast('Failed to regenerate token', 'error')
+  } finally {
+    portalActioning.value = ''
+  }
+}
+
+async function deleteAccess(access) {
+  if (!confirm(`Permanently delete portal access for ${access.client_email}? This cannot be undone.`)) return
+  portalActioning.value = access.name
+  try {
+    await call('next_pms.api.portal.delete_portal_access', { access_name: access.name })
+    portalAccessList.value = portalAccessList.value.filter(a => a.name !== access.name)
+    showToast(`Access deleted for ${access.client_email}`)
+  } catch (e) {
+    console.error('Failed to delete:', e)
+    showToast('Failed to delete access', 'error')
+  } finally {
+    portalActioning.value = ''
+  }
+}
+
+function copyPortalLink(access) {
+  const baseUrl = window.location.origin
+  const link = `${baseUrl}/next-pms/portal/project/${access.project}?token=${access.access_token}`
+  navigator.clipboard.writeText(link).then(() => {
+    showToast('Portal link copied to clipboard')
+  }).catch(() => {
+    // Fallback
+    prompt('Copy this portal link:', link)
+  })
+}
+
 // ── Init ────────────────────────────────────────────────
 function onCheckinChanged() {
   loadTeamData()
@@ -620,6 +969,9 @@ onMounted(() => {
   loadTeamData()
   if (activeTab.value === 'users') {
     loadUsers()
+  }
+  if (activeTab.value === 'portal') {
+    loadPortalAccess()
   }
   if (activeTab.value === 'ai') {
     loadAiSettings()
@@ -1275,6 +1627,185 @@ onUnmounted(() => {
 .ai-btn-save:hover:not(:disabled) { background: var(--color-primary-hover); }
 .ai-btn-test { background: var(--bg-surface-hover); color: var(--text-primary); border: 1px solid var(--border-default); }
 .ai-btn-test:hover:not(:disabled) { background: var(--border-default); }
+
+/* ═══════════════════════════════════════════════════════ */
+/* CLIENT PORTAL TAB                                      */
+/* ═══════════════════════════════════════════════════════ */
+
+.btn-invite-client {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #2563EB;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn-invite-client:hover { background: #1d4ed8; }
+
+.portal-project-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.portal-project-link:hover { text-decoration: underline; }
+
+.portal-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.portal-active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.portal-revoked { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+.portal-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
+
+.portal-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.portal-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.portal-btn-copy:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-bg); }
+.portal-btn-revoke { color: #ef4444; }
+.portal-btn-revoke:hover { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+.portal-btn-reactivate { color: #10b981; }
+.portal-btn-reactivate:hover { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
+.portal-btn-regen:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.portal-btn-delete { color: #ef4444; }
+.portal-btn-delete:hover { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+
+/* Invite Dialog */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-box {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  padding: 24px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.dialog-box h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.dialog-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 16px;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.form-input-portal {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.form-input-portal:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-bg); }
+
+.form-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn-cancel-portal {
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-cancel-portal:hover { background: var(--border-default); }
+
+.btn-submit-portal {
+  background: #2563EB;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-submit-portal:hover { background: #1d4ed8; }
+.btn-submit-portal:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ═══════════════════════════════════════════════════════ */
 /* TOAST                                                  */

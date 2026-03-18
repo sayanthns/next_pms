@@ -28,7 +28,7 @@
     <div class="card-meta-row">
       <span class="task-id">{{ task.name }}</span>
       <span v-if="task.task_type" class="meta-separator">|</span>
-      <span v-if="task.task_type" class="task-type-chip">{{ task.task_type }}</span>
+      <span v-if="task.task_type" class="task-type-chip" :class="{ 'chip-support-ticket': task.task_type === 'Support Ticket' }">{{ task.task_type }}</span>
     </div>
 
     <!-- Row 4: Due date, Avatar stack, Timer button -->
@@ -303,6 +303,12 @@ function onDragEnd(event) {
   border-radius: 4px;
   background: var(--bg-surface-hover);
   color: var(--text-secondary);
+}
+
+.chip-support-ticket {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  font-weight: 600;
 }
 
 /* Row 4: Bottom row */

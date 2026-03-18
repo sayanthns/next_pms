@@ -12,6 +12,7 @@ class PMSComment(Document):
         self.notify_task_owner()
         self.send_comment_email()
         self.send_push_notifications()
+        self.notify_portal_client()
 
     def notify_mentions(self):
         if self.mentions:
@@ -190,3 +191,20 @@ class PMSComment(Document):
 
         except Exception:
             frappe.log_error("PMS: Failed to send comment push notifications")
+
+    def notify_portal_client(self):
+        """Notify portal clients when their support ticket gets a response."""
+        try:
+            from next_pms.api.portal import notify_client_on_ticket_response
+            comment_text = self.comment or getattr(self, 'content', '') or ''
+            commenter = self.user or getattr(self, 'author', '') or ''
+            frappe.enqueue(
+                "next_pms.api.portal.notify_client_on_ticket_response",
+                task_name=self.task,
+                comment_content=comment_text,
+                commenter=commenter,
+                queue="short",
+                now=frappe.flags.in_test,
+            )
+        except Exception:
+            frappe.log_error("PMS: Failed to enqueue portal client notification")

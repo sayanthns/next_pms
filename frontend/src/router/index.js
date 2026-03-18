@@ -99,6 +99,18 @@ const routes = [
     component: () => import("@/views/TaskReportView.vue"),
   },
   {
+    path: "/support-tickets",
+    name: "SupportTickets",
+    component: () => import("@/views/SupportTicketsView.vue"),
+    meta: { requiresSettings: true },
+  },
+  {
+    path: "/portal-analytics",
+    name: "PortalAnalytics",
+    component: () => import("@/views/PortalAnalyticsView.vue"),
+    meta: { requiresSettings: true },
+  },
+  {
     path: "/user-management",
     redirect: "/team?tab=users",
   },
@@ -124,6 +136,11 @@ const routes = [
         name: "PortalTickets",
         component: () => import("@/views/portal/PortalTickets.vue"),
       },
+      {
+        path: "reports",
+        name: "PortalReports",
+        component: () => import("@/views/portal/PortalReports.vue"),
+      },
     ],
   },
 ];
@@ -133,8 +150,23 @@ const router = createRouter({
   routes,
 });
 
-// Route guards for role-based access
+// Route guards for role-based access and portal token auth
 router.beforeEach(async (to, from, next) => {
+  // Portal token login: if ?token= is present, log in via API first
+  if (to.meta.isPortal && to.query.token) {
+    try {
+      const { call } = await import("@/utils/frappe");
+      await call("next_pms.api.portal.portal_token_login", { token: to.query.token });
+      // Remove token from URL after login (clean URL)
+      const { token, ...otherQuery } = to.query;
+      return next({ path: to.path, query: otherQuery, replace: true });
+    } catch (e) {
+      console.error("Portal token login failed:", e);
+      // Redirect to a simple error or login page
+      return next("/portal");
+    }
+  }
+
   if (to.meta.requiresAnalytics || to.meta.requiresAdmin || to.meta.requiresSettings) {
     // Dynamically import to avoid circular deps
     const { useSettingsStore } = await import("@/store/settings");

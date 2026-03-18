@@ -55,12 +55,15 @@
       <div v-if="activeTab === 'milestones'" class="tab-content">
         <div v-if="milestones.length === 0" class="empty-tab">No milestones yet.</div>
         <div v-else class="milestones-list">
-          <div v-for="m in milestones" :key="m.name" class="milestone-card">
-            <div class="milestone-header">
-              <h3>{{ m.sprint_name }}</h3>
+          <div v-for="m in milestones" :key="m.name" class="milestone-card" :class="{ expanded: expandedSprint === m.name }">
+            <div class="milestone-header" @click="toggleSprint(m)">
+              <div class="milestone-header-left">
+                <svg class="expand-icon" :class="{ rotated: expandedSprint === m.name }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <h3>{{ m.sprint_name }}</h3>
+              </div>
               <div class="milestone-badges">
                 <span class="m-status" :class="'ms-' + m.status?.toLowerCase()">{{ m.status }}</span>
-                <span v-if="m.approval_status" class="m-approval" :class="'ma-' + approvalKey(m.approval_status)">
+                <span v-if="m.approval_status && m.approval_status !== 'Pending'" class="m-approval" :class="'ma-' + approvalKey(m.approval_status)">
                   {{ m.approval_status }}
                 </span>
               </div>
@@ -80,14 +83,40 @@
 
             <!-- Approval actions (only if Ready for Review) -->
             <div v-if="m.approval_status === 'Ready for Review'" class="milestone-actions">
-              <button class="btn-approve" @click="approveMilestone(m)" :disabled="approving">
+              <button class="btn-approve" @click.stop="approveMilestone(m)" :disabled="approving">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
                 Approve
               </button>
-              <button class="btn-changes" @click="showChangesDialog(m)" :disabled="approving">
+              <button class="btn-changes" @click.stop="showChangesDialog(m)" :disabled="approving">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 Request Changes
               </button>
+            </div>
+
+            <!-- Expanded: Sprint Tasks (mini kanban) -->
+            <div v-if="expandedSprint === m.name" class="sprint-tasks-section">
+              <div class="sprint-kanban">
+                <div v-for="col in kanbanColumns" :key="col.key" class="kanban-col">
+                  <div class="kanban-col-header" :class="'kh-' + col.key">
+                    <span>{{ col.label }}</span>
+                    <span class="kanban-col-count">{{ sprintTasksByStatus(m.name, col.status).length }}</span>
+                  </div>
+                  <div class="kanban-col-body">
+                    <div
+                      v-for="t in sprintTasksByStatus(m.name, col.status)"
+                      :key="t.name"
+                      class="kanban-card"
+                      @click.stop="openTask(t)"
+                    >
+                      <span class="kanban-card-title">{{ t.task_title }}</span>
+                      <div class="kanban-card-meta">
+                        <span class="task-priority" :class="'tp-' + t.priority?.toLowerCase()">{{ t.priority }}</span>
+                      </div>
+                    </div>
+                    <div v-if="sprintTasksByStatus(m.name, col.status).length === 0" class="kanban-empty">—</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -95,7 +124,7 @@
 
       <!-- Tasks Tab -->
       <div v-if="activeTab === 'tasks'" class="tab-content">
-        <div class="tasks-filter">
+        <div class="tasks-toolbar">
           <select v-model="taskFilter" class="filter-select">
             <option value="">All Tasks</option>
             <option value="To Do">To Do</option>
@@ -103,25 +132,62 @@
             <option value="In Review">In Review</option>
             <option value="Done">Done</option>
           </select>
+          <div class="view-toggle">
+            <button class="view-btn" :class="{ active: taskView === 'list' }" @click="taskView = 'list'" title="List view">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+            <button class="view-btn" :class="{ active: taskView === 'kanban' }" @click="taskView = 'kanban'" title="Kanban view">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>
+            </button>
+          </div>
         </div>
-        <div v-if="filteredTasks.length === 0" class="empty-tab">No tasks found.</div>
-        <div v-else class="tasks-list">
-          <div
-            v-for="t in filteredTasks"
-            :key="t.name"
-            class="task-row"
-            @click="openTask(t)"
-          >
-            <div class="task-info">
-              <span class="task-name">{{ t.task_title }}</span>
-              <span class="task-meta">
-                <span class="task-id">{{ t.name }}</span>
-                <span v-if="t.sprint" class="task-sprint">{{ sprintNameMap[t.sprint] || t.sprint }}</span>
-              </span>
+
+        <!-- List View -->
+        <div v-if="taskView === 'list'">
+          <div v-if="filteredTasks.length === 0" class="empty-tab">No tasks found.</div>
+          <div v-else class="tasks-list">
+            <div
+              v-for="t in filteredTasks"
+              :key="t.name"
+              class="task-row"
+              @click="openTask(t)"
+            >
+              <div class="task-info">
+                <span class="task-name">{{ t.task_title }}</span>
+                <span class="task-meta">
+                  <span class="task-id">{{ t.name }}</span>
+                  <span v-if="t.sprint" class="task-sprint">{{ sprintNameMap[t.sprint] || t.sprint }}</span>
+                </span>
+              </div>
+              <div class="task-right">
+                <span class="task-priority" :class="'tp-' + t.priority?.toLowerCase()">{{ t.priority }}</span>
+                <span class="task-status-badge" :class="'ts-' + taskStatusKey(t.status)">{{ t.status }}</span>
+              </div>
             </div>
-            <div class="task-right">
-              <span class="task-priority" :class="'tp-' + t.priority?.toLowerCase()">{{ t.priority }}</span>
-              <span class="task-status-badge" :class="'ts-' + taskStatusKey(t.status)">{{ t.status }}</span>
+          </div>
+        </div>
+
+        <!-- Kanban View -->
+        <div v-if="taskView === 'kanban'" class="full-kanban">
+          <div v-for="col in kanbanColumns" :key="col.key" class="kanban-col">
+            <div class="kanban-col-header" :class="'kh-' + col.key">
+              <span>{{ col.label }}</span>
+              <span class="kanban-col-count">{{ tasksByStatus(col.status).length }}</span>
+            </div>
+            <div class="kanban-col-body">
+              <div
+                v-for="t in tasksByStatus(col.status)"
+                :key="t.name"
+                class="kanban-card"
+                @click="openTask(t)"
+              >
+                <span class="kanban-card-title">{{ t.task_title }}</span>
+                <div class="kanban-card-meta">
+                  <span class="task-priority" :class="'tp-' + t.priority?.toLowerCase()">{{ t.priority }}</span>
+                  <span v-if="t.sprint" class="kanban-card-sprint">{{ sprintNameMap[t.sprint] || '' }}</span>
+                </div>
+              </div>
+              <div v-if="tasksByStatus(col.status).length === 0" class="kanban-empty">No tasks</div>
             </div>
           </div>
         </div>
@@ -252,7 +318,16 @@ const files = ref([])
 const links = ref([])
 const activeTab = ref('milestones')
 const taskFilter = ref('')
+const taskView = ref('list')
+const expandedSprint = ref(null)
 const approving = ref(false)
+
+const kanbanColumns = [
+  { key: 'todo', label: 'To Do', status: ['To Do', 'Backlog'] },
+  { key: 'progress', label: 'In Progress', status: ['In Progress'] },
+  { key: 'review', label: 'In Review', status: ['In Review'] },
+  { key: 'done', label: 'Done', status: ['Done'] },
+]
 
 // Task drawer
 const selectedTask = ref(null)
@@ -285,6 +360,18 @@ const filteredTasks = computed(() => {
   if (!taskFilter.value) return tasks.value
   return tasks.value.filter(t => t.status === taskFilter.value)
 })
+
+function tasksByStatus(statuses) {
+  return tasks.value.filter(t => statuses.includes(t.status))
+}
+
+function sprintTasksByStatus(sprintName, statuses) {
+  return tasks.value.filter(t => t.sprint === sprintName && statuses.includes(t.status))
+}
+
+function toggleSprint(m) {
+  expandedSprint.value = expandedSprint.value === m.name ? null : m.name
+}
 
 onMounted(() => loadProject())
 
@@ -412,7 +499,7 @@ function formatDateTime(d) {
 </script>
 
 <style scoped>
-.portal-project { max-width: 100%; }
+.portal-project { max-width: 100%; overflow-y: auto; }
 
 .back-btn {
   display: inline-flex;
@@ -471,7 +558,6 @@ function formatDateTime(d) {
 /* Milestones */
 .milestones-list { display: flex; flex-direction: column; gap: 12px; }
 .milestone-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; }
-.milestone-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
 .milestone-header h3 { font-size: 15px; font-weight: 600; color: #1e293b; margin: 0; }
 .milestone-badges { display: flex; gap: 6px; flex-shrink: 0; }
 .m-status, .m-approval { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
@@ -499,8 +585,48 @@ function formatDateTime(d) {
 .btn-changes { background: #f1f5f9; color: #64748b; }
 .btn-changes:hover { background: #e2e8f0; color: #334155; }
 
+/* Milestone expand */
+.milestone-header { cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.milestone-header-left { display: flex; align-items: center; gap: 6px; }
+.expand-icon { transition: transform 0.2s; flex-shrink: 0; color: #94a3b8; }
+.expand-icon.rotated { transform: rotate(90deg); }
+.milestone-card.expanded { border-color: #2563eb; }
+
+/* Sprint tasks kanban */
+.sprint-tasks-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+.sprint-kanban, .full-kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.kanban-col { min-width: 0; }
+.kanban-col-header {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 6px 10px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center;
+}
+.kh-todo { background: #f1f5f9; color: #64748b; }
+.kh-progress { background: #eff6ff; color: #2563eb; }
+.kh-review { background: #faf5ff; color: #9333ea; }
+.kh-done { background: #f0fdf4; color: #16a34a; }
+.kanban-col-count { font-size: 10px; background: rgba(0,0,0,0.08); padding: 1px 6px; border-radius: 8px; }
+.kanban-col-body { background: #fafbfc; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 6px 6px; padding: 6px; min-height: 60px; display: flex; flex-direction: column; gap: 4px; }
+.kanban-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 10px;
+  cursor: pointer; transition: all 0.15s; font-size: 12px;
+}
+.kanban-card:hover { border-color: #2563eb; box-shadow: 0 1px 4px rgba(37,99,235,0.08); }
+.kanban-card-title { font-weight: 500; color: #1e293b; display: block; margin-bottom: 4px; line-height: 1.3; }
+.kanban-card-meta { display: flex; gap: 4px; align-items: center; }
+.kanban-card-sprint { font-size: 10px; color: #94a3b8; }
+.kanban-empty { text-align: center; color: #cbd5e1; font-size: 11px; padding: 12px 0; }
+
+/* Tasks toolbar */
+.tasks-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; }
+.view-toggle { display: flex; gap: 2px; background: #f1f5f9; border-radius: 6px; padding: 2px; }
+.view-btn {
+  background: none; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer;
+  color: #94a3b8; display: flex; align-items: center; transition: all 0.15s;
+}
+.view-btn:hover { color: #334155; }
+.view-btn.active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+
 /* Tasks */
-.tasks-filter { margin-bottom: 12px; }
 .filter-select { padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; background: #fff; }
 .tasks-list { display: flex; flex-direction: column; gap: 4px; }
 .task-row {
@@ -621,5 +747,6 @@ function formatDateTime(d) {
   .project-header { flex-direction: column; }
   .project-header-right { flex-direction: row; gap: 16px; }
   .drawer { width: 100vw; }
+  .sprint-kanban, .full-kanban { grid-template-columns: repeat(2, 1fr); }
 }
 </style>

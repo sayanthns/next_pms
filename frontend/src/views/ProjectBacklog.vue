@@ -38,6 +38,16 @@
             >
               {{ sprint.status || 'Active' }}
             </span>
+            <span
+              v-if="sprint.approval_status && sprint.approval_status !== 'Pending'"
+              class="approval-badge"
+              :class="approvalStatusClass(sprint.approval_status)"
+            >
+              <svg v-if="sprint.approval_status === 'Approved'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <svg v-else-if="sprint.approval_status === 'Ready for Review'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg v-else-if="sprint.approval_status === 'Changes Requested'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              {{ sprint.approval_status }}
+            </span>
             <span v-if="sprint.start_date || sprint.end_date" class="sprint-dates">
               {{ formatDate(sprint.start_date) }} - {{ formatDate(sprint.end_date) }}
             </span>
@@ -46,6 +56,25 @@
             <span class="sprint-task-count">
               {{ getSprintTasks(sprint.name).length }} tasks
             </span>
+            <button
+              v-if="canManage && (!sprint.approval_status || sprint.approval_status === 'Pending' || sprint.approval_status === 'Changes Requested')"
+              class="approval-action-btn btn-mark-review"
+              @click.stop="markReadyForReview(sprint)"
+              :disabled="approvalActioning === sprint.name"
+              title="Mark sprint as ready for client review"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              {{ approvalActioning === sprint.name ? '...' : 'Send for Review' }}
+            </button>
+            <button
+              v-if="canManage && sprint.approval_status === 'Ready for Review'"
+              class="approval-action-btn btn-reset-approval"
+              @click.stop="resetApproval(sprint)"
+              :disabled="approvalActioning === sprint.name"
+              title="Reset approval status to Pending"
+            >
+              Reset
+            </button>
             <button v-if="canCreateTask" class="add-task-btn" @click="openCreateTask(sprint.name)" title="Add task to sprint">+ Task</button>
           </div>
         </div>
@@ -204,7 +233,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useTaskStore } from '@/store/tasks'
 import { useSettingsStore } from '@/store/settings'
-import { getList, setValue } from '@/utils/frappe'
+import { getList, setValue, call } from '@/utils/frappe'
 import CreateSprintModal from '@/components/CreateSprintModal.vue'
 import CreateTaskModal from '@/components/CreateTaskModal.vue'
 
@@ -219,6 +248,8 @@ const props = defineProps({
 const taskStore = useTaskStore()
 const settingsStore = useSettingsStore()
 const canCreateTask = computed(() => settingsStore.featurePermissions.create_task !== false)
+const canManage = computed(() => settingsStore.isAdmin || settingsStore.isManager)
+const approvalActioning = ref('')
 
 const sprints = ref([])
 const loading = ref(false)
@@ -257,7 +288,7 @@ onMounted(async () => {
 async function loadSprints() {
   try {
     sprints.value = await getList('PMS Sprint', {
-      fields: ['name', 'sprint_name', 'status', 'start_date', 'end_date', 'project'],
+      fields: ['name', 'sprint_name', 'status', 'start_date', 'end_date', 'project', 'approval_status'],
       filters: { project: props.id },
       orderBy: 'start_date asc',
       limit: 0,
@@ -378,6 +409,43 @@ function sprintStatusClass(status) {
     'Closed': 'badge-default',
   }
   return map[status] || 'badge-default'
+}
+
+function approvalStatusClass(status) {
+  const map = {
+    'Pending': 'approval-pending',
+    'Ready for Review': 'approval-review',
+    'Approved': 'approval-approved',
+    'Changes Requested': 'approval-changes',
+  }
+  return map[status] || 'approval-pending'
+}
+
+async function markReadyForReview(sprint) {
+  approvalActioning.value = sprint.name
+  try {
+    await call('next_pms.api.portal.mark_sprint_ready_for_review', { sprint: sprint.name })
+    sprint.approval_status = 'Ready for Review'
+  } catch (e) {
+    console.error('Failed to mark sprint for review:', e)
+    alert(e?.message || 'Failed to update sprint')
+  } finally {
+    approvalActioning.value = ''
+  }
+}
+
+async function resetApproval(sprint) {
+  if (!confirm('Reset approval status to Pending?')) return
+  approvalActioning.value = sprint.name
+  try {
+    await call('next_pms.api.portal.reset_sprint_approval', { sprint: sprint.name })
+    sprint.approval_status = 'Pending'
+  } catch (e) {
+    console.error('Failed to reset approval:', e)
+    alert(e?.message || 'Failed to reset approval')
+  } finally {
+    approvalActioning.value = ''
+  }
 }
 </script>
 
@@ -723,5 +791,78 @@ function sprintStatusClass(status) {
   border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-bg);
+}
+
+/* ── Sprint Approval Status ────────────────────────── */
+.approval-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.approval-pending {
+  background: var(--bg-surface-hover);
+  color: var(--text-tertiary);
+}
+
+.approval-review {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.approval-approved {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.approval-changes {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.approval-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.approval-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-mark-review {
+  background: rgba(59, 130, 246, 0.05);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.btn-mark-review:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+.btn-reset-approval {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.btn-reset-approval:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: var(--text-tertiary);
 }
 </style>

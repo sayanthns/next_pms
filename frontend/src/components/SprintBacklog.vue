@@ -12,6 +12,16 @@
         <span class="status-badge" :class="sprintStatusClass">
           {{ sprintData.status || 'Planning' }}
         </span>
+        <span
+          v-if="sprintData.approval_status && sprintData.approval_status !== 'Pending'"
+          class="approval-badge"
+          :class="approvalBadgeClass"
+        >
+          <svg v-if="sprintData.approval_status === 'Approved'" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg v-else-if="sprintData.approval_status === 'Ready for Review'" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg v-else-if="sprintData.approval_status === 'Changes Requested'" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          {{ sprintData.approval_status }}
+        </span>
         <span v-if="sprintData.start_date || sprintData.end_date" class="sprint-dates">
           {{ formatDate(sprintData.start_date) }} - {{ formatDate(sprintData.end_date) }}
         </span>
@@ -223,6 +233,15 @@ const sprintStatusClass = computed(() => {
   return map[props.sprintData.status] || 'badge-default'
 })
 
+const approvalBadgeClass = computed(() => {
+  const map = {
+    'Ready for Review': 'approval-review',
+    'Approved': 'approval-approved',
+    'Changes Requested': 'approval-changes',
+  }
+  return map[props.sprintData.approval_status] || ''
+})
+
 // Methods
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
@@ -428,6 +447,22 @@ function taskStatusClass(status) {
   font-size: 12px;
   color: var(--text-tertiary);
 }
+
+/* Approval Status Badge */
+.approval-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.approval-review { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.approval-approved { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.approval-changes { background: rgba(245, 158, 11, 0.1); color: #d97706; }
 
 .task-count {
   font-size: 13px;
