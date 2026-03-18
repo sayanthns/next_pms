@@ -167,6 +167,18 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // Redirect PMS Customer users to portal (block access to admin routes)
+  if (!to.meta.isPortal && to.path !== '/portal' && !to.path.startsWith('/portal')) {
+    const { useSettingsStore } = await import("@/store/settings");
+    const settingsStore = useSettingsStore();
+    if (!settingsStore.loaded) {
+      await settingsStore.fetchSettings();
+    }
+    if (settingsStore.isCustomer) {
+      return next("/portal");
+    }
+  }
+
   if (to.meta.requiresAnalytics || to.meta.requiresAdmin || to.meta.requiresSettings) {
     // Dynamically import to avoid circular deps
     const { useSettingsStore } = await import("@/store/settings");
