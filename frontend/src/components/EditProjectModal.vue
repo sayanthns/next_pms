@@ -76,6 +76,19 @@
           rows="3"
         ></textarea>
       </div>
+
+      <div class="form-group portal-toggle-group">
+        <label class="portal-toggle-row">
+          <input type="checkbox" v-model="form.client_portal_enabled" class="portal-checkbox" />
+          <div class="portal-toggle-info">
+            <span class="portal-toggle-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Enable Client Portal
+            </span>
+            <span class="portal-toggle-desc">Allow clients to view project progress, milestones, and raise support tickets</span>
+          </div>
+        </label>
+      </div>
     </form>
   </CreateModal>
 </template>
@@ -106,6 +119,7 @@ function getDefaultForm() {
     end_date: '',
     total_budget: 0,
     description: '',
+    client_portal_enabled: false,
   }
 }
 
@@ -129,6 +143,7 @@ watch(() => props.show, (val) => {
       end_date: props.project.end_date || '',
       total_budget: props.project.total_budget || 0,
       description: props.project.description || '',
+      client_portal_enabled: !!props.project.client_portal_enabled,
     }
     if (!customers.value.length) {
       loadCustomers()
@@ -151,6 +166,7 @@ async function handleSubmit() {
         end_date: form.value.end_date || null,
         total_budget: form.value.total_budget || 0,
         description: form.value.description || '',
+        client_portal_enabled: form.value.client_portal_enabled ? 1 : 0,
       }),
     })
     emit('updated', result)
@@ -212,5 +228,73 @@ async function handleSubmit() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.portal-toggle-group {
+  padding-top: 8px;
+  border-top: 1px solid var(--border-default, #e5e7eb);
+}
+
+.portal-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.portal-checkbox {
+  width: 36px;
+  height: 20px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #e2e8f0;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.portal-checkbox:checked {
+  background: #2563eb;
+}
+
+.portal-checkbox::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.portal-checkbox:checked::after {
+  transform: translateX(16px);
+}
+
+.portal-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.portal-toggle-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.portal-toggle-desc {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.4;
 }
 </style>
