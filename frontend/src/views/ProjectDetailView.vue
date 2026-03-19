@@ -18,6 +18,17 @@
             <p v-if="project?.description" class="project-desc">{{ stripHtml(project.description) }}</p>
             <div class="header-badges">
               <span class="badge-status" :class="'badge-' + statusKey(dashboard.status)">{{ dashboard.status }}</span>
+              <label v-if="canModifyProject" class="portal-toggle" title="Enable Client Portal for this project">
+                <input type="checkbox" :checked="project?.client_portal_enabled" @change="togglePortal" />
+                <span class="portal-toggle-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Client Portal
+                </span>
+              </label>
+              <span v-else-if="project?.client_portal_enabled" class="badge-portal-enabled">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Portal Enabled
+              </span>
             </div>
           </div>
           <div class="header-meta-right">
@@ -559,6 +570,22 @@ const canModifyProject = computed(() => {
   if (project.value.project_manager === currentUser) return true
   return false
 })
+
+async function togglePortal(e) {
+  const enabled = e.target.checked ? 1 : 0
+  try {
+    await call('frappe.client.set_value', {
+      doctype: 'PMS Project',
+      name: props.id,
+      fieldname: 'client_portal_enabled',
+      value: enabled,
+    })
+    if (project.value) project.value.client_portal_enabled = enabled
+  } catch (err) {
+    console.error('Failed to toggle portal:', err)
+    e.target.checked = !enabled // revert
+  }
+}
 
 // Files state
 const projectFiles = ref([])
@@ -1198,6 +1225,26 @@ watch(() => props.id, () => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
+}
+
+.portal-toggle {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+}
+.portal-toggle input[type="checkbox"] {
+  width: 32px; height: 18px; appearance: none; -webkit-appearance: none;
+  background: #e2e8f0; border-radius: 9px; position: relative; cursor: pointer; transition: background 0.2s;
+  flex-shrink: 0;
+}
+.portal-toggle input[type="checkbox"]:checked { background: #2563eb; }
+.portal-toggle input[type="checkbox"]::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+  background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.portal-toggle input[type="checkbox"]:checked::after { transform: translateX(14px); }
+.portal-toggle-label { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #64748b; }
+.badge-portal-enabled {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; background: rgba(37,99,235,0.1); color: #2563eb;
 }
 
 .badge-active, .badge-in-progress { background: rgba(16, 185, 129, 0.1); color: #10b981; }
