@@ -397,7 +397,7 @@
               <option value="">Select a project</option>
               <option v-for="p in allProjectsList" :key="p.name" :value="p.name">{{ p.project_name || p.name }}</option>
             </select>
-            <small v-if="allProjectsList.length === 0" class="form-hint">No portal-enabled projects. Enable portal in project settings first.</small>
+            <small v-if="allProjectsList.length === 0" class="form-hint">No projects found.</small>
           </div>
           <div class="dialog-actions">
             <button class="btn-cancel-portal" @click="showInviteDialog = false">Cancel</button>

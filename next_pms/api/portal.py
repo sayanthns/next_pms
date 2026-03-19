@@ -968,12 +968,12 @@ def get_customer_users():
 
 @frappe.whitelist()
 def get_portal_enabled_projects():
-    """Return projects that have client_portal_enabled = 1. Admin/Manager only."""
+    """Return all active projects for portal access grant. Admin/Manager only."""
     _require_manager_or_admin()
 
     projects = frappe.get_all(
         "PMS Project",
-        filters={"client_portal_enabled": 1},
+        filters={"status": ["not in", ["Archived", "Cancelled"]]},
         fields=["name", "project_name", "status"],
         order_by="project_name asc",
     )
@@ -1026,6 +1026,11 @@ def invite_client(project, client_email=None, user=None):
         "is_active": 1,
     })
     doc.insert(ignore_permissions=True)
+
+    # Auto-enable client portal on the project
+    if not frappe.db.get_value("PMS Project", project, "client_portal_enabled"):
+        frappe.db.set_value("PMS Project", project, "client_portal_enabled", 1)
+
     frappe.db.commit()
 
     # Send invitation email

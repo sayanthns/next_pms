@@ -77,18 +77,6 @@
         ></textarea>
       </div>
 
-      <div class="form-group portal-toggle-group">
-        <label class="portal-toggle-row">
-          <input type="checkbox" v-model="form.client_portal_enabled" class="portal-checkbox" />
-          <div class="portal-toggle-info">
-            <span class="portal-toggle-title">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Enable Client Portal
-            </span>
-            <span class="portal-toggle-desc">Allow clients to view project progress, milestones, and raise support tickets</span>
-          </div>
-        </label>
-      </div>
     </form>
   </CreateModal>
 </template>

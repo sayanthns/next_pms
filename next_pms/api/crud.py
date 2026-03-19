@@ -234,7 +234,7 @@ def update_project(project, fields):
 
     allowed_fields = {
         "project_name", "status", "start_date", "end_date",
-        "total_budget", "description", "client",
+        "total_budget", "description", "client", "client_portal_enabled",
     }
 
     doc = frappe.get_doc("PMS Project", project)
