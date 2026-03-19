@@ -1014,6 +1014,10 @@ def invite_client(project, client_email=None, user=None):
     if existing:
         frappe.throw(_("This user already has access to this project."))
 
+    # Auto-enable client portal on the project BEFORE creating access record
+    if not frappe.db.get_value("PMS Project", project, "client_portal_enabled"):
+        frappe.db.set_value("PMS Project", project, "client_portal_enabled", 1)
+
     # Generate unique access token
     import secrets
     token = secrets.token_urlsafe(32)
@@ -1026,10 +1030,6 @@ def invite_client(project, client_email=None, user=None):
         "is_active": 1,
     })
     doc.insert(ignore_permissions=True)
-
-    # Auto-enable client portal on the project
-    if not frappe.db.get_value("PMS Project", project, "client_portal_enabled"):
-        frappe.db.set_value("PMS Project", project, "client_portal_enabled", 1)
 
     frappe.db.commit()
 
