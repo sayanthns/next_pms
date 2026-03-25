@@ -1,5 +1,25 @@
 # Next PMS - Project Memory
 
+> **READ `skills/` BEFORE ANY OPERATION.** The skills directory contains critical safety rules, architecture docs, operations guides, and troubleshooting patterns that prevent production incidents.
+
+## Skill Index
+
+| Skill | Path | Read When |
+|-------|------|-----------|
+| **Safety Rules** | `skills/safety/SKILL.md` | BEFORE making ANY change |
+| **Architecture** | `skills/architecture/SKILL.md` | When you need to understand how the system works |
+| **Operations** | `skills/operations/SKILL.md` | When building, deploying, or debugging |
+| **Troubleshooting** | `skills/troubleshooting/SKILL.md` | When something breaks |
+| **Session Logs** | `skills/session-logs/` | To see what was done in previous sessions |
+
+## Top 5 Rules That Prevent Production Incidents
+
+1. **PMS Comment fields are `comment` and `user`** — NOT `content` and `author`. This has caused multiple production bugs.
+2. **All portal `frappe.get_all()` calls need `ignore_permissions=True`** — PMS Customer users lack doctype read permissions.
+3. **Never use `frappe.get_doc()` in portal APIs** — use `frappe.db.get_value()` or `frappe.get_all()` with ignore_permissions.
+4. **Always `bench use office` before migrate on server** — 4 sites exist, wrong site = wrong database.
+5. **Frontend deploy = `cd frontend && yarn build`** — NOT `bench build`. They are completely different.
+
 ## Confirmed Features (Deployed & Tested on Server)
 
 ### March 2026
