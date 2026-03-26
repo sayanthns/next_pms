@@ -207,6 +207,7 @@
             "description": "Flag for tasks created via the client portal"
         }
     ],
+    "allow_import": 1,
     "index_web_pages_for_search": 1,
     "links": [],
     "modified": "2024-01-01 00:00:00.000000",

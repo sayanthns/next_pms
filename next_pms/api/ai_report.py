@@ -77,12 +77,12 @@ def _should_skip_report():
     report_date = add_days(today(), -1)  # Report covers yesterday
     dt = getdate(report_date)
 
-    # Skip if yesterday was Friday or Saturday (weekend in Middle East)
-    # or Saturday/Sunday (weekend in most countries)
-    # Using Friday-Saturday as default (adjust per company)
+    # Skip if yesterday was Sunday (weekly off)
+    # Note: Some staff may work Sundays on shift, but report is skipped
+    # since most of the team is off. Shift workers' data appears in Monday's report.
     weekday = dt.weekday()  # 0=Monday ... 6=Sunday
-    if weekday in (4, 5):  # Friday=4, Saturday=5
-        return f"Skipped: {report_date} was a weekend day."
+    if weekday == 6:  # Sunday
+        return f"Skipped: {report_date} was Sunday (weekly off)."
 
     # Check Frappe Holiday List (if configured)
     try:
