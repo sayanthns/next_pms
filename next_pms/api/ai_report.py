@@ -20,6 +20,12 @@ def generate_daily_report(test=False):
     if not settings.get("daily_report_enabled") and not is_test and not frappe.flags.force_ai_report:
         return {"success": False, "message": "Daily report is disabled."}
 
+    # Skip weekends and holidays (unless test)
+    if not is_test:
+        skip_reason = _should_skip_report()
+        if skip_reason:
+            return {"success": False, "message": skip_reason}
+
     if not settings.get("ai_api_key"):
         return {"success": False, "message": "API key not set."}
 
@@ -63,6 +69,37 @@ def generate_daily_report(test=False):
                        process_mining, time_patterns, project_summary)
 
     return {"success": True, "message": f"Daily AI report sent to {len(recipients)} recipient(s)."}
+
+
+def _should_skip_report():
+    """Check if today is a weekend or holiday. Returns skip reason or None."""
+    from frappe.utils import getdate
+    report_date = add_days(today(), -1)  # Report covers yesterday
+    dt = getdate(report_date)
+
+    # Skip if yesterday was Friday or Saturday (weekend in Middle East)
+    # or Saturday/Sunday (weekend in most countries)
+    # Using Friday-Saturday as default (adjust per company)
+    weekday = dt.weekday()  # 0=Monday ... 6=Sunday
+    if weekday in (4, 5):  # Friday=4, Saturday=5
+        return f"Skipped: {report_date} was a weekend day."
+
+    # Check Frappe Holiday List (if configured)
+    try:
+        # Look for any Holiday List that's the default or linked to the company
+        holiday_lists = frappe.get_all("Holiday List",
+            filters={"holiday_date": report_date},
+            fields=["parent"],
+            ignore_permissions=True,
+        )
+        # Also check the Holiday table directly
+        is_holiday = frappe.db.exists("Holiday", {"holiday_date": report_date})
+        if is_holiday:
+            return f"Skipped: {report_date} is a holiday."
+    except Exception:
+        pass  # Holiday List may not exist, continue
+
+    return None
 
 
 def _get_ai_settings():
