@@ -848,6 +848,7 @@ def get_user_detail(user):
         pms_role = "customer"
 
     rate = frappe.db.get_default("pms_hourly_rate", parent=user)
+    department = frappe.db.get_default("pms_department", parent=user) or ""
 
     today_date = today()
     checkin = frappe.db.get_value(
@@ -871,6 +872,7 @@ def get_user_detail(user):
         "pms_role": pms_role,
         "has_pms_access": has_pms_access,
         "hourly_rate": float(rate or 0),
+        "department": department,
         "today_checkin": checkin,
         "sidebar_permissions": perms.get("sidebar_permissions", {}),
         "project_tab_permissions": perms.get("project_tab_permissions", {}),
@@ -886,6 +888,16 @@ def set_user_hourly_rate(user, rate):
     frappe.db.set_default("pms_hourly_rate", float(rate or 0), parent=user)
     frappe.db.commit()
     return {"success": True, "rate": float(rate or 0)}
+
+
+@frappe.whitelist()
+def set_user_department(user, department):
+    """Set a user's PMS department. Admin only."""
+    if not is_admin_user():
+        frappe.throw("Only administrators can set departments.", frappe.PermissionError)
+    frappe.db.set_default("pms_department", department or "", parent=user)
+    frappe.db.commit()
+    return {"success": True, "department": department or ""}
 
 
 # ═══════════════════════════════════════════════════════════════

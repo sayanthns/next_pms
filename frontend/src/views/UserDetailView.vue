@@ -107,6 +107,22 @@
                 </span>
               </div>
               <div class="profile-field">
+                <label class="field-label">Department</label>
+                <div v-if="settingsStore.isAdmin" class="field-value">
+                  <select
+                    :value="user.department || ''"
+                    class="role-select"
+                    @change="changeDepartment($event.target.value)"
+                  >
+                    <option value="">No Department</option>
+                    <option v-for="d in departments" :key="d.name" :value="d.name">
+                      {{ d.department_name || d.name }}
+                    </option>
+                  </select>
+                </div>
+                <span v-else class="field-value">{{ user.department || '—' }}</span>
+              </div>
+              <div class="profile-field">
                 <label class="field-label">Hourly Rate</label>
                 <div class="rate-edit-wrap">
                   <span class="rate-currency">₹</span>
@@ -370,6 +386,26 @@ async function loadUser() {
 // ── Profile & Rate ────────────────────────────────────
 const togglingAccess = ref(false)
 const changingRole = ref(false)
+const departments = ref([])
+
+async function loadDepartments() {
+  try {
+    const result = await call('next_pms.api.crud.get_departments')
+    departments.value = result || []
+  } catch (e) {
+    console.error('Failed to load departments:', e)
+  }
+}
+
+async function changeDepartment(dept) {
+  try {
+    await call('next_pms.api.crud.set_user_department', { user: props.id, department: dept })
+    user.value.department = dept
+    showToast('Department updated')
+  } catch (e) {
+    console.error('Failed to set department:', e)
+  }
+}
 
 async function toggleAccess(enable) {
   togglingAccess.value = true
@@ -591,6 +627,7 @@ watch(activeTab, (tab) => {
 // ── Init ──────────────────────────────────────────────
 onMounted(async () => {
   await loadUser()
+  loadDepartments()
   // Pre-load the active tab data
   if (activeTab.value === 'attendance') loadCheckins()
   if (activeTab.value === 'projects') loadProjects()
