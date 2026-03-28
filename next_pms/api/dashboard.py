@@ -142,6 +142,7 @@ def get_all_projects_summary():
             "total_budget",
             "calculated_cost",
             "budget_utilization",
+            "department",
         ],
         order_by="modified desc",
     )

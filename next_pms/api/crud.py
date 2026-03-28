@@ -235,6 +235,7 @@ def update_project(project, fields):
     allowed_fields = {
         "project_name", "status", "start_date", "end_date",
         "total_budget", "description", "client", "client_portal_enabled",
+        "department",
     }
 
     doc = frappe.get_doc("PMS Project", project)
@@ -464,6 +465,7 @@ def create_project(
     description=None,
     total_budget=0,
     project_manager=None,
+    department=None,
 ):
     """Create a new PMS Project and return its name."""
     feature_perms = get_current_user_feature_permissions()
@@ -481,6 +483,7 @@ def create_project(
             "description": description,
             "total_budget": total_budget or 0,
             "project_manager": project_manager or frappe.session.user,
+            "department": department,
         }
     )
     doc.insert()
@@ -1236,3 +1239,50 @@ def get_task_report(filters=None):
             "status_breakdown": status_summary,
         },
     }
+
+
+@frappe.whitelist()
+def get_departments():
+    """Return all departments for dropdown."""
+    return frappe.get_all(
+        "Department",
+        filters={"is_group": 0},
+        fields=["name", "department_name"],
+        order_by="department_name asc",
+        ignore_permissions=True,
+    )
+
+
+@frappe.whitelist()
+def toggle_favorite_project(project):
+    """Add or remove a project from the current user's favorites.
+    Returns {"is_favorite": True/False}.
+    """
+    user = frappe.session.user
+    existing = frappe.db.exists(
+        "PMS Favorite Project", {"user": user, "project": project}
+    )
+    if existing:
+        frappe.delete_doc("PMS Favorite Project", existing, ignore_permissions=True)
+        frappe.db.commit()
+        return {"is_favorite": False}
+    else:
+        doc = frappe.get_doc({
+            "doctype": "PMS Favorite Project",
+            "user": user,
+            "project": project,
+        })
+        doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+        return {"is_favorite": True}
+
+
+@frappe.whitelist()
+def get_favorite_projects():
+    """Return list of project names favorited by the current user."""
+    return frappe.get_all(
+        "PMS Favorite Project",
+        filters={"user": frappe.session.user},
+        pluck="project",
+        ignore_permissions=True,
+    )

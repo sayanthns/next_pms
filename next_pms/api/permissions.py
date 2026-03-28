@@ -19,7 +19,8 @@ def is_manager_user():
 def get_user_projects():
     """Return list of project names user has access to.
     Returns None if user is admin (no filter needed).
-    Returns list of project names otherwise (including PM).
+    For PMS Manager: projects where user is PM, team member, OR project's
+    department matches user's department.
     """
     if is_admin_user():
         return None
@@ -40,7 +41,18 @@ def get_user_projects():
         pluck="parent",
     )
 
-    allowed = list(set(manager_projects + member_projects))
+    # For PMS Manager: also include projects matching their department
+    dept_projects = []
+    if is_manager_user():
+        user_dept = frappe.db.get_value("User", user, "department")
+        if user_dept:
+            dept_projects = frappe.get_all(
+                "PMS Project",
+                filters={"department": user_dept},
+                pluck="name",
+            )
+
+    allowed = list(set(manager_projects + member_projects + dept_projects))
 
     # Return a sentinel value if no projects found so filters don't return all
     return allowed if allowed else ["__none__"]
@@ -68,18 +80,34 @@ def project_query_conditions(user):
         return ""
 
     roles = set(frappe.get_roles(user))
-    # Only System Manager bypasses all filters
-    # PMS Manager is filtered like others (sees only allocated projects)
     if "System Manager" in roles:
         return ""
 
-    return """(
-        `tabPMS Project`.project_manager = {user}
-        OR `tabPMS Project`.name IN (
+    escaped_user = frappe.db.escape(user)
+
+    # Base conditions: PM or team member
+    conditions = [
+        f"`tabPMS Project`.project_manager = {escaped_user}",
+        f"""`tabPMS Project`.name IN (
             SELECT parent FROM `tabPMS Project Member`
-            WHERE user = {user}
+            WHERE user = {escaped_user}
+        )""",
+    ]
+
+    # PMS Manager: also sees projects in their department
+    if "PMS Manager" in roles:
+        user_dept = frappe.db.get_value("User", user, "department")
+        if user_dept:
+            escaped_dept = frappe.db.escape(user_dept)
+            conditions.append(
+                f"`tabPMS Project`.department = {escaped_dept}"
+            )
+        # Also include projects with no department set
+        conditions.append(
+            "`tabPMS Project`.department IS NULL OR `tabPMS Project`.department = ''"
         )
-    )""".format(user=frappe.db.escape(user))
+
+    return "(" + " OR ".join(conditions) + ")"
 
 
 def task_query_conditions(user):

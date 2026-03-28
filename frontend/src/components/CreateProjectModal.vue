@@ -35,6 +35,16 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label">Department</label>
+        <select v-model="form.department" class="form-input">
+          <option value="">No Department</option>
+          <option v-for="d in departments" :key="d.name" :value="d.name">
+            {{ d.department_name || d.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Status</label>
         <select v-model="form.status" class="form-input">
           <option value="Planning">Planning</option>
@@ -94,12 +104,14 @@ const emit = defineEmits(['close', 'created'])
 const nameInput = ref(null)
 const saving = ref(false)
 const customers = ref([])
+const departments = ref([])
 const form = ref(getDefaultForm())
 
 function getDefaultForm() {
   return {
     project_name: '',
     client: '',
+    department: '',
     status: 'Planning',
     start_date: new Date().toISOString().split('T')[0],
     end_date: '',
@@ -118,11 +130,24 @@ async function loadCustomers() {
   }
 }
 
+async function loadDepartments() {
+  try {
+    const result = await call('next_pms.api.crud.get_departments')
+    departments.value = result || []
+  } catch (e) {
+    console.error('Failed to load departments:', e)
+    departments.value = []
+  }
+}
+
 watch(() => props.show, (val) => {
   if (val) {
     form.value = getDefaultForm()
     if (!customers.value.length) {
       loadCustomers()
+    }
+    if (!departments.value.length) {
+      loadDepartments()
     }
     nextTick(() => nameInput.value?.focus())
   }
@@ -141,6 +166,7 @@ async function handleSubmit() {
       end_date: form.value.end_date || null,
       total_budget: form.value.total_budget || 0,
       description: form.value.description || null,
+      department: form.value.department || null,
     })
     emit('created', result)
   } catch (e) {

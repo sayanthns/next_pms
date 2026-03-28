@@ -32,6 +32,16 @@
           <option value="on-hold">On Hold</option>
           <option value="completed">Completed</option>
         </select>
+        <button
+          :class="['filter-btn', { active: favoriteFilter }]"
+          @click="favoriteFilter = !favoriteFilter"
+          title="Show favorites only"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" :fill="favoriteFilter ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          Favorites
+        </button>
       </div>
       <div class="toolbar-right">
         <span class="project-count">{{ filteredProjects.length }} projects</span>
@@ -85,7 +95,19 @@
         @click="openProject(project.name)"
       >
         <div class="card-header">
-          <h3 class="project-name">{{ project.project_name }}</h3>
+          <div class="card-header-left">
+            <button
+              class="star-btn"
+              :class="{ active: isFavorite(project.name) }"
+              @click="toggleFavorite($event, project.name)"
+              :title="isFavorite(project.name) ? 'Remove from favorites' : 'Add to favorites'"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" :fill="isFavorite(project.name) ? '#f59e0b' : 'none'" stroke="#f59e0b" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+            <h3 class="project-name">{{ project.project_name }}</h3>
+          </div>
           <span class="status-badge" :class="statusClass(project.status)">
             {{ project.status }}
           </span>
@@ -201,6 +223,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { call } from '@/utils/frappe'
 import { useProjectStore } from '@/store/projects'
 import { useSettingsStore } from '@/store/settings'
 import EmptyState from '@/components/EmptyState.vue'
@@ -213,13 +236,50 @@ const showCreateProject = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const viewMode = ref('grid')
+const favoriteProjects = ref([])
+const favoriteFilter = ref(false)
 
 onMounted(() => {
   projectStore.fetchProjects()
+  loadFavorites()
 })
+
+async function loadFavorites() {
+  try {
+    const result = await call('next_pms.api.crud.get_favorite_projects')
+    favoriteProjects.value = result || []
+  } catch (e) {
+    console.error('Failed to load favorites:', e)
+  }
+}
+
+async function toggleFavorite(e, projectName) {
+  e.stopPropagation()
+  try {
+    const result = await call('next_pms.api.crud.toggle_favorite_project', {
+      project: projectName,
+    })
+    if (result.is_favorite) {
+      favoriteProjects.value.push(projectName)
+    } else {
+      favoriteProjects.value = favoriteProjects.value.filter(p => p !== projectName)
+    }
+  } catch (err) {
+    console.error('Failed to toggle favorite:', err)
+  }
+}
+
+function isFavorite(projectName) {
+  return favoriteProjects.value.includes(projectName)
+}
 
 const filteredProjects = computed(() => {
   let projects = projectStore.projects || []
+
+  // Favorites filter
+  if (favoriteFilter.value) {
+    projects = projects.filter(p => favoriteProjects.value.includes(p.name))
+  }
 
   // Search filter
   if (searchQuery.value) {
@@ -805,5 +865,53 @@ function statusBorderColor(status) {
   .search-box { max-width: 100%; }
   .toolbar-right { justify-content: space-between; }
   .project-grid { grid-template-columns: 1fr; }
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+.star-btn:hover,
+.star-btn.active {
+  opacity: 1;
+}
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.card-header-left .project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 6px;
+  background: white;
+  font-size: 13px;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover {
+  border-color: var(--primary, #3b82f6);
+  color: var(--primary, #3b82f6);
+}
+.filter-btn.active {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #b45309;
 }
 </style>

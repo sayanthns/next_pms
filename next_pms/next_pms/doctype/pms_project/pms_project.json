@@ -7,6 +7,7 @@
  "field_order": [
   "project_name",
   "client",
+  "department",
   "project_manager",
   "status",
   "column_break_mkew",
@@ -38,6 +39,12 @@
    "label": "Client",
    "options": "Customer",
    "reqd": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
   },
   {
    "fieldname": "project_manager",
