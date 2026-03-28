@@ -44,7 +44,7 @@ def get_user_projects():
     # For PMS Manager: also include projects matching their department
     dept_projects = []
     if is_manager_user():
-        user_dept = frappe.db.get_value("User", user, "department")
+        user_dept = frappe.db.get_value("Employee", {"user_id": user}, "department")
         if user_dept:
             dept_projects = frappe.get_all(
                 "PMS Project",
@@ -96,7 +96,7 @@ def project_query_conditions(user):
 
     # PMS Manager: also sees projects in their department
     if "PMS Manager" in roles:
-        user_dept = frappe.db.get_value("User", user, "department")
+        user_dept = frappe.db.get_value("Employee", {"user_id": user}, "department")
         if user_dept:
             escaped_dept = frappe.db.escape(user_dept)
             conditions.append(

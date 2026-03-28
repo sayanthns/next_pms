@@ -1246,7 +1246,6 @@ def get_departments():
     """Return all departments for dropdown."""
     return frappe.get_all(
         "Department",
-        filters={"is_group": 0},
         fields=["name", "department_name"],
         order_by="department_name asc",
         ignore_permissions=True,
