@@ -1255,10 +1255,11 @@ def get_task_report(filters=None):
 
 @frappe.whitelist()
 def get_departments():
-    """Return all departments for dropdown."""
+    """Return only enabled, non-group departments for dropdown."""
     return frappe.get_all(
         "Department",
         fields=["name", "department_name"],
+        filters={"disabled": 0, "is_group": 0},
         order_by="department_name asc",
         ignore_permissions=True,
     )

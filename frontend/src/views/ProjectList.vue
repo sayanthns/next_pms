@@ -32,6 +32,12 @@
           <option value="on-hold">On Hold</option>
           <option value="completed">Completed</option>
         </select>
+        <select v-model="departmentFilter" class="filter-select">
+          <option value="all">All Departments</option>
+          <option v-for="d in departments" :key="d.name" :value="d.name">
+            {{ d.department_name || d.name }}
+          </option>
+        </select>
         <button
           :class="['filter-btn', { active: favoriteFilter }]"
           @click="favoriteFilter = !favoriteFilter"
@@ -82,7 +88,7 @@
     <!-- No results -->
     <div v-else-if="!filteredProjects.length" class="empty-filter">
       <p>No projects match your search or filter.</p>
-      <button class="btn-clear-filter" @click="searchQuery = ''; statusFilter = 'all'">Clear filters</button>
+      <button class="btn-clear-filter" @click="searchQuery = ''; statusFilter = 'all'; departmentFilter = 'all'; favoriteFilter = false">Clear filters</button>
     </div>
 
     <!-- Grid View -->
@@ -238,11 +244,23 @@ const statusFilter = ref('all')
 const viewMode = ref('grid')
 const favoriteProjects = ref([])
 const favoriteFilter = ref(false)
+const departments = ref([])
+const departmentFilter = ref('all')
 
 onMounted(() => {
   projectStore.fetchProjects()
   loadFavorites()
+  loadDepartments()
 })
+
+async function loadDepartments() {
+  try {
+    const result = await call('next_pms.api.crud.get_departments')
+    departments.value = result || []
+  } catch (e) {
+    console.error('Failed to load departments:', e)
+  }
+}
 
 async function loadFavorites() {
   try {
@@ -279,6 +297,11 @@ const filteredProjects = computed(() => {
   // Favorites filter
   if (favoriteFilter.value) {
     projects = projects.filter(p => favoriteProjects.value.includes(p.name))
+  }
+
+  // Department filter
+  if (departmentFilter.value !== 'all') {
+    projects = projects.filter(p => p.department === departmentFilter.value)
   }
 
   // Search filter
