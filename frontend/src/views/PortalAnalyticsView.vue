@@ -270,8 +270,10 @@ function statusClass(status) {
 .priority-bar-track { flex: 1; height: 8px; background: var(--border-default); border-radius: 4px; overflow: hidden; }
 .priority-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
 .bar-low { background: #94a3b8; }
+.bar-normal { background: #3b82f6; }
 .bar-medium { background: #f59e0b; }
 .bar-high { background: #f97316; }
+.bar-urgent { background: #dc2626; }
 .bar-critical { background: #ef4444; }
 .priority-count { font-size: 13px; font-weight: 600; color: var(--text-primary); width: 24px; text-align: right; }
 
@@ -318,8 +320,10 @@ function statusClass(status) {
 .ticket-indicator { display: flex; align-items: center; justify-content: center; width: 32px; flex-shrink: 0; }
 .priority-dot { width: 10px; height: 10px; border-radius: 50%; }
 .dot-critical { background: #ef4444; }
+.dot-urgent { background: #dc2626; }
 .dot-high { background: #f97316; }
 .dot-medium { background: #f59e0b; }
+.dot-normal { background: #3b82f6; }
 .dot-low { background: #94a3b8; }
 
 .activity-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }

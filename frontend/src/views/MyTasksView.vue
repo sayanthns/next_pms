@@ -171,7 +171,7 @@ function tasksByStatus(status) {
 }
 
 function priorityColor(p) {
-  const map = { Critical: '#EF4444', High: '#F59E0B', Medium: '#FBBF24', Low: '#9ca3af' }
+  const map = { Critical: '#EF4444', Urgent: '#dc2626', High: '#F59E0B', Medium: '#FBBF24', Normal: '#3b82f6', Low: '#9ca3af' }
   return map[p] || '#9ca3af'
 }
 

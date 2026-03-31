@@ -380,9 +380,11 @@ function getInitials(email) {
 
 function priorityClass(priority) {
   const map = {
+    'Critical': 'priority-critical',
     'Urgent': 'priority-urgent',
     'High': 'priority-high',
     'Medium': 'priority-medium',
+    'Normal': 'priority-normal',
     'Low': 'priority-low',
   }
   return map[priority] || 'priority-low'
@@ -631,8 +633,12 @@ async function resetApproval(sprint) {
   flex-shrink: 0;
 }
 
+.priority-critical {
+  background: #EF4444;
+}
+
 .priority-urgent {
-  background: var(--color-danger);
+  background: #dc2626;
 }
 
 .priority-high {
@@ -641,6 +647,10 @@ async function resetApproval(sprint) {
 
 .priority-medium {
   background: #FBBF24;
+}
+
+.priority-normal {
+  background: #3b82f6;
 }
 
 .priority-low {

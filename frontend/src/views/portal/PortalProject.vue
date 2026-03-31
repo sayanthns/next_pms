@@ -643,8 +643,10 @@ function formatDateTime(d) {
 
 .task-priority, .task-status-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
 .tp-critical { background: #fef2f2; color: #dc2626; }
+.tp-urgent { background: #fef2f2; color: #dc2626; }
 .tp-high { background: #fff7ed; color: #ea580c; }
 .tp-medium { background: #fffbeb; color: #d97706; }
+.tp-normal { background: #eff6ff; color: #3b82f6; }
 .tp-low { background: #f0fdf4; color: #16a34a; }
 .ts-to-do { background: #f1f5f9; color: #64748b; }
 .ts-in-progress { background: #eff6ff; color: #2563eb; }

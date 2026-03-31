@@ -51,8 +51,10 @@
       <select v-model="filterPriority" class="filter-select">
         <option value="">All Priorities</option>
         <option value="Critical">Critical</option>
+        <option value="Urgent">Urgent</option>
         <option value="High">High</option>
         <option value="Medium">Medium</option>
+        <option value="Normal">Normal</option>
         <option value="Low">Low</option>
       </select>
     </div>
@@ -226,8 +228,10 @@ function formatDate(d) {
 .sb-backlog { background: #f8fafc; color: #94a3b8; }
 
 .pb-critical { background: #fef2f2; color: #dc2626; }
+.pb-urgent { background: #fef2f2; color: #dc2626; }
 .pb-high { background: #fff7ed; color: #ea580c; }
 .pb-medium { background: #fffbeb; color: #d97706; }
+.pb-normal { background: #eff6ff; color: #3b82f6; }
 .pb-low { background: #f0fdf4; color: #16a34a; }
 
 /* States */

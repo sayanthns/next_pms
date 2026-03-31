@@ -85,10 +85,12 @@
               <div class="edit-field">
                 <label class="edit-label">Priority</label>
                 <select v-model="editForm.priority" class="edit-input">
-                  <option value="Urgent">Urgent</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
                   <option value="Low">Low</option>
+                  <option value="Normal">Normal</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                  <option value="Critical">Critical</option>
                 </select>
               </div>
               <div class="edit-field">
@@ -1209,9 +1211,11 @@ function formatCurrency(value) {
 
 function priorityClass(priority) {
   const map = {
+    'Critical': 'priority-critical',
     'Urgent': 'priority-urgent',
     'High': 'priority-high',
     'Medium': 'priority-medium',
+    'Normal': 'priority-normal',
     'Low': 'priority-low',
   }
   return map[priority] || 'priority-low'
@@ -1219,9 +1223,11 @@ function priorityClass(priority) {
 
 function priorityDotClass(priority) {
   const map = {
+    'Critical': 'dot-critical',
     'Urgent': 'dot-urgent',
     'High': 'dot-high',
     'Medium': 'dot-medium',
+    'Normal': 'dot-normal',
     'Low': 'dot-low',
   }
   return map[priority] || 'dot-low'
@@ -1343,9 +1349,14 @@ function statusSelectClass(status) {
   margin-top: 4px;
 }
 
-.priority-urgent {
+.priority-critical {
   background: rgba(239, 68, 68, 0.1);
   color: #EF4444;
+}
+
+.priority-urgent {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .priority-high {
@@ -1356,6 +1367,11 @@ function statusSelectClass(status) {
 .priority-medium {
   background: rgba(251, 191, 36, 0.1);
   color: #FBBF24;
+}
+
+.priority-normal {
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
 .priority-low {
@@ -1627,9 +1643,11 @@ function statusSelectClass(status) {
   flex-shrink: 0;
 }
 
-.dot-urgent { background: #EF4444; }
+.dot-critical { background: #EF4444; }
+.dot-urgent { background: #dc2626; }
 .dot-high { background: #F59E0B; }
 .dot-medium { background: #FBBF24; }
+.dot-normal { background: #3b82f6; }
 .dot-low { background: var(--text-tertiary); }
 
 .subtask-title {

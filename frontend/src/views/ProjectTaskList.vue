@@ -21,8 +21,10 @@
         <select v-model="filterPriority" class="filter-select">
           <option value="">All Priority</option>
           <option value="Critical">Critical</option>
+          <option value="Urgent">Urgent</option>
           <option value="High">High</option>
           <option value="Medium">Medium</option>
+          <option value="Normal">Normal</option>
           <option value="Low">Low</option>
         </select>
         <button v-if="canCreateTask" class="btn btn-primary" @click="showCreateTask = true">
@@ -185,7 +187,7 @@ const filteredTasks = computed(() => {
   }
 
   // Sort
-  const priorityOrder = { Critical: 4, High: 3, Medium: 2, Low: 1 }
+  const priorityOrder = { Critical: 6, Urgent: 5, High: 4, Medium: 3, Normal: 2, Low: 1 }
   result.sort((a, b) => {
     let valA, valB
     if (sortField.value === 'priority') {
@@ -439,9 +441,11 @@ function statusKey(status) {
   margin-right: 6px;
 }
 
-.dot-critical, .dot-urgent { background: var(--color-danger); }
+.dot-critical { background: #EF4444; }
+.dot-urgent { background: #dc2626; }
 .dot-high { background: var(--color-warning); }
 .dot-medium { background: #FBBF24; }
+.dot-normal { background: #3b82f6; }
 .dot-low { background: var(--text-tertiary); }
 
 .priority-text {

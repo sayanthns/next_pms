@@ -56,9 +56,10 @@ let ganttInstance = null
 // Color maps
 const priorityColors = {
   Critical: '#EF4444',
-  Urgent: '#EF4444',
+  Urgent: '#dc2626',
   High: '#F97316',
   Medium: '#F59E0B',
+  Normal: '#3b82f6',
   Low: '#94A3B8',
 }
 

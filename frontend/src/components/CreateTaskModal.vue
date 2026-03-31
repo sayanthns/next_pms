@@ -25,8 +25,10 @@
           <label class="form-label">Priority</label>
           <select v-model="form.priority" class="form-input">
             <option value="Low">Low</option>
+            <option value="Normal">Normal</option>
             <option value="Medium">Medium</option>
             <option value="High">High</option>
+            <option value="Urgent">Urgent</option>
             <option value="Critical">Critical</option>
           </select>
         </div>

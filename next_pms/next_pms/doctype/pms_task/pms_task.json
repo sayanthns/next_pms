@@ -85,7 +85,7 @@
             "fieldname": "priority",
             "fieldtype": "Select",
             "label": "Priority",
-            "options": "Low\nMedium\nHigh\nCritical",
+            "options": "Low\nNormal\nMedium\nHigh\nUrgent\nCritical",
             "default": "Medium",
             "in_list_view": 1
         },

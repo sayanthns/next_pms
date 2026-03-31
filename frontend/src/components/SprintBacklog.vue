@@ -146,8 +146,10 @@
           />
           <select v-model="newTaskPriority" class="add-task-select">
             <option value="Low">Low</option>
+            <option value="Normal">Normal</option>
             <option value="Medium">Medium</option>
             <option value="High">High</option>
+            <option value="Urgent">Urgent</option>
             <option value="Critical">Critical</option>
           </select>
           <input
@@ -354,9 +356,10 @@ function getInitials(email) {
 function priorityClass(priority) {
   const map = {
     Critical: 'priority-critical',
-    Urgent: 'priority-critical',
+    Urgent: 'priority-urgent',
     High: 'priority-high',
     Medium: 'priority-medium',
+    Normal: 'priority-normal',
     Low: 'priority-low',
   }
   return map[priority] || 'priority-low'
@@ -590,8 +593,10 @@ function taskStatusClass(status) {
 }
 
 .priority-critical { background: #EF4444; }
+.priority-urgent { background: #dc2626; }
 .priority-high { background: #F97316; }
 .priority-medium { background: #F59E0B; }
+.priority-normal { background: #3b82f6; }
 .priority-low { background: #94A3B8; }
 
 /* Task title link */

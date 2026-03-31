@@ -42,8 +42,10 @@
           <select v-model="filters.priority" class="filter-select" @change="fetchReport">
             <option value="">All Priorities</option>
             <option value="Critical">Critical</option>
+            <option value="Urgent">Urgent</option>
             <option value="High">High</option>
             <option value="Medium">Medium</option>
+            <option value="Normal">Normal</option>
             <option value="Low">Low</option>
           </select>
         </div>
@@ -280,7 +282,7 @@ function statusChipClass(status) {
 }
 
 function priorityClass(priority) {
-  const map = { 'Critical': 'priority-critical', 'High': 'priority-high', 'Medium': 'priority-medium', 'Low': 'priority-low' }
+  const map = { 'Critical': 'priority-critical', 'Urgent': 'priority-urgent', 'High': 'priority-high', 'Medium': 'priority-medium', 'Normal': 'priority-normal', 'Low': 'priority-low' }
   return map[priority] || ''
 }
 </script>
@@ -347,8 +349,10 @@ function priorityClass(priority) {
 
 .priority-badge { font-size: 11px; font-weight: 600; }
 .priority-critical { color: #dc2626; }
+.priority-urgent { color: #dc2626; }
 .priority-high { color: #ea580c; }
 .priority-medium { color: #d97706; }
+.priority-normal { color: #3b82f6; }
 .priority-low { color: #64748b; }
 
 .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: var(--color-primary-bg); color: var(--color-primary); }

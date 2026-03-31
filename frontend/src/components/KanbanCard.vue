@@ -105,9 +105,11 @@ const assigneeList = computed(() => {
 
 const priorityClass = computed(() => {
   const p = (props.task.priority || '').toLowerCase()
-  if (p === 'critical' || p === 'urgent') return 'priority-critical'
+  if (p === 'critical') return 'priority-critical'
+  if (p === 'urgent') return 'priority-urgent'
   if (p === 'high') return 'priority-high'
   if (p === 'medium') return 'priority-medium'
+  if (p === 'normal') return 'priority-normal'
   return 'priority-low'
 })
 
@@ -117,6 +119,7 @@ const priorityLabel = computed(() => {
   if (p === 'urgent') return 'Urgent'
   if (p === 'high') return 'High'
   if (p === 'medium') return 'Medium'
+  if (p === 'normal') return 'Normal'
   if (p === 'low') return 'Low'
   // Capitalize first letter for any other value
   if (props.task.priority) {
@@ -247,6 +250,11 @@ function onDragEnd(event) {
   color: var(--color-danger);
 }
 
+.priority-urgent {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
 .priority-high {
   background: var(--color-warning-bg);
   color: var(--color-warning);
@@ -255,6 +263,11 @@ function onDragEnd(event) {
 .priority-medium {
   background: rgba(251, 191, 36, 0.1);
   color: var(--color-warning-hover);
+}
+
+.priority-normal {
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
 .priority-low {

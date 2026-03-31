@@ -782,10 +782,14 @@ function getTaskStatusColor(status) {
   flex-shrink: 0;
 }
 
-.priority-critical,
-.priority-urgent {
+.priority-critical {
   background-color: var(--color-danger-bg);
   color: var(--color-danger);
+}
+
+.priority-urgent {
+  background-color: #fef2f2;
+  color: #dc2626;
 }
 
 .priority-high {
@@ -796,6 +800,11 @@ function getTaskStatusColor(status) {
 .priority-medium {
   background-color: var(--color-warning-bg);
   color: var(--color-warning);
+}
+
+.priority-normal {
+  background-color: #eff6ff;
+  color: #3b82f6;
 }
 
 .priority-low {

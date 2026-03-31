@@ -197,8 +197,10 @@
           <label>Priority</label>
           <select v-model="newTicket.priority" class="form-input">
             <option value="Low">Low</option>
+            <option value="Normal">Normal</option>
             <option value="Medium">Medium</option>
             <option value="High">High</option>
+            <option value="Urgent">Urgent</option>
             <option value="Critical">Critical</option>
           </select>
         </div>
@@ -485,8 +487,10 @@ function formatDateTime(d) {
 
 .ticket-priority { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 4px; }
 .tp-critical { background: #fef2f2; color: #dc2626; }
+.tp-urgent { background: #fef2f2; color: #dc2626; }
 .tp-high { background: #fff7ed; color: #ea580c; }
 .tp-medium { background: #fffbeb; color: #d97706; }
+.tp-normal { background: #eff6ff; color: #3b82f6; }
 .tp-low { background: #f0fdf4; color: #16a34a; }
 
 .ticket-comments { display: flex; align-items: center; gap: 3px; }
