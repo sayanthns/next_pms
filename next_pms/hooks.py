@@ -53,6 +53,7 @@ scheduler_events = {
         ],
         "0 8 * * 1-6": [
             "next_pms.api.project_report.send_scheduled_project_reports",
+            "next_pms.api.project_report.send_scheduled_multi_project_reports",
         ],
     },
 }

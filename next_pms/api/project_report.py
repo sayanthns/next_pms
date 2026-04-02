@@ -155,6 +155,170 @@ def get_project_report_recipients(project):
     return suggestions
 
 
+### --- Multi-project combined report APIs --- ###
+
+
+@frappe.whitelist()
+def get_multi_project_report_data(projects, date=None):
+    """Collect status data for multiple projects. Returns list of per-project data."""
+    import json as _json
+    if isinstance(projects, str):
+        projects = _json.loads(projects)
+
+    if not date:
+        date = str(add_days(today(), -1))
+
+    results = []
+    totals = {"tasks_done_count": 0, "tasks_in_progress_count": 0, "tasks_new_count": 0,
+              "total_tasks": 0, "done_tasks": 0}
+
+    for project_name in projects:
+        data = get_project_report_data(project_name, date)
+        results.append(data)
+        totals["tasks_done_count"] += data["tasks_done_count"]
+        totals["tasks_in_progress_count"] += data["tasks_in_progress_count"]
+        totals["tasks_new_count"] += data["tasks_new_count"]
+        totals["total_tasks"] += data["total_tasks"]
+        totals["done_tasks"] += data["done_tasks"]
+
+    totals["progress_pct"] = round((totals["done_tasks"] / totals["total_tasks"] * 100)
+                                    if totals["total_tasks"] else 0)
+
+    formatted_date = format_date(str(getdate(date)), "EEEE, d MMMM yyyy")
+    return {"projects": results, "totals": totals, "formatted_date": formatted_date,
+            "report_date": str(getdate(date))}
+
+
+@frappe.whitelist()
+def send_multi_project_report(projects, recipients, report_name=None, date=None):
+    """Generate and email a combined report for multiple projects."""
+    import json as _json
+    if isinstance(projects, str):
+        projects = _json.loads(projects)
+    if isinstance(recipients, str):
+        recipients = [r.strip() for r in recipients.split(",") if r.strip()]
+
+    if not recipients:
+        frappe.throw("Please provide at least one recipient email.")
+    if not projects:
+        frappe.throw("Please select at least one project.")
+
+    data = get_multi_project_report_data(projects, date)
+    data["report_name"] = report_name or "Project Status Update"
+
+    message = frappe.render_template(
+        "next_pms/templates/emails/project_multi_status_report.html",
+        data,
+    )
+
+    subject = f"{data['report_name']} — {data['formatted_date']}"
+
+    frappe.sendmail(
+        recipients=recipients,
+        subject=subject,
+        message=message,
+        now=True,
+    )
+
+    return {"success": True, "message": f"Combined report sent to {len(recipients)} recipient(s)."}
+
+
+@frappe.whitelist()
+def get_report_configs():
+    """Return all saved report configs."""
+    configs = frappe.get_all(
+        "PMS Report Config",
+        fields=["name", "report_name", "recipients", "auto_send", "owner", "modified"],
+        order_by="modified desc",
+        ignore_permissions=True,
+    )
+
+    for c in configs:
+        c["projects"] = frappe.get_all(
+            "PMS Report Config Project",
+            filters={"parent": c["name"]},
+            fields=["project"],
+            order_by="idx asc",
+        )
+        # Enrich with project names
+        for p in c["projects"]:
+            p["project_name"] = frappe.db.get_value("PMS Project", p["project"], "project_name") or p["project"]
+
+    return configs
+
+
+@frappe.whitelist()
+def save_report_config(report_name, projects, recipients, auto_send=False, config_name=None):
+    """Create or update a report config."""
+    import json as _json
+    if isinstance(projects, str):
+        projects = _json.loads(projects)
+    auto_send = str(auto_send).lower() in ("true", "1", "yes")
+
+    if config_name:
+        doc = frappe.get_doc("PMS Report Config", config_name)
+        doc.report_name = report_name
+        doc.recipients = recipients
+        doc.auto_send = 1 if auto_send else 0
+        doc.set("projects", [])
+        for p in projects:
+            doc.append("projects", {"project": p})
+        doc.save(ignore_permissions=True)
+    else:
+        doc = frappe.get_doc({
+            "doctype": "PMS Report Config",
+            "report_name": report_name,
+            "recipients": recipients,
+            "auto_send": 1 if auto_send else 0,
+            "projects": [{"project": p} for p in projects],
+        })
+        doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"success": True, "name": doc.name, "report_name": doc.report_name}
+
+
+@frappe.whitelist()
+def delete_report_config(config_name):
+    """Delete a saved report config."""
+    frappe.delete_doc("PMS Report Config", config_name, ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True}
+
+
+def send_scheduled_multi_project_reports():
+    """Cron: send combined reports for all configs with auto_send enabled."""
+    configs = frappe.get_all(
+        "PMS Report Config",
+        filters={"auto_send": 1, "recipients": ["is", "set"]},
+        fields=["name", "report_name", "recipients"],
+    )
+
+    report_date = str(add_days(today(), -1))
+
+    for config in configs:
+        projects = frappe.get_all(
+            "PMS Report Config Project",
+            filters={"parent": config.name},
+            pluck="project",
+            order_by="idx asc",
+        )
+        if not projects:
+            continue
+
+        recipients = [r.strip() for r in (config.recipients or "").split(",") if r.strip()]
+        if not recipients:
+            continue
+
+        try:
+            send_multi_project_report(projects, recipients, report_name=config.report_name, date=report_date)
+        except Exception:
+            frappe.log_error(
+                f"Failed to send scheduled multi-project report: {config.report_name}",
+                "Multi-Project Report Scheduler",
+            )
+
+
 def send_scheduled_project_reports():
     """Cron job: send daily reports for all active projects with auto_send_report enabled."""
     projects = frappe.get_all(

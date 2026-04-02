@@ -7,6 +7,32 @@
       </div>
     </div>
 
+    <!-- Tab Bar (non-embedded only) -->
+    <div v-if="!embedded" class="reports-tab-bar">
+      <button
+        class="reports-tab-btn"
+        :class="{ active: reportTab === 'analytics' }"
+        @click="reportTab = 'analytics'"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </button>
+      <button
+        class="reports-tab-btn"
+        :class="{ active: reportTab === 'client-reports' }"
+        @click="reportTab = 'client-reports'"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Client Reports
+      </button>
+    </div>
+
+    <!-- Client Reports Tab -->
+    <ClientReportsTab v-if="!embedded && reportTab === 'client-reports'" />
+
+    <!-- Analytics Tab: Project Selector (shown if no projectId prop and not embedded) -->
+    <template v-if="embedded || reportTab === 'analytics'">
+
     <!-- Project Selector (shown if no projectId prop and not embedded) -->
     <div v-if="!selectedProject && !embedded" class="project-selector-bar">
       <div class="selector-row">
@@ -411,6 +437,8 @@
         </div>
       </div>
     </template>
+
+    </template><!-- end analytics tab wrapper -->
   </div>
 </template>
 
@@ -421,6 +449,7 @@ import { useProjectStore } from '@/store/projects'
 import { useSettingsStore } from '@/store/settings'
 import { getList, call } from '@/utils/frappe'
 import BudgetWidget from '@/components/BudgetWidget.vue'
+import ClientReportsTab from '@/components/ClientReportsTab.vue'
 
 const props = defineProps({
   projectId: {
@@ -434,6 +463,7 @@ const router = useRouter()
 const projectStore = useProjectStore()
 const settingsStore = useSettingsStore()
 
+const reportTab = ref('analytics')
 const projectOptions = ref([])
 const projectsLoading = ref(false)
 const pickedProject = ref('')
@@ -714,11 +744,43 @@ function sprintStatusClass(status) {
   padding: 16px 0;
 }
 
+.reports-tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-bottom: 2px solid var(--border-default, #e5e7eb);
+}
+
+.reports-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary, #94a3b8);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+
+.reports-tab-btn:hover {
+  color: var(--text-primary, #1e293b);
+}
+
+.reports-tab-btn.active {
+  color: var(--color-primary, #2563eb);
+  border-bottom-color: var(--color-primary, #2563eb);
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .page-title {
