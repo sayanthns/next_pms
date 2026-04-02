@@ -1,0 +1,122 @@
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 640px; margin: 0 auto; background: #ffffff;">
+
+  <!-- Header -->
+  <div style="background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; padding: 28px 32px; border-radius: 12px 12px 0 0;">
+    <h1 style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">{{ project_name }}</h1>
+    <p style="margin: 0; opacity: 0.85; font-size: 13px;">Status Update &mdash; {{ formatted_date }}</p>
+  </div>
+
+  <!-- Summary Stats -->
+  <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e5e7eb; border-top: none; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 16px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 33%;">
+        <div style="font-size: 26px; font-weight: 800; color: #059669;">{{ tasks_done_count }}</div>
+        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Completed</div>
+      </td>
+      <td style="padding: 16px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 33%;">
+        <div style="font-size: 26px; font-weight: 800; color: #2563eb;">{{ tasks_in_progress_count }}</div>
+        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">In Progress</div>
+      </td>
+      <td style="padding: 16px 12px; text-align: center; width: 33%;">
+        <div style="font-size: 26px; font-weight: 800; color: #7c3aed;">{{ tasks_new_count }}</div>
+        <div style="font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">New Tasks</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Tasks Completed -->
+  {% if tasks_done %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 20px 28px;">
+    <div style="font-size: 13px; font-weight: 700; color: #059669; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+      &#10003; Completed Today
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+      {% for task in tasks_done %}
+      <tr style="{% if not loop.last %}border-bottom: 1px solid #f3f4f6;{% endif %}">
+        <td style="padding: 8px 0; font-size: 13px; color: #1f2937;">{{ task.task_title }}</td>
+        <td style="padding: 8px 0; font-size: 12px; color: #6b7280; text-align: right; white-space: nowrap;">{{ task.assignee_name or task.assigned_to or '' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Tasks In Progress -->
+  {% if tasks_in_progress %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 20px 28px;">
+    <div style="font-size: 13px; font-weight: 700; color: #2563eb; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+      &#9654; In Progress
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+      {% for task in tasks_in_progress %}
+      <tr style="{% if not loop.last %}border-bottom: 1px solid #f3f4f6;{% endif %}">
+        <td style="padding: 8px 0; font-size: 13px; color: #1f2937;">{{ task.task_title }}</td>
+        <td style="padding: 8px 0; font-size: 12px; color: #6b7280; text-align: right; white-space: nowrap;">
+          <span style="display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; background: {% if task.status == 'In Review' %}#ede9fe; color: #7c3aed;{% else %}#dbeafe; color: #2563eb;{% endif %}">{{ task.status }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- New Tasks -->
+  {% if tasks_new %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 20px 28px;">
+    <div style="font-size: 13px; font-weight: 700; color: #7c3aed; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+      &#43; New Tasks
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+      {% for task in tasks_new %}
+      <tr style="{% if not loop.last %}border-bottom: 1px solid #f3f4f6;{% endif %}">
+        <td style="padding: 8px 0; font-size: 13px; color: #1f2937;">{{ task.task_title }}</td>
+        <td style="padding: 8px 0; font-size: 12px; text-align: right; white-space: nowrap;">
+          <span style="display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600;
+            {% if task.priority == 'Urgent' %}background: #fee2e2; color: #dc2626;
+            {% elif task.priority == 'High' %}background: #fef3c7; color: #d97706;
+            {% elif task.priority == 'Medium' or task.priority == 'Normal' %}background: #dbeafe; color: #2563eb;
+            {% else %}background: #f3f4f6; color: #6b7280;{% endif %}">{{ task.priority or 'Normal' }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- No Activity -->
+  {% if not tasks_done and not tasks_in_progress and not tasks_new %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 32px 28px; text-align: center;">
+    <div style="font-size: 14px; color: #9ca3af;">No task activity recorded for this date.</div>
+  </div>
+  {% endif %}
+
+  <!-- Overall Progress -->
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 20px 28px; border-radius: 0 0 12px 12px;">
+    <div style="font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 10px;">Overall Progress</div>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom: 8px;">
+          <div style="background: #e5e7eb; border-radius: 6px; height: 8px; overflow: hidden;">
+            <div style="background: linear-gradient(90deg, #10b981, #34d399); height: 100%; width: {{ progress_pct }}%; border-radius: 6px;"></div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div style="font-size: 13px; color: #6b7280;">
+            <strong style="color: #059669;">{{ done_tasks }}</strong> of <strong>{{ total_tasks }}</strong> tasks complete
+            <span style="float: right; font-weight: 700; color: #059669;">{{ progress_pct }}%</span>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div style="padding: 16px 28px; text-align: center;">
+    <p style="margin: 0; font-size: 11px; color: #9ca3af;">
+      Generated by NextPMS &mdash; Project: {{ project_name }} &mdash; Status: {{ project_status }}
+    </p>
+  </div>
+
+</div>

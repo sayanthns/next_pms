@@ -22,7 +22,10 @@
   "budget_utilization",
   "client_portal_section",
   "client_portal_enabled",
-  "client_portal_password"
+  "client_portal_password",
+  "report_section",
+  "auto_send_report",
+  "report_recipients"
  ],
  "fields": [
   {
@@ -130,6 +133,25 @@
    "fieldname": "client_portal_password",
    "fieldtype": "Password",
    "label": "Client Portal Password"
+  },
+  {
+   "fieldname": "report_section",
+   "fieldtype": "Section Break",
+   "label": "Daily Status Report"
+  },
+  {
+   "default": "0",
+   "description": "Send a daily task status report email to the recipients below",
+   "fieldname": "auto_send_report",
+   "fieldtype": "Check",
+   "label": "Auto-Send Daily Report"
+  },
+  {
+   "depends_on": "auto_send_report",
+   "description": "Comma-separated email addresses",
+   "fieldname": "report_recipients",
+   "fieldtype": "Small Text",
+   "label": "Report Recipients"
   }
  ],
  "index_web_pages_for_search": 1,

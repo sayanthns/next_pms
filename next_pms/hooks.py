@@ -51,6 +51,9 @@ scheduler_events = {
         "0 3 * * *": [
             "next_pms.api.ai_report.generate_daily_report",
         ],
+        "0 8 * * 1-6": [
+            "next_pms.api.project_report.send_scheduled_project_reports",
+        ],
     },
 }
 

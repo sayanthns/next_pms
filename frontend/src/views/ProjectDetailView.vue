@@ -34,6 +34,10 @@
               <span>Started: {{ formatDate(project.start_date) }}</span>
             </div>
             <div v-if="canModifyProject" class="header-action-btns">
+              <button class="hdr-btn hdr-btn-report" @click="showSendReport = true" title="Send Status Report">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Send Report
+              </button>
               <button class="hdr-btn hdr-btn-edit" @click="showEditProject = true" title="Edit Project">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 Edit
@@ -419,6 +423,13 @@
       @updated="onProjectUpdated"
     />
 
+    <!-- Send Report Modal -->
+    <SendReportModal
+      :show="showSendReport"
+      :project="project"
+      @close="showSendReport = false"
+    />
+
     <!-- Delete Confirmation with OTP -->
     <Teleport to="body">
       <div v-if="showDeleteConfirm" class="otp-overlay" @click.self="cancelDelete">
@@ -500,6 +511,7 @@ import ProjectGantt from '@/views/ProjectGantt.vue'
 import ProjectBacklog from '@/views/ProjectBacklog.vue'
 import ReportsView from '@/views/ReportsView.vue'
 import EditProjectModal from '@/components/EditProjectModal.vue'
+import SendReportModal from '@/components/SendReportModal.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 const props = defineProps({
@@ -542,6 +554,7 @@ const teamSaving = ref(false)
 const allUsers = ref([])
 
 // Edit / Delete project state
+const showSendReport = ref(false)
 const showEditProject = ref(false)
 const showDeleteConfirm = ref(false)
 const deleting = ref(false)
@@ -1271,6 +1284,16 @@ watch(() => props.id, () => {
 .hdr-btn-delete:hover {
   background: #fef2f2;
   border-color: var(--color-danger);
+}
+
+.hdr-btn-report {
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.hdr-btn-report:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
 }
 
 /* KPI Row */

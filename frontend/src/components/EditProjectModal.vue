@@ -87,6 +87,35 @@
         ></textarea>
       </div>
 
+      <!-- Daily Report Settings -->
+      <div class="report-toggle-group">
+        <label class="portal-toggle-row">
+          <input
+            type="checkbox"
+            v-model="form.auto_send_report"
+            class="portal-checkbox"
+          />
+          <div class="portal-toggle-info">
+            <span class="portal-toggle-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Auto-Send Daily Report
+            </span>
+            <span class="portal-toggle-desc">Email a daily task status update to the recipients below (Mon-Sat, 8 AM)</span>
+          </div>
+        </label>
+      </div>
+
+      <div v-if="form.auto_send_report" class="form-group">
+        <label class="form-label">Report Recipients</label>
+        <textarea
+          v-model="form.report_recipients"
+          class="form-input form-textarea"
+          placeholder="client@example.com, manager@example.com"
+          rows="2"
+        ></textarea>
+        <p class="report-hint">Comma-separated email addresses</p>
+      </div>
+
     </form>
   </CreateModal>
 </template>
@@ -120,6 +149,8 @@ function getDefaultForm() {
     total_budget: 0,
     description: '',
     client_portal_enabled: false,
+    auto_send_report: false,
+    report_recipients: '',
   }
 }
 
@@ -155,6 +186,8 @@ watch(() => props.show, (val) => {
       total_budget: props.project.total_budget || 0,
       description: props.project.description || '',
       client_portal_enabled: !!props.project.client_portal_enabled,
+      auto_send_report: !!props.project.auto_send_report,
+      report_recipients: props.project.report_recipients || '',
     }
     if (!customers.value.length) {
       loadCustomers()
@@ -182,6 +215,8 @@ async function handleSubmit() {
         total_budget: form.value.total_budget || 0,
         description: form.value.description || '',
         client_portal_enabled: form.value.client_portal_enabled ? 1 : 0,
+        auto_send_report: form.value.auto_send_report ? 1 : 0,
+        report_recipients: form.value.report_recipients || '',
       }),
     })
     emit('updated', result)
@@ -243,6 +278,17 @@ async function handleSubmit() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+.report-toggle-group {
+  padding-top: 8px;
+  border-top: 1px solid var(--border-default, #e5e7eb);
+}
+
+.report-hint {
+  font-size: 11px;
+  color: var(--text-tertiary, #94a3b8);
+  margin: 0;
 }
 
 .portal-toggle-group {
