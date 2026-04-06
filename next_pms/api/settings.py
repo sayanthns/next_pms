@@ -32,7 +32,7 @@ def get_pms_settings():
     # Manager = PMS Manager (project-scoped full access, NOT admin-level)
     is_manager = "PMS Manager" in user_roles
     is_developer = "PMS Developer" in user_roles
-    is_customer = "PMS Customer" in user_roles
+    is_customer = "PMS Customer" in user_roles and not (is_admin or is_manager or is_developer)
 
     # Get user's UI permissions
     perms = get_user_permissions(frappe.session.user)
