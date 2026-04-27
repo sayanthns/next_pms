@@ -5,7 +5,24 @@
       <p class="page-subtitle">Comprehensive task overview with filters</p>
     </div>
 
-    <!-- Filters -->
+    <!-- Tab Bar -->
+    <div class="report-tab-bar">
+      <button class="report-tab-btn" :class="{ active: activeTab === 'tasks' }" @click="activeTab = 'tasks'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Tasks
+      </button>
+      <button class="report-tab-btn" :class="{ active: activeTab === 'productivity' }" @click="activeTab = 'productivity'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Productivity
+      </button>
+    </div>
+
+    <!-- Productivity Tab -->
+    <EmployeeProductivityTab v-if="activeTab === 'productivity'" />
+
+    <!-- Tasks Tab content -->
+    <template v-if="activeTab === 'tasks'">
+
     <div class="filters-card">
       <div class="filters-grid">
         <div class="filter-group filter-search">
@@ -165,6 +182,8 @@
         </table>
       </div>
     </div>
+
+    </template><!-- end tasks tab -->
   </div>
 </template>
 
@@ -172,8 +191,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { call, getList } from '@/utils/frappe'
 import { useSettingsStore } from '@/store/settings'
+import EmployeeProductivityTab from '@/components/EmployeeProductivityTab.vue'
 
 const settingsStore = useSettingsStore()
+const activeTab = ref('tasks')
 
 const loading = ref(true)
 const tasks = ref([])
@@ -290,6 +311,12 @@ function priorityClass(priority) {
 <style scoped>
 .task-report-view { padding: 16px 24px; max-width: 1400px; margin: 0 auto; }
 .page-header { margin-bottom: 12px; }
+
+/* Tab Bar */
+.report-tab-bar { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid var(--border-default); padding-bottom: 0; }
+.report-tab-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; background: transparent; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; border-radius: 4px 4px 0 0; transition: color 0.15s; }
+.report-tab-btn:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+.report-tab-btn.active { color: var(--color-primary, #2563eb); border-bottom-color: var(--color-primary, #2563eb); font-weight: 600; }
 .page-title { font-size: 22px; font-weight: 700; color: var(--text-primary); }
 .page-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
 
