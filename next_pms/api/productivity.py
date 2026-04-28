@@ -26,6 +26,66 @@ def _working_days_in_range(from_date, to_date):
     return days
 
 
+def _get_employee_for_user(user):
+    """Return Employee name for a given user email, or None."""
+    employees = frappe.get_all(
+        "Employee",
+        filters={"user_id": user, "status": "Active"},
+        fields=["name", "holiday_list"],
+        limit=1,
+    )
+    if not employees:
+        # Try without status filter (resigned employees still have leave records)
+        employees = frappe.get_all(
+            "Employee",
+            filters={"user_id": user},
+            fields=["name", "holiday_list"],
+            limit=1,
+        )
+    return employees[0] if employees else None
+
+
+def _get_holiday_dates(holiday_list_name, from_date, to_date):
+    """Return set of date strings that are holidays (excluding weekly_off ones)."""
+    if not holiday_list_name:
+        return set()
+    holidays = frappe.get_all(
+        "Holiday",
+        filters={
+            "parent": holiday_list_name,
+            "holiday_date": ["between", [str(from_date), str(to_date)]],
+            "weekly_off": 0,  # exclude weekly-off entries (Sundays already handled)
+        },
+        fields=["holiday_date"],
+    )
+    return {str(h.holiday_date) for h in holidays}
+
+
+def _get_leave_dates(employee_name, from_date, to_date):
+    """Return set of date strings covered by approved leave applications."""
+    if not employee_name:
+        return set()
+    leaves = frappe.get_all(
+        "Leave Application",
+        filters={
+            "employee": employee_name,
+            "status": "Approved",
+            "from_date": ["<=", str(to_date)],
+            "to_date": [">=", str(from_date)],
+        },
+        fields=["from_date", "to_date", "leave_type"],
+    )
+    leave_dates = set()
+    for leave in leaves:
+        ld = getdate(leave.from_date)
+        lt = getdate(leave.to_date)
+        while ld <= lt:
+            if from_date <= ld <= to_date:
+                leave_dates.add(str(ld))
+            ld += timedelta(days=1)
+    return leave_dates
+
+
 @frappe.whitelist()
 def get_employee_productivity(user, period_days=30):
     """
@@ -46,8 +106,21 @@ def get_employee_productivity(user, period_days=30):
     to_str = str(to_date)
 
     # ── 1. Attendance ────────────────────────────────────────────────
-    working_days = _working_days_in_range(from_date, to_date)
-    working_day_strs = {str(d) for d in working_days}
+    all_non_sunday_days = _working_days_in_range(from_date, to_date)
+    all_non_sunday_strs = {str(d) for d in all_non_sunday_days}
+
+    # Get employee record → holiday list + leave applications
+    employee = _get_employee_for_user(user)
+    employee_name = employee.name if employee else None
+    holiday_list_name = employee.holiday_list if employee else None
+
+    holiday_dates = _get_holiday_dates(holiday_list_name, from_date, to_date)
+    leave_dates = _get_leave_dates(employee_name, from_date, to_date)
+
+    # Expected working days = non-Sunday, non-holiday, non-leave
+    excused_dates = holiday_dates | leave_dates
+    working_day_strs = all_non_sunday_strs - excused_dates
+    working_days = sorted(working_day_strs)
 
     checkins = frappe.get_all(
         "PMS Checkin",
@@ -61,6 +134,42 @@ def get_employee_productivity(user, period_days=30):
     avg_hours_per_day = (
         round(total_hours_logged / len(checked_in_days), 2) if checked_in_days else 0
     )
+
+    # Build leave details for frontend display
+    leaves_in_period = frappe.get_all(
+        "Leave Application",
+        filters={
+            "employee": employee_name,
+            "status": "Approved",
+            "from_date": ["<=", to_str],
+            "to_date": [">=", from_str],
+        },
+        fields=["from_date", "to_date", "leave_type", "total_leave_days"],
+    ) if employee_name else []
+    leaves_display = [
+        {
+            "from_date": str(l.from_date),
+            "to_date": str(l.to_date),
+            "leave_type": l.leave_type,
+            "days": l.total_leave_days,
+        }
+        for l in leaves_in_period
+    ]
+
+    # Build holiday details for frontend
+    holidays_display = []
+    if holiday_list_name:
+        hols = frappe.get_all(
+            "Holiday",
+            filters={
+                "parent": holiday_list_name,
+                "holiday_date": ["between", [from_str, to_str]],
+                "weekly_off": 0,
+            },
+            fields=["holiday_date", "description"],
+            order_by="holiday_date asc",
+        )
+        holidays_display = [{"date": str(h.holiday_date), "description": h.description or ""} for h in hols]
 
     # ── 2. Tasks ─────────────────────────────────────────────────────
     # Tasks where this user is assigned_to and modified/created in range
@@ -200,6 +309,12 @@ def get_employee_productivity(user, period_days=30):
         "attendance_pct": attendance_pct,
         "total_hours_logged": total_hours_logged,
         "avg_hours_per_day": avg_hours_per_day,
+        # leave & holidays
+        "leaves": leaves_display,
+        "holidays": holidays_display,
+        "holiday_list": holiday_list_name or "",
+        "leave_days_count": len(leave_dates & all_non_sunday_strs),
+        "holiday_days_count": len(holiday_dates & all_non_sunday_strs),
         # task summary
         "total_tasks": total_tasks,
         "done_count": done_count,

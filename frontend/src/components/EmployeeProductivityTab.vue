@@ -136,27 +136,51 @@
         <!-- Missing Check-in Days -->
         <div class="section-card">
           <div class="section-title">
-            Check-in Missing Days
-            <span class="missing-count" :class="{ red: data.missing_days.length > 3 }">
-              {{ data.missing_days.length }} day(s)
-            </span>
+            Attendance Breakdown
           </div>
-          <div v-if="!data.missing_days.length" class="section-empty success">
-            ✅ No missing check-ins in this period.
-          </div>
-          <div v-else class="missing-days-list">
-            <div
-              v-for="d in data.missing_days"
-              :key="d"
-              class="missing-day"
-            >
-              <span class="day-dot"></span>
-              <span class="day-date">{{ formatDate(d) }}</span>
-              <span class="day-weekday">{{ weekday(d) }}</span>
+
+          <!-- Leave summary -->
+          <div v-if="data.leaves.length" class="attend-section">
+            <div class="attend-section-label">🏖 Approved Leaves ({{ data.leave_days_count }} day(s))</div>
+            <div v-for="l in data.leaves" :key="l.from_date + l.leave_type" class="attend-row leave-row">
+              <span class="ar-type">{{ l.leave_type }}</span>
+              <span class="ar-dates">{{ formatDate(l.from_date) }}<template v-if="l.from_date !== l.to_date"> – {{ formatDate(l.to_date) }}</template></span>
+              <span class="ar-days">{{ l.days }}d</span>
             </div>
           </div>
-          <div v-if="data.missing_days.length" class="missing-note">
-            Sundays excluded (treated as holidays).
+
+          <!-- Holiday summary -->
+          <div v-if="data.holidays.length" class="attend-section">
+            <div class="attend-section-label">🎉 Public Holidays ({{ data.holiday_days_count }} day(s))</div>
+            <div v-for="h in data.holidays" :key="h.date" class="attend-row holiday-row">
+              <span class="ar-type">{{ h.description || 'Holiday' }}</span>
+              <span class="ar-dates">{{ formatDate(h.date) }}</span>
+              <span class="day-weekday">{{ weekday(h.date) }}</span>
+            </div>
+          </div>
+
+          <!-- Missing check-ins -->
+          <div class="attend-section">
+            <div class="attend-section-label">
+              ⚠ Missing Check-ins
+              <span class="missing-count" :class="{ red: data.missing_days.length > 3 }">
+                {{ data.missing_days.length }} day(s)
+              </span>
+            </div>
+            <div v-if="!data.missing_days.length" class="section-empty success">
+              ✅ No missing check-ins in this period.
+            </div>
+            <div v-else class="missing-days-list">
+              <div v-for="d in data.missing_days" :key="d" class="missing-day">
+                <span class="day-dot"></span>
+                <span class="day-date">{{ formatDate(d) }}</span>
+                <span class="day-weekday">{{ weekday(d) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="missing-note">
+            Sundays, public holidays, and approved leaves excluded from expected working days.
           </div>
         </div>
       </div>
@@ -418,6 +442,34 @@ function effClass(pct) {
 .day-date { font-size: 12px; font-weight: 500; color: var(--text-primary); flex: 1; }
 .day-weekday { font-size: 11px; color: var(--text-tertiary); font-weight: 600; }
 .missing-note { margin-top: 8px; font-size: 11px; color: var(--text-tertiary); }
+
+/* Attendance breakdown */
+.attend-section { margin-bottom: 12px; }
+.attend-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.attend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+.leave-row { background: #ecfdf5; }
+.holiday-row { background: #fefce8; }
+.ar-type { font-weight: 600; color: var(--text-primary); flex: 1; }
+.ar-dates { color: var(--text-secondary); }
+.ar-days { font-size: 11px; font-weight: 700; color: #059669; background: #d1fae5; padding: 1px 6px; border-radius: 8px; }
 
 /* Recommendations */
 .reco-card {
