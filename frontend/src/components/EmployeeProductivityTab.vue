@@ -23,7 +23,6 @@
       </div>
     </div>
 
-    <!-- Loading / Empty -->
     <div v-if="loading" class="prod-loading">
       <div class="spinner"></div>
       <span>Loading productivity data...</span>
@@ -34,58 +33,76 @@
     </div>
 
     <template v-else-if="data">
-      <!-- Employee Header -->
+      <!-- Employee Header (no colored score) -->
       <div class="emp-header">
         <div class="emp-avatar">{{ initials(data.user_full_name) }}</div>
         <div class="emp-info">
           <div class="emp-name">{{ data.user_full_name }}</div>
           <div class="emp-period">{{ formatDate(data.from_date) }} – {{ formatDate(data.to_date) }}</div>
         </div>
-        <div class="emp-score" :class="scoreClass">
-          <span class="score-num">{{ data.attendance_pct }}%</span>
-          <span class="score-label">Attendance</span>
+        <div class="emp-meta-pills">
+          <span class="meta-pill">{{ data.checked_in_days_count }}/{{ data.working_days_count }} days</span>
+          <span class="meta-pill">{{ data.attendance_pct }}% attendance</span>
+          <span class="meta-pill" v-if="data.overall_completion_pct !== null">{{ data.overall_completion_pct }}% tasks done</span>
+          <span class="meta-pill" :class="effPillClass(data.overall_efficiency_pct)" v-if="data.overall_efficiency_pct !== null">{{ data.overall_efficiency_pct }}% efficiency</span>
         </div>
       </div>
 
-      <!-- Stat Cards Row -->
+      <!-- Stat Cards -->
       <div class="stats-grid">
         <div class="stat-card">
-          <span class="stat-icon attend">📅</span>
+          <span class="stat-icon">📅</span>
           <div class="stat-body">
             <span class="stat-val">{{ data.checked_in_days_count }}/{{ data.working_days_count }}</span>
             <span class="stat-lbl">Days Checked In</span>
           </div>
         </div>
         <div class="stat-card">
-          <span class="stat-icon hours">⏱</span>
+          <span class="stat-icon">🏢</span>
           <div class="stat-body">
-            <span class="stat-val">{{ data.total_hours_logged }}h</span>
-            <span class="stat-lbl">Hours Logged (avg {{ data.avg_hours_per_day }}h/day)</span>
+            <span class="stat-val">{{ data.total_office_hours }}h</span>
+            <span class="stat-lbl">Office Hours (avg {{ data.avg_hours_per_day }}h/day)</span>
           </div>
         </div>
         <div class="stat-card">
-          <span class="stat-icon tasks">✅</span>
+          <span class="stat-icon">⏱</span>
+          <div class="stat-body">
+            <span class="stat-val">{{ data.total_logged_hours }}h</span>
+            <span class="stat-lbl">Task Hours Logged</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">✅</span>
           <div class="stat-body">
             <span class="stat-val">{{ data.done_count }}/{{ data.total_tasks }}</span>
-            <span class="stat-lbl">Tasks Completed</span>
+            <span class="stat-lbl">Tasks Completed ({{ data.overall_completion_pct }}%)</span>
           </div>
         </div>
         <div class="stat-card" :class="{ warn: data.overdue_count > 0 }">
-          <span class="stat-icon overdue">⚠️</span>
+          <span class="stat-icon">⚠️</span>
           <div class="stat-body">
             <span class="stat-val">{{ data.overdue_count }}</span>
             <span class="stat-lbl">Overdue Tasks</span>
           </div>
         </div>
         <div class="stat-card">
-          <span class="stat-icon ontime">🎯</span>
+          <span class="stat-icon">🎯</span>
           <div class="stat-body">
             <span class="stat-val">{{ data.on_time_pct != null ? data.on_time_pct + '%' : 'N/A' }}</span>
             <span class="stat-lbl">On-Time Completion</span>
           </div>
         </div>
         <div class="stat-card">
-          <span class="stat-icon est">📊</span>
+          <span class="stat-icon">📊</span>
+          <div class="stat-body">
+            <span class="stat-val" :class="effValClass(data.overall_efficiency_pct)">
+              {{ data.overall_efficiency_pct != null ? data.overall_efficiency_pct + '%' : 'N/A' }}
+            </span>
+            <span class="stat-lbl">Efficiency (Est÷Act×100)</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">📋</span>
           <div class="stat-body">
             <span class="stat-val">{{ data.total_estimated_hours }}h / {{ data.total_actual_hours }}h</span>
             <span class="stat-lbl">Estimated / Actual Hours</span>
@@ -94,7 +111,7 @@
       </div>
 
       <div class="two-col">
-        <!-- Projects Breakdown -->
+        <!-- Projects Worked On -->
         <div class="section-card">
           <div class="section-title">Projects Worked On ({{ data.projects.length }})</div>
           <div v-if="!data.projects.length" class="section-empty">No projects found.</div>
@@ -109,6 +126,7 @@
                   <th class="num">Overdue</th>
                   <th class="num">Est.h</th>
                   <th class="num">Act.h</th>
+                  <th class="num">Completion</th>
                   <th class="num">Efficiency</th>
                 </tr>
               </thead>
@@ -122,24 +140,40 @@
                   <td class="num">{{ proj.estimated_hours }}</td>
                   <td class="num">{{ proj.actual_hours }}</td>
                   <td class="num">
-                    <span v-if="proj.efficiency_pct != null" :class="effClass(proj.efficiency_pct)">
-                      {{ proj.efficiency_pct }}%
-                    </span>
+                    <span :class="compClass(proj.completion_pct)">{{ proj.completion_pct }}%</span>
+                  </td>
+                  <td class="num">
+                    <span v-if="proj.efficiency_pct != null" :class="effClass(proj.efficiency_pct)">{{ proj.efficiency_pct }}%</span>
+                    <span v-else class="text-muted">—</span>
+                  </td>
+                </tr>
+                <!-- Overall row -->
+                <tr class="overall-row">
+                  <td class="proj-name"><strong>Overall</strong></td>
+                  <td class="num"><strong>{{ data.total_tasks }}</strong></td>
+                  <td class="num done-num"><strong>{{ data.done_count }}</strong></td>
+                  <td class="num wip-num"><strong>{{ data.in_progress_count }}</strong></td>
+                  <td class="num" :class="{ 'overdue-num': data.overdue_count > 0 }"><strong>{{ data.overdue_count }}</strong></td>
+                  <td class="num"><strong>{{ data.total_estimated_hours }}</strong></td>
+                  <td class="num"><strong>{{ data.total_actual_hours }}</strong></td>
+                  <td class="num">
+                    <strong :class="compClass(data.overall_completion_pct)">{{ data.overall_completion_pct }}%</strong>
+                  </td>
+                  <td class="num">
+                    <strong v-if="data.overall_efficiency_pct != null" :class="effClass(data.overall_efficiency_pct)">{{ data.overall_efficiency_pct }}%</strong>
                     <span v-else class="text-muted">—</span>
                   </td>
                 </tr>
               </tbody>
             </table>
+            <div class="eff-note">Efficiency = Estimated ÷ Actual × 100. &gt;100% = faster than estimated.</div>
           </div>
         </div>
 
-        <!-- Missing Check-in Days -->
+        <!-- Attendance Breakdown (no highlight) -->
         <div class="section-card">
-          <div class="section-title">
-            Attendance Breakdown
-          </div>
+          <div class="section-title">Attendance Breakdown</div>
 
-          <!-- Leave summary -->
           <div v-if="data.leaves.length" class="attend-section">
             <div class="attend-section-label">🏖 Approved Leaves ({{ data.leave_days_count }} day(s))</div>
             <div v-for="l in data.leaves" :key="l.from_date + l.leave_type" class="attend-row leave-row">
@@ -149,7 +183,6 @@
             </div>
           </div>
 
-          <!-- Holiday summary -->
           <div v-if="data.holidays.length" class="attend-section">
             <div class="attend-section-label">🎉 Public Holidays ({{ data.holiday_days_count }} day(s))</div>
             <div v-for="h in data.holidays" :key="h.date" class="attend-row holiday-row">
@@ -159,7 +192,6 @@
             </div>
           </div>
 
-          <!-- Missing check-ins -->
           <div class="attend-section">
             <div class="attend-section-label">
               ⚠ Missing Check-ins
@@ -167,9 +199,7 @@
                 {{ data.missing_days.length }} day(s)
               </span>
             </div>
-            <div v-if="!data.missing_days.length" class="section-empty success">
-              ✅ No missing check-ins in this period.
-            </div>
+            <div v-if="!data.missing_days.length" class="section-empty success">✅ No missing check-ins.</div>
             <div v-else class="missing-days-list">
               <div v-for="d in data.missing_days" :key="d" class="missing-day">
                 <span class="day-dot"></span>
@@ -178,10 +208,52 @@
               </div>
             </div>
           </div>
+          <div class="missing-note">Sundays, public holidays, and approved leaves excluded.</div>
+        </div>
+      </div>
 
-          <div class="missing-note">
-            Sundays, public holidays, and approved leaves excluded from expected working days.
-          </div>
+      <!-- Day-wise Hours Summary -->
+      <div class="section-card" v-if="data.day_summary.length">
+        <div class="section-title">
+          Day-wise Hours Summary
+          <span v-if="data.timer_missing_days.length" class="timer-missing-badge">
+            ⏱ {{ data.timer_missing_days.length }} day(s) with no task timer
+          </span>
+        </div>
+        <div class="day-table-wrap">
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Day</th>
+                <th class="num">Office Hours</th>
+                <th class="num">Task Hours Logged</th>
+                <th class="num">Gap</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="d in data.day_summary"
+                :key="d.date"
+                :class="{ 'row-timer-missing': d.timer_missing }"
+              >
+                <td class="day-cell">{{ formatDate(d.date) }}</td>
+                <td class="day-cell text-muted">{{ weekday(d.date) }}</td>
+                <td class="num">{{ d.office_hours }}h</td>
+                <td class="num">{{ d.logged_hours }}h</td>
+                <td class="num" :class="gapClass(d.office_hours, d.logged_hours)">
+                  {{ gapHours(d.office_hours, d.logged_hours) }}
+                </td>
+                <td>
+                  <span v-if="d.timer_missing" class="status-no-timer">No timer</span>
+                  <span v-else-if="d.logged_hours >= d.office_hours * 0.8" class="status-good">Good</span>
+                  <span v-else-if="d.logged_hours > 0" class="status-partial">Partial</span>
+                  <span v-else class="status-no-timer">No timer</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -197,7 +269,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { call } from '@/utils/frappe'
 
 const users = ref([])
@@ -219,7 +291,6 @@ const periods = [
 onMounted(async () => {
   try {
     users.value = await call('next_pms.api.productivity.get_productivity_users')
-    // Auto-select if only one user
     if (users.value.length === 1) {
       selectedUser.value = users.value[0].name
       await load()
@@ -245,14 +316,6 @@ async function load() {
   }
 }
 
-const scoreClass = computed(() => {
-  if (!data.value) return ''
-  const pct = data.value.attendance_pct
-  if (pct >= 80) return 'score-good'
-  if (pct >= 60) return 'score-mid'
-  return 'score-low'
-})
-
 function initials(name) {
   if (!name) return '?'
   return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
@@ -270,9 +333,43 @@ function weekday(dateStr) {
 }
 
 function effClass(pct) {
+  if (pct == null) return 'text-muted'
   if (pct >= 90) return 'eff-good'
   if (pct >= 70) return 'eff-mid'
   return 'eff-low'
+}
+
+function effValClass(pct) {
+  if (pct == null) return ''
+  if (pct >= 90) return 'val-good'
+  if (pct >= 70) return 'val-mid'
+  return 'val-low'
+}
+
+function effPillClass(pct) {
+  if (pct == null) return ''
+  if (pct >= 90) return 'pill-good'
+  if (pct >= 70) return 'pill-mid'
+  return 'pill-low'
+}
+
+function compClass(pct) {
+  if (pct >= 70) return 'eff-good'
+  if (pct >= 40) return 'eff-mid'
+  return 'eff-low'
+}
+
+function gapHours(office, logged) {
+  const g = office - logged
+  if (g <= 0) return '0h'
+  return '-' + g.toFixed(1) + 'h'
+}
+
+function gapClass(office, logged) {
+  const g = office - logged
+  if (g <= 0) return 'gap-ok'
+  if (g <= 2) return 'gap-mid'
+  return 'gap-high'
 }
 </script>
 
@@ -323,26 +420,26 @@ function effClass(pct) {
 .spinner { width: 22px; height: 22px; border: 3px solid var(--border-default); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .prod-empty { text-align: center; padding: 60px 0; color: var(--text-tertiary); }
-.prod-empty svg { margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto; }
+.prod-empty svg { margin: 0 auto 12px; display: block; }
 .prod-empty p { font-size: 14px; }
 
-/* Employee Header */
+/* Employee Header — plain, no color score */
 .emp-header {
   display: flex;
   align-items: center;
   gap: 16px;
   background: var(--bg-surface);
   border-radius: 12px;
-  padding: 20px 24px;
+  padding: 18px 24px;
   margin-bottom: 20px;
   box-shadow: 0 1px 3px var(--shadow-sm);
 }
 .emp-avatar {
-  width: 52px; height: 52px;
+  width: 48px; height: 48px;
   border-radius: 50%;
   background: linear-gradient(135deg, #2563eb, #7c3aed);
   color: #fff;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -350,14 +447,21 @@ function effClass(pct) {
   flex-shrink: 0;
 }
 .emp-info { flex: 1; }
-.emp-name { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.emp-name { font-size: 17px; font-weight: 700; color: var(--text-primary); }
 .emp-period { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
-.emp-score { text-align: center; }
-.score-num { display: block; font-size: 28px; font-weight: 800; }
-.score-label { font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; }
-.score-good .score-num { color: #16a34a; }
-.score-mid .score-num { color: #d97706; }
-.score-low .score-num { color: #dc2626; }
+.emp-meta-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.meta-pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--bg-surface-hover, #f3f4f6);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light, #e5e7eb);
+}
+.pill-good { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.pill-mid { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
+.pill-low { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 
 /* Stats Grid */
 .stats-grid {
@@ -375,19 +479,17 @@ function effClass(pct) {
   gap: 12px;
   box-shadow: 0 1px 3px var(--shadow-sm);
 }
-.stat-card.warn { border-left: 3px solid #dc2626; }
+.stat-card.warn { border-left: 3px solid #f59e0b; }
 .stat-icon { font-size: 22px; flex-shrink: 0; }
 .stat-body { display: flex; flex-direction: column; gap: 2px; }
 .stat-val { font-size: 18px; font-weight: 700; color: var(--text-primary); }
 .stat-lbl { font-size: 11px; color: var(--text-tertiary); font-weight: 500; }
+.val-good { color: #16a34a; }
+.val-mid { color: #d97706; }
+.val-low { color: #dc2626; }
 
-/* Two-column layout */
-.two-col {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
+/* Two-column */
+.two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
 @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
 
 .section-card {
@@ -395,6 +497,7 @@ function effClass(pct) {
   border-radius: 10px;
   padding: 16px 20px;
   box-shadow: 0 1px 3px var(--shadow-sm);
+  margin-bottom: 16px;
 }
 .section-title {
   font-size: 13px;
@@ -404,14 +507,14 @@ function effClass(pct) {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
-.missing-count { font-size: 11px; font-weight: 600; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; }
-.missing-count.red { background: #fef2f2; color: #dc2626; }
-.section-empty { font-size: 13px; color: var(--text-tertiary); padding: 12px 0; }
+.section-empty { font-size: 13px; color: var(--text-tertiary); padding: 8px 0; }
 .section-empty.success { color: #16a34a; }
 
-/* Mini table */
-.proj-table-wrap { overflow-x: auto; }
+/* Projects table */
+.proj-table-wrap, .day-table-wrap { overflow-x: auto; }
+.eff-note { font-size: 11px; color: var(--text-tertiary); margin-top: 8px; }
 .mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .mini-table th {
   padding: 7px 10px;
@@ -424,9 +527,10 @@ function effClass(pct) {
   white-space: nowrap;
 }
 .mini-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-light); color: var(--text-primary); }
-.mini-table tr:hover { background: var(--bg-surface-hover); }
+.mini-table tr:hover td { background: var(--bg-surface-hover); }
 .mini-table .num { text-align: right; }
 .proj-name { font-weight: 500; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.overall-row td { background: var(--bg-surface-hover, #f9fafb); border-top: 2px solid var(--border-default); }
 .done-num { color: #16a34a; font-weight: 600; }
 .wip-num { color: #d97706; }
 .overdue-num { color: #dc2626; font-weight: 700; }
@@ -435,41 +539,49 @@ function effClass(pct) {
 .eff-mid { color: #d97706; font-weight: 600; }
 .eff-low { color: #dc2626; font-weight: 600; }
 
-/* Missing Days */
-.missing-days-list { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
-.missing-day { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; background: var(--bg-surface-hover); }
-.day-dot { width: 7px; height: 7px; background: #f59e0b; border-radius: 50%; flex-shrink: 0; }
-.day-date { font-size: 12px; font-weight: 500; color: var(--text-primary); flex: 1; }
-.day-weekday { font-size: 11px; color: var(--text-tertiary); font-weight: 600; }
-.missing-note { margin-top: 8px; font-size: 11px; color: var(--text-tertiary); }
+/* Day-wise table */
+.day-cell { white-space: nowrap; }
+.row-timer-missing td { background: #fff7ed !important; }
+.gap-ok { color: #16a34a; }
+.gap-mid { color: #d97706; }
+.gap-high { color: #dc2626; font-weight: 600; }
+.timer-missing-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+.status-good { font-size: 11px; font-weight: 600; color: #16a34a; }
+.status-partial { font-size: 11px; font-weight: 600; color: #d97706; }
+.status-no-timer { font-size: 11px; font-weight: 600; color: #dc2626; }
 
 /* Attendance breakdown */
 .attend-section { margin-bottom: 12px; }
 .attend-section-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 5px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 11px; font-weight: 700; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.3px;
+  margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
 }
+.missing-count { font-size: 11px; font-weight: 600; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; }
+.missing-count.red { background: #fef2f2; color: #dc2626; }
 .attend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  margin-bottom: 3px;
-  font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px; border-radius: 6px; margin-bottom: 3px; font-size: 12px;
 }
-.leave-row { background: #ecfdf5; }
+.leave-row { background: #f0fdf4; }
 .holiday-row { background: #fefce8; }
 .ar-type { font-weight: 600; color: var(--text-primary); flex: 1; }
 .ar-dates { color: var(--text-secondary); }
 .ar-days { font-size: 11px; font-weight: 700; color: #059669; background: #d1fae5; padding: 1px 6px; border-radius: 8px; }
+.missing-days-list { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
+.missing-day { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; background: var(--bg-surface-hover); }
+.day-dot { width: 7px; height: 7px; background: #f59e0b; border-radius: 50%; flex-shrink: 0; }
+.day-date { font-size: 12px; font-weight: 500; color: var(--text-primary); flex: 1; }
+.day-weekday { font-size: 11px; color: var(--text-tertiary); font-weight: 600; }
+.missing-note { margin-top: 8px; font-size: 11px; color: var(--text-tertiary); }
 
 /* Recommendations */
 .reco-card {

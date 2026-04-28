@@ -1,12 +1,18 @@
+import re
 import frappe
-from frappe.utils import getdate, add_days, today, date_diff
-from datetime import date, timedelta
+from frappe.utils import getdate, today
+from datetime import timedelta
 
 from next_pms.api.permissions import is_admin_user, is_manager_user
 
 
+def _strip_html(text):
+    if not text:
+        return ""
+    return re.sub(r"<[^>]+>", "", text).strip()
+
+
 def _get_date_range(period_days):
-    """Return (from_date, to_date). period_days=0 means all-time."""
     to_date = getdate(today())
     if period_days == 0:
         from_date = getdate("2020-01-01")
@@ -16,18 +22,17 @@ def _get_date_range(period_days):
 
 
 def _working_days_in_range(from_date, to_date):
-    """List of dates in range that are NOT Sunday (weekday != 6)."""
+    """Non-Sunday dates in range."""
     days = []
     d = from_date
     while d <= to_date:
-        if d.weekday() != 6:  # 6 = Sunday
+        if d.weekday() != 6:
             days.append(d)
         d += timedelta(days=1)
     return days
 
 
 def _get_employee_for_user(user):
-    """Return Employee name for a given user email, or None."""
     employees = frappe.get_all(
         "Employee",
         filters={"user_id": user, "status": "Active"},
@@ -35,7 +40,6 @@ def _get_employee_for_user(user):
         limit=1,
     )
     if not employees:
-        # Try without status filter (resigned employees still have leave records)
         employees = frappe.get_all(
             "Employee",
             filters={"user_id": user},
@@ -46,7 +50,6 @@ def _get_employee_for_user(user):
 
 
 def _get_holiday_dates(holiday_list_name, from_date, to_date):
-    """Return set of date strings that are holidays (excluding weekly_off ones)."""
     if not holiday_list_name:
         return set()
     holidays = frappe.get_all(
@@ -54,7 +57,7 @@ def _get_holiday_dates(holiday_list_name, from_date, to_date):
         filters={
             "parent": holiday_list_name,
             "holiday_date": ["between", [str(from_date), str(to_date)]],
-            "weekly_off": 0,  # exclude weekly-off entries (Sundays already handled)
+            "weekly_off": 0,
         },
         fields=["holiday_date"],
     )
@@ -62,7 +65,6 @@ def _get_holiday_dates(holiday_list_name, from_date, to_date):
 
 
 def _get_leave_dates(employee_name, from_date, to_date):
-    """Return set of date strings covered by approved leave applications."""
     if not employee_name:
         return set()
     leaves = frappe.get_all(
@@ -88,14 +90,9 @@ def _get_leave_dates(employee_name, from_date, to_date):
 
 @frappe.whitelist()
 def get_employee_productivity(user, period_days=30):
-    """
-    Return comprehensive productivity data for a given user over a period.
-    period_days: 5 | 10 | 30 | 45 | 60 | 90 | 0 (all-time)
-    """
     period_days = int(period_days)
     current_user = frappe.session.user
 
-    # Access control: developer can only view their own
     is_admin = is_admin_user()
     is_pm = is_manager_user()
     if not (is_admin or is_pm) and user != current_user:
@@ -105,11 +102,10 @@ def get_employee_productivity(user, period_days=30):
     from_str = str(from_date)
     to_str = str(to_date)
 
-    # ── 1. Attendance ────────────────────────────────────────────────
+    # ── 1. Attendance ─────────────────────────────────────────────────
     all_non_sunday_days = _working_days_in_range(from_date, to_date)
     all_non_sunday_strs = {str(d) for d in all_non_sunday_days}
 
-    # Get employee record → holiday list + leave applications
     employee = _get_employee_for_user(user)
     employee_name = employee.name if employee else None
     holiday_list_name = employee.holiday_list if employee else None
@@ -117,7 +113,6 @@ def get_employee_productivity(user, period_days=30):
     holiday_dates = _get_holiday_dates(holiday_list_name, from_date, to_date)
     leave_dates = _get_leave_dates(employee_name, from_date, to_date)
 
-    # Expected working days = non-Sunday, non-holiday, non-leave
     excused_dates = holiday_dates | leave_dates
     working_day_strs = all_non_sunday_strs - excused_dates
     working_days = sorted(working_day_strs)
@@ -126,16 +121,52 @@ def get_employee_productivity(user, period_days=30):
         "PMS Checkin",
         filters={"user": user, "date": ["between", [from_str, to_str]]},
         fields=["date", "checkin_time", "checkout_time", "total_hours"],
+        order_by="date asc",
     )
-    checked_in_days = {str(c.date) for c in checkins}
+    checkin_map = {str(c.date): c for c in checkins}
+    checked_in_days = set(checkin_map.keys())
     missing_days = sorted(working_day_strs - checked_in_days)
 
-    total_hours_logged = round(sum(c.total_hours or 0 for c in checkins), 2)
+    total_office_hours = round(sum(c.total_hours or 0 for c in checkins), 2)
     avg_hours_per_day = (
-        round(total_hours_logged / len(checked_in_days), 2) if checked_in_days else 0
+        round(total_office_hours / len(checked_in_days), 2) if checked_in_days else 0
     )
 
-    # Build leave details for frontend display
+    # ── 2. Time logs (timer) per day ──────────────────────────────────
+    time_logs = frappe.get_all(
+        "PMS Time Log",
+        filters={
+            "user": user,
+            "start_time": ["between", [from_str + " 00:00:00", to_str + " 23:59:59"]],
+            "is_running": 0,
+        },
+        fields=["start_time", "duration_hours", "task"],
+    )
+    # Group logged hours by date
+    logged_by_day = {}
+    for tl in time_logs:
+        d = str(getdate(tl.start_time))
+        logged_by_day[d] = round(logged_by_day.get(d, 0) + (tl.duration_hours or 0), 2)
+
+    total_logged_hours = round(sum(logged_by_day.values()), 2)
+
+    # ── 3. Day-wise hours summary (only checked-in days) ──────────────
+    day_summary = []
+    for d in sorted(checked_in_days):
+        cin = checkin_map.get(d)
+        office_h = round(cin.total_hours or 0, 2) if cin else 0
+        logged_h = round(logged_by_day.get(d, 0), 2)
+        timer_missing = office_h > 0 and logged_h == 0
+        day_summary.append({
+            "date": d,
+            "office_hours": office_h,
+            "logged_hours": logged_h,
+            "timer_missing": timer_missing,
+        })
+
+    timer_missing_days = [d for d in day_summary if d["timer_missing"]]
+
+    # ── 4. Leave & holiday display ────────────────────────────────────
     leaves_in_period = frappe.get_all(
         "Leave Application",
         filters={
@@ -156,7 +187,6 @@ def get_employee_productivity(user, period_days=30):
         for l in leaves_in_period
     ]
 
-    # Build holiday details for frontend
     holidays_display = []
     if holiday_list_name:
         hols = frappe.get_all(
@@ -169,10 +199,12 @@ def get_employee_productivity(user, period_days=30):
             fields=["holiday_date", "description"],
             order_by="holiday_date asc",
         )
-        holidays_display = [{"date": str(h.holiday_date), "description": h.description or ""} for h in hols]
+        holidays_display = [
+            {"date": str(h.holiday_date), "description": _strip_html(h.description)}
+            for h in hols
+        ]
 
-    # ── 2. Tasks ─────────────────────────────────────────────────────
-    # Tasks where this user is assigned_to and modified/created in range
+    # ── 5. Tasks ──────────────────────────────────────────────────────
     task_fields = [
         "name", "task_title", "project", "status", "priority",
         "estimated_hours", "actual_hours", "due_date", "modified",
@@ -182,7 +214,6 @@ def get_employee_productivity(user, period_days=30):
     existing = {f.fieldname for f in meta.fields}
     safe_fields = [f for f in task_fields if f in existing or f in ("name", "creation", "modified")]
 
-    # All active tasks assigned to user (no date filter — ongoing)
     all_tasks = frappe.get_all(
         "PMS Task",
         filters={"assigned_to": user},
@@ -190,7 +221,6 @@ def get_employee_productivity(user, period_days=30):
         limit=0,
     )
 
-    # Tasks modified within period (gives activity picture)
     period_tasks = frappe.get_all(
         "PMS Task",
         filters={
@@ -202,7 +232,7 @@ def get_employee_productivity(user, period_days=30):
     )
     period_task_names = {t.name for t in period_tasks}
 
-    # ── 3. Per-project breakdown ──────────────────────────────────────
+    # ── 6. Per-project breakdown ──────────────────────────────────────
     project_map = {}
     for t in all_tasks:
         proj = t.project or "__no_project__"
@@ -224,9 +254,8 @@ def get_employee_productivity(user, period_days=30):
         if t.due_date and getdate(t.due_date) < to_date and t.status != "Done":
             pm["overdue"] += 1
 
-    # Enrich project names
-    project_names_map = {}
     proj_ids = [p for p in project_map if p != "__no_project__"]
+    project_names_map = {}
     if proj_ids:
         projs = frappe.get_all(
             "PMS Project",
@@ -241,24 +270,22 @@ def get_employee_productivity(user, period_days=30):
             pm["project_name"] = project_names_map.get(proj, proj)
         pm["estimated_hours"] = round(pm["estimated_hours"], 2)
         pm["actual_hours"] = round(pm["actual_hours"], 2)
+        # efficiency = est/actual (>100% = faster than estimated, <100% = slower)
         pm["efficiency_pct"] = (
             round((pm["estimated_hours"] / pm["actual_hours"]) * 100, 1)
-            if pm["actual_hours"] > 0
+            if pm["actual_hours"] > 0 and pm["estimated_hours"] > 0
             else None
+        )
+        # completion rate
+        pm["completion_pct"] = (
+            round(pm["done"] / pm["total"] * 100, 1) if pm["total"] > 0 else 0
         )
         projects_data.append(pm)
     projects_data.sort(key=lambda x: -x["total"])
 
-    # ── 4. On-time completion ─────────────────────────────────────────
-    done_tasks_all = [t for t in all_tasks if t.status == "Done"]
-    tasks_with_due = [t for t in done_tasks_all if t.due_date]
-    on_time = [t for t in tasks_with_due if getdate(t.modified) <= getdate(t.due_date)]
-    on_time_pct = (
-        round(len(on_time) / len(tasks_with_due) * 100, 1)
-        if tasks_with_due else None
-    )
-
-    # ── 5. Overall task summary ───────────────────────────────────────
+    # Overall across all projects
+    total_estimated = round(sum(t.estimated_hours or 0 for t in all_tasks), 2)
+    total_actual = round(sum(t.actual_hours or 0 for t in all_tasks), 2)
     total_tasks = len(all_tasks)
     done_count = sum(1 for t in all_tasks if t.status == "Done")
     in_progress_count = sum(1 for t in all_tasks if t.status in ("In Progress", "In Review"))
@@ -267,11 +294,25 @@ def get_employee_productivity(user, period_days=30):
         1 for t in all_tasks
         if t.due_date and getdate(t.due_date) < to_date and t.status != "Done"
     )
-    total_estimated = round(sum(t.estimated_hours or 0 for t in all_tasks), 2)
-    total_actual = round(sum(t.actual_hours or 0 for t in all_tasks), 2)
-    active_in_period = len(period_task_names)
 
-    # ── 6. Recommendation ────────────────────────────────────────────
+    overall_efficiency_pct = (
+        round((total_estimated / total_actual) * 100, 1)
+        if total_actual > 0 and total_estimated > 0 else None
+    )
+    overall_completion_pct = (
+        round(done_count / total_tasks * 100, 1) if total_tasks > 0 else 0
+    )
+
+    # ── 7. On-time completion ─────────────────────────────────────────
+    done_tasks_all = [t for t in all_tasks if t.status == "Done"]
+    tasks_with_due = [t for t in done_tasks_all if t.due_date]
+    on_time = [t for t in tasks_with_due if getdate(t.modified) <= getdate(t.due_date)]
+    on_time_pct = (
+        round(len(on_time) / len(tasks_with_due) * 100, 1)
+        if tasks_with_due else None
+    )
+
+    # ── 8. Recommendations ────────────────────────────────────────────
     recommendations = []
     attendance_pct = (
         round(len(checked_in_days) / len(working_days) * 100, 1)
@@ -279,19 +320,18 @@ def get_employee_productivity(user, period_days=30):
     )
     if attendance_pct < 70:
         recommendations.append("Low attendance ({:.0f}%). Verify leave records or check-in issues.".format(attendance_pct))
+    if len(timer_missing_days) > 2:
+        recommendations.append("{} day(s) checked in but no task timer logged. Encourage daily time tracking.".format(len(timer_missing_days)))
     if overdue_count > 0:
         recommendations.append("{} overdue task(s). Review workload and due date accuracy.".format(overdue_count))
     if total_estimated > 0 and total_actual > total_estimated * 1.3:
         recommendations.append("Actual hours exceed estimates by >30%. Improve task time estimation.")
     elif total_estimated > 0 and total_actual < total_estimated * 0.5:
-        recommendations.append("Actual hours are well under estimates. Tasks may be under-logged or over-estimated.")
+        recommendations.append("Actual hours well under estimates. Tasks may be under-logged or over-estimated.")
     if on_time_pct is not None and on_time_pct < 60:
         recommendations.append("On-time completion rate is low ({:.0f}%). Focus on deadline adherence.".format(on_time_pct))
     if not recommendations:
-        if on_time_pct is not None and on_time_pct >= 80 and attendance_pct >= 80:
-            recommendations.append("Good performance. High attendance and on-time delivery.")
-        else:
-            recommendations.append("Productivity looks acceptable. Continue consistent check-ins and task updates.")
+        recommendations.append("Performance looks good. Attendance, delivery, and time tracking are consistent.")
 
     user_info = frappe.get_cached_value("User", user, ["full_name", "user_image"], as_dict=True) or {}
 
@@ -307,7 +347,8 @@ def get_employee_productivity(user, period_days=30):
         "checked_in_days_count": len(checked_in_days),
         "missing_days": missing_days,
         "attendance_pct": attendance_pct,
-        "total_hours_logged": total_hours_logged,
+        "total_office_hours": total_office_hours,
+        "total_logged_hours": total_logged_hours,
         "avg_hours_per_day": avg_hours_per_day,
         # leave & holidays
         "leaves": leaves_display,
@@ -315,16 +356,21 @@ def get_employee_productivity(user, period_days=30):
         "holiday_list": holiday_list_name or "",
         "leave_days_count": len(leave_dates & all_non_sunday_strs),
         "holiday_days_count": len(holiday_dates & all_non_sunday_strs),
+        # day-wise hours summary
+        "day_summary": day_summary,
+        "timer_missing_days": timer_missing_days,
         # task summary
         "total_tasks": total_tasks,
         "done_count": done_count,
         "in_progress_count": in_progress_count,
         "backlog_count": backlog_count,
         "overdue_count": overdue_count,
-        "active_in_period": active_in_period,
+        "active_in_period": len(period_task_names),
         "total_estimated_hours": total_estimated,
         "total_actual_hours": total_actual,
         "on_time_pct": on_time_pct,
+        "overall_efficiency_pct": overall_efficiency_pct,
+        "overall_completion_pct": overall_completion_pct,
         # per-project
         "projects": projects_data,
         # recommendations
@@ -334,7 +380,6 @@ def get_employee_productivity(user, period_days=30):
 
 @frappe.whitelist()
 def get_productivity_users():
-    """Return list of users the current user is allowed to see productivity for."""
     is_admin = is_admin_user()
     is_pm = is_manager_user()
 
