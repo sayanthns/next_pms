@@ -4,6 +4,14 @@ from frappe.utils import getdate, today
 from datetime import timedelta
 
 from next_pms.api.permissions import is_admin_user, is_manager_user
+from next_pms.api._hours import (
+    working_days_in_range as _working_days_in_range,
+    get_employee_for_user as _get_employee_for_user,
+    get_holiday_dates as _get_holiday_dates,
+    get_leave_dates as _get_leave_dates,
+    compute_target_hours,
+    compute_utilization,
+)
 
 
 def _strip_html(text):
@@ -19,73 +27,6 @@ def _get_date_range(period_days):
     else:
         from_date = to_date - timedelta(days=int(period_days) - 1)
     return from_date, to_date
-
-
-def _working_days_in_range(from_date, to_date):
-    """Non-Sunday dates in range."""
-    days = []
-    d = from_date
-    while d <= to_date:
-        if d.weekday() != 6:
-            days.append(d)
-        d += timedelta(days=1)
-    return days
-
-
-def _get_employee_for_user(user):
-    employees = frappe.get_all(
-        "Employee",
-        filters={"user_id": user, "status": "Active"},
-        fields=["name", "holiday_list"],
-        limit=1,
-    )
-    if not employees:
-        employees = frappe.get_all(
-            "Employee",
-            filters={"user_id": user},
-            fields=["name", "holiday_list"],
-            limit=1,
-        )
-    return employees[0] if employees else None
-
-
-def _get_holiday_dates(holiday_list_name, from_date, to_date):
-    if not holiday_list_name:
-        return set()
-    holidays = frappe.get_all(
-        "Holiday",
-        filters={
-            "parent": holiday_list_name,
-            "holiday_date": ["between", [str(from_date), str(to_date)]],
-            "weekly_off": 0,
-        },
-        fields=["holiday_date"],
-    )
-    return {str(h.holiday_date) for h in holidays}
-
-
-def _get_leave_dates(employee_name, from_date, to_date):
-    if not employee_name:
-        return set()
-    leaves = frappe.get_all(
-        "Leave Application",
-        filters={
-            "employee": employee_name,
-            "status": "Approved",
-            "from_date": ["<=", str(to_date)],
-            "to_date": [">=", str(from_date)],
-        },
-        fields=["from_date", "to_date", "leave_type"],
-    )
-    leave_dates = set()
-    for leave in leaves:
-        ld = getdate(leave.from_date)
-        lt = getdate(leave.to_date)
-        while ld <= lt:
-            if from_date <= ld <= to_date:
-                leave_dates.add(str(ld))
-            ld += timedelta(days=1)
-    return leave_dates
 
 
 @frappe.whitelist()
@@ -149,6 +90,10 @@ def get_employee_productivity(user, period_days=30):
         logged_by_day[d] = round(logged_by_day.get(d, 0) + (tl.duration_hours or 0), 2)
 
     total_logged_hours = round(sum(logged_by_day.values()), 2)
+
+    # Fixed-baseline target (configurable 8h x effective working days) — replaces checkin in/out as the baseline
+    target_hours = compute_target_hours(user, from_date, to_date)
+    utilization_pct = compute_utilization(total_logged_hours, target_hours)
 
     # ── 3. Day-wise hours summary (only checked-in days) ──────────────
     day_summary = []
@@ -350,6 +295,8 @@ def get_employee_productivity(user, period_days=30):
         "total_office_hours": total_office_hours,
         "total_logged_hours": total_logged_hours,
         "avg_hours_per_day": avg_hours_per_day,
+        "target_hours": target_hours,
+        "utilization_pct": utilization_pct,
         # leave & holidays
         "leaves": leaves_display,
         "holidays": holidays_display,
