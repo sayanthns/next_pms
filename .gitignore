@@ -28,3 +28,11 @@ Thumbs.db
 
 # Frappe build output is committed (needed for production)
 # next_pms/public/frontend/
+
+# Capacitor Android
+android-capacitor/node_modules/
+android-capacitor/android/.gradle/
+android-capacitor/android/app/build/
+android-capacitor/android/build/
+android-capacitor/android/local.properties
+android-capacitor/android/capacitor-cordova-android-plugins/build/

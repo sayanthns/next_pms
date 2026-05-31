@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Next PMS</string>
+    <string name="title_activity_main">Next PMS</string>
+    <string name="package_name">com.eftpms.pms</string>
+    <string name="custom_url_scheme">com.eftpms.pms</string>
+</resources>
