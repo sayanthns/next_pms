@@ -4,6 +4,7 @@ from frappe import _
 
 
 @frappe.whitelist(allow_guest=True)
+@frappe.rate_limit(key="usr", limit=10, seconds=300)
 def get_api_credentials(usr, pwd):
     """Native-app login endpoint.
 
