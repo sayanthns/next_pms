@@ -62,6 +62,14 @@
 
 - **Employee Productivity Report** (Apr 27–28) — New tab in Task Report (`EmployeeProductivityTab.vue`, `TaskReportView.vue`). API `get_employee_productivity(user, period_days)` in `next_pms/api/productivity.py`: day-wise hours, overall summary row, working-days calc that **excludes approved leaves and public holidays** (reads Employee → Holiday List + Leave Application). `get_productivity_users` lists reportable users.
 
+### May 2026
+
+- **Fixed working-hours baseline + report consistency** (May 31) — All reports now compare timer hours against a **fixed configurable daily target** (default **8h**, field `working_hours_per_day` on **PMS AI Settings**), NOT against PMS Checkin in/out. New shared module **`next_pms/api/_hours.py`** is the single source of truth: `compute_target_hours(user, from, to)` = effective working days × 8h (excludes Sundays, holidays, **approved non-cancelled** leave; **half-day leave = 0.5 day**), `compute_utilization(logged, target)`. `productivity.py` (dropped its duplicate helpers) and `ai_report.py` both emit `target_hours` + `utilization_pct`. Checkin in/out kept only as informational. All `_hours` queries use `ignore_permissions=True` (PMS Manager lacks HR-doctype perms).
+
+- **Mandatory project budget** (May 31) — `total_budget` required and **> 0 on NEW projects only** (existing budget-less projects grandfathered via `is_new()` guard in `PMSProject.validate_budget`). `reqd:1` on the field + required in `CreateProjectModal.vue`. Backend throw is the hard enforcement.
+
+- **Saturday weekly summary** (May 31) — `send_weekly_summary` moved to cron **`0 7 * * 6`** (Sat 07:00). Per active member (logged time this week OR member of an Active project; **System User only**) → own email (logged vs 8h target, utilization %, tasks done/in-progress, projects). Configured recipient (`weekly_summary_recipient` on PMS AI Settings, default `sayanth@enfono.in`) → all-members table. Window = **Mon 00:00 → Fri 23:59** (Saturday not counted as unworked target day). Each `sendmail` isolated in try/except + `log_error`. Note: `tasks_completed` uses `DATE(modified)` proxy (no `completion_date` field yet — follow-up open).
+
 ## Customer Portal Architecture
 
 - **Dual access**: Session-based (PMS Customer role login) + Token-based (allow_guest URLs with access_token)
@@ -86,9 +94,11 @@
 |----------|--------|---------|
 | daily | `next_pms.tasks.send_deadline_reminders` / `check_budget_alerts` | Deadline + budget alerts |
 | hourly | `next_pms.tasks.check_long_running_timers` | 4h+ timer warnings |
-| weekly | `next_pms.tasks.send_weekly_summary` | Weekly summary |
 | `0 3 * * *` | `api.ai_report.generate_daily_report` | LLM daily work summary (skips Sun/holidays) |
+| `0 7 * * 6` | `next_pms.tasks.send_weekly_summary` | Sat 07:00 — per-member + all-team weekly summary (Mon–Fri window, 8h baseline) |
 | `0 8 * * 1-6` | `api.project_report.send_scheduled_project_reports` + `send_scheduled_multi_project_reports` | Project status emails, Mon–Sat |
+
+PMS AI Settings (single) holds: AI provider/key/model, daily-report recipients, **`working_hours_per_day`** (default 8), **`weekly_summary_recipient`** (default sayanth@enfono.in).
 
 `doc_events`: PMS Time Log (after_insert/on_update/on_trash → cost recalc), PMS Task (on_update). `permission_query_conditions`: PMS Project, PMS Task.
 
