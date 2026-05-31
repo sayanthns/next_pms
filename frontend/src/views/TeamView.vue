@@ -471,6 +471,29 @@
               </select>
             </div>
           </div>
+          <h3 class="ai-section-heading">Working Hours &amp; Weekly Summary</h3>
+          <div class="ai-form-row">
+            <div class="ai-field">
+              <label class="ai-label">Working Hours Per Day</label>
+              <input
+                v-model="aiSettings.workingHoursPerDay"
+                type="number"
+                min="1"
+                step="0.5"
+                class="ai-input"
+                placeholder="8"
+              />
+            </div>
+            <div class="ai-field">
+              <label class="ai-label">Weekly Summary Recipient (all-team email)</label>
+              <input
+                v-model="aiSettings.weeklySummaryRecipient"
+                type="email"
+                class="ai-input"
+                placeholder="sayanth@enfono.in"
+              />
+            </div>
+          </div>
           <div class="ai-actions">
             <button class="ai-btn ai-btn-save" @click="saveAiSettings" :disabled="aiSaving">
               {{ aiSaving ? 'Saving...' : 'Save AI Settings' }}
@@ -735,6 +758,8 @@ const aiSettings = ref({
   model: 'gpt-4o',
   enabled: false,
   recipient: 'sayanth@enfono.in',
+  workingHoursPerDay: 8,
+  weeklySummaryRecipient: 'sayanth@enfono.in',
 })
 const aiSaving = ref(false)
 const aiTesting = ref(false)
@@ -758,6 +783,8 @@ async function loadAiSettings() {
       aiSettings.value.recipient = data.daily_report_recipient || ''
       aiSettings.value.additionalRecipients = data.daily_report_recipients || ''
       aiSettings.value.detailLevel = data.report_detail_level || 'Detailed'
+      aiSettings.value.workingHoursPerDay = data.working_hours_per_day || 8
+      aiSettings.value.weeklySummaryRecipient = data.weekly_summary_recipient || 'sayanth@enfono.in'
     }
     aiLoaded.value = true
   } catch (e) {
@@ -776,6 +803,8 @@ async function saveAiSettings() {
       recipient: aiSettings.value.recipient,
       additional_recipients: aiSettings.value.additionalRecipients || '',
       detail_level: aiSettings.value.detailLevel || 'Detailed',
+      working_hours_per_day: aiSettings.value.workingHoursPerDay || 8,
+      weekly_summary_recipient: aiSettings.value.weeklySummaryRecipient || 'sayanth@enfono.in',
     })
     aiSettings.value.apiKey = ''
     // Reload settings from server to confirm save
@@ -1516,6 +1545,13 @@ onUnmounted(() => {
   font-size: 13px;
   color: var(--text-secondary);
   margin: 0 0 20px 0;
+}
+
+.ai-section-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 8px 0 0 0;
 }
 
 .ai-form {
