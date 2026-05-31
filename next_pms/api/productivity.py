@@ -11,6 +11,7 @@ from next_pms.api._hours import (
     get_leave_dates as _get_leave_dates,
     compute_target_hours,
     compute_utilization,
+    get_working_hours_per_day,
 )
 
 
@@ -95,18 +96,36 @@ def get_employee_productivity(user, period_days=30):
     target_hours = compute_target_hours(user, from_date, to_date)
     utilization_pct = compute_utilization(total_logged_hours, target_hours)
 
-    # ── 3. Day-wise hours summary (only checked-in days) ──────────────
+    # ── 3. Day-wise hours summary — baseline is the FIXED daily target (8h),
+    #       NOT checkin in/out. Compares timer-logged hours vs target.
+    whpd = get_working_hours_per_day()
+    # Show every working day plus any day that has logged time (e.g. Sunday work).
+    relevant_days = sorted(working_day_strs | set(logged_by_day.keys()))
     day_summary = []
-    for d in sorted(checked_in_days):
+    for d in relevant_days:
+        is_working = d in working_day_strs
+        target_h = whpd if is_working else 0
         cin = checkin_map.get(d)
         office_h = round(cin.total_hours or 0, 2) if cin else 0
         logged_h = round(logged_by_day.get(d, 0), 2)
-        timer_missing = office_h > 0 and logged_h == 0
+        gap_h = round(logged_h - target_h, 2)  # negative = under target
+        timer_missing = target_h > 0 and logged_h == 0
+        if not is_working:
+            status = "off"            # non-working day (Sun/holiday/leave)
+        elif logged_h == 0:
+            status = "no_timer"
+        elif logged_h >= target_h * 0.8:
+            status = "good"
+        else:
+            status = "partial"
         day_summary.append({
             "date": d,
-            "office_hours": office_h,
+            "target_hours": target_h,
+            "office_hours": office_h,   # actual checkin — informational only
             "logged_hours": logged_h,
+            "gap_hours": gap_h,
             "timer_missing": timer_missing,
+            "status": status,
         })
 
     timer_missing_days = [d for d in day_summary if d["timer_missing"]]
@@ -331,12 +350,33 @@ def get_productivity_users():
     is_pm = is_manager_user()
 
     if is_admin or is_pm:
+        # Only internal PMS users — exclude portal customers (PMS Customer) and
+        # System Users with no PMS role at all.
+        pms_roles = ["Next PMS", "PMS Manager", "PMS Developer", "PMS Viewer"]
+        role_rows = frappe.get_all(
+            "Has Role",
+            filters={"role": ["in", pms_roles], "parenttype": "User"},
+            fields=["parent"],
+            distinct=True,
+        )
+        pms_users = {r.parent for r in role_rows}
+        cust_rows = frappe.get_all(
+            "Has Role",
+            filters={"role": "PMS Customer", "parenttype": "User"},
+            fields=["parent"],
+        )
+        customers = {r.parent for r in cust_rows}
+        candidates = list(pms_users - customers)
         users = frappe.get_all(
             "User",
-            filters={"enabled": 1, "user_type": "System User"},
+            filters={
+                "name": ["in", candidates],
+                "enabled": 1,
+                "user_type": "System User",
+            },
             fields=["name", "full_name", "user_image"],
             order_by="full_name asc",
-        )
+        ) if candidates else []
     else:
         u = frappe.session.user
         info = frappe.get_cached_value("User", u, ["full_name", "user_image"], as_dict=True) or {}

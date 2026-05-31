@@ -226,7 +226,7 @@
               <tr>
                 <th>Date</th>
                 <th>Day</th>
-                <th class="num">Office Hours</th>
+                <th class="num">Target</th>
                 <th class="num">Task Hours Logged</th>
                 <th class="num">Gap</th>
                 <th>Status</th>
@@ -240,15 +240,15 @@
               >
                 <td class="day-cell">{{ formatDate(d.date) }}</td>
                 <td class="day-cell text-muted">{{ weekday(d.date) }}</td>
-                <td class="num">{{ d.office_hours }}h</td>
+                <td class="num">{{ d.target_hours }}h</td>
                 <td class="num">{{ d.logged_hours }}h</td>
-                <td class="num" :class="gapClass(d.office_hours, d.logged_hours)">
-                  {{ gapHours(d.office_hours, d.logged_hours) }}
+                <td class="num" :class="gapClass(d.target_hours, d.logged_hours)">
+                  {{ gapHours(d.target_hours, d.logged_hours) }}
                 </td>
                 <td>
-                  <span v-if="d.timer_missing" class="status-no-timer">No timer</span>
-                  <span v-else-if="d.logged_hours >= d.office_hours * 0.8" class="status-good">Good</span>
-                  <span v-else-if="d.logged_hours > 0" class="status-partial">Partial</span>
+                  <span v-if="d.status === 'off'" class="status-no-timer">Off day</span>
+                  <span v-else-if="d.status === 'good'" class="status-good">Good</span>
+                  <span v-else-if="d.status === 'partial'" class="status-partial">Partial</span>
                   <span v-else class="status-no-timer">No timer</span>
                 </td>
               </tr>

@@ -35,6 +35,16 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label">Sales Order</label>
+        <select v-model="form.sales_order" class="form-input">
+          <option value="">— None —</option>
+          <option v-for="so in salesOrders" :key="so.name" :value="so.name">
+            {{ so.name }} — {{ so.customer }} ({{ so.grand_total }})
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Department</label>
         <select v-model="form.department" class="form-input">
           <option value="">No Department</option>
@@ -136,6 +146,7 @@ const nameInput = ref(null)
 const saving = ref(false)
 const customers = ref([])
 const departments = ref([])
+const salesOrders = ref([])
 const form = ref(getDefaultForm())
 
 function getDefaultForm() {
@@ -148,9 +159,26 @@ function getDefaultForm() {
     end_date: '',
     total_budget: 0,
     description: '',
+    sales_order: '',
     client_portal_enabled: false,
     auto_send_report: false,
     report_recipients: '',
+  }
+}
+
+async function loadSalesOrders() {
+  try {
+    const rows = await call('frappe.client.get_list', {
+      doctype: 'Sales Order',
+      filters: { docstatus: 1 },
+      fields: ['name', 'grand_total', 'customer'],
+      limit_page_length: 0,
+      order_by: 'creation desc',
+    })
+    salesOrders.value = Array.isArray(rows) ? rows : (rows?.message || [])
+  } catch (e) {
+    console.error('Failed to load sales orders:', e)
+    salesOrders.value = []
   }
 }
 
@@ -185,6 +213,7 @@ watch(() => props.show, (val) => {
       end_date: props.project.end_date || '',
       total_budget: props.project.total_budget || 0,
       description: props.project.description || '',
+      sales_order: props.project.sales_order || '',
       client_portal_enabled: !!props.project.client_portal_enabled,
       auto_send_report: !!props.project.auto_send_report,
       report_recipients: props.project.report_recipients || '',
@@ -194,6 +223,9 @@ watch(() => props.show, (val) => {
     }
     if (!departments.value.length) {
       loadDepartments()
+    }
+    if (!salesOrders.value.length) {
+      loadSalesOrders()
     }
     nextTick(() => nameInput.value?.focus())
   }
@@ -214,6 +246,7 @@ async function handleSubmit() {
         end_date: form.value.end_date || null,
         total_budget: form.value.total_budget || 0,
         description: form.value.description || '',
+        sales_order: form.value.sales_order || null,
         client_portal_enabled: form.value.client_portal_enabled ? 1 : 0,
         auto_send_report: form.value.auto_send_report ? 1 : 0,
         report_recipients: form.value.report_recipients || '',
