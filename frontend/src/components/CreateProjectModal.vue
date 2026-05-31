@@ -66,14 +66,15 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Total Budget</label>
+        <label class="form-label">Total Budget <span class="required">*</span></label>
         <input
           v-model.number="form.total_budget"
           type="number"
           class="form-input"
           placeholder="0.00"
-          min="0"
+          min="0.01"
           step="0.01"
+          required
         />
       </div>
 
@@ -156,6 +157,10 @@ watch(() => props.show, (val) => {
 async function handleSubmit() {
   if (!form.value.project_name.trim()) return
   if (!form.value.client) return
+  if (!form.value.total_budget || form.value.total_budget <= 0) {
+    alert('Total Budget is required and must be greater than 0')
+    return
+  }
   saving.value = true
   try {
     const result = await call('next_pms.api.crud.create_project', {
