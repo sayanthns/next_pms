@@ -466,6 +466,7 @@ def create_project(
     total_budget=0,
     project_manager=None,
     department=None,
+    sales_order=None,
 ):
     """Create a new PMS Project and return its name."""
     feature_perms = get_current_user_feature_permissions()
@@ -484,6 +485,7 @@ def create_project(
             "total_budget": total_budget or 0,
             "project_manager": project_manager or frappe.session.user,
             "department": department,
+            "sales_order": sales_order,
         }
     )
     doc.insert()

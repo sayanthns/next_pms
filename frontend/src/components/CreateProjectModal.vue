@@ -35,6 +35,16 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label">Sales Order <span class="required">*</span></label>
+        <select v-model="form.sales_order" class="form-input" required>
+          <option value="" disabled>Select a sales order</option>
+          <option v-for="so in salesOrders" :key="so.name" :value="so.name">
+            {{ so.name }} — {{ so.customer }} ({{ so.grand_total }})
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Department</label>
         <select v-model="form.department" class="form-input">
           <option value="">No Department</option>
@@ -106,12 +116,14 @@ const nameInput = ref(null)
 const saving = ref(false)
 const customers = ref([])
 const departments = ref([])
+const salesOrders = ref([])
 const form = ref(getDefaultForm())
 
 function getDefaultForm() {
   return {
     project_name: '',
     client: '',
+    sales_order: '',
     department: '',
     status: 'Planning',
     start_date: new Date().toISOString().split('T')[0],
@@ -141,6 +153,19 @@ async function loadDepartments() {
   }
 }
 
+async function loadSalesOrders() {
+  try {
+    const rows = await call('frappe.client.get_list', {
+      doctype: 'Sales Order',
+      filters: { docstatus: 1 },
+      fields: ['name', 'grand_total', 'customer'],
+      limit_page_length: 0,
+      order_by: 'creation desc',
+    })
+    salesOrders.value = Array.isArray(rows) ? rows : (rows?.message || [])
+  } catch (e) { console.error('Failed to load sales orders', e) }
+}
+
 watch(() => props.show, (val) => {
   if (val) {
     form.value = getDefaultForm()
@@ -149,6 +174,9 @@ watch(() => props.show, (val) => {
     }
     if (!departments.value.length) {
       loadDepartments()
+    }
+    if (!salesOrders.value.length) {
+      loadSalesOrders()
     }
     nextTick(() => nameInput.value?.focus())
   }
@@ -159,6 +187,10 @@ async function handleSubmit() {
   if (!form.value.client) return
   if (!form.value.total_budget || form.value.total_budget <= 0) {
     alert('Total Budget is required and must be greater than 0')
+    return
+  }
+  if (!form.value.sales_order) {
+    alert('Sales Order is required')
     return
   }
   saving.value = true
@@ -172,6 +204,7 @@ async function handleSubmit() {
       total_budget: form.value.total_budget || 0,
       description: form.value.description || null,
       department: form.value.department || null,
+      sales_order: form.value.sales_order,
     })
     emit('created', result)
   } catch (e) {

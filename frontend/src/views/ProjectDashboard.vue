@@ -105,6 +105,11 @@
               </div>
             </div>
           </div>
+          <div v-if="financials" class="financials-card" style="display:flex; gap:24px; padding:16px; border:1px solid #e5e7eb; border-radius:8px; margin:16px 0;">
+            <div><div style="font-size:12px; color:#6b7280;">Sales Order</div><div style="font-weight:600;">{{ Number(financials.so_value).toLocaleString() }}</div></div>
+            <div><div style="font-size:12px; color:#6b7280;">Budget</div><div style="font-weight:600;">{{ Number(financials.budget).toLocaleString() }}</div></div>
+            <div><div style="font-size:12px; color:#6b7280;">Actual</div><div style="font-weight:600;">{{ Number(financials.actual).toLocaleString() }} ({{ financials.budget_util }}%)</div></div>
+          </div>
         </div>
 
         <!-- Sprints -->
@@ -161,6 +166,15 @@ const props = defineProps({
 
 const loading = ref(true)
 const dashboard = ref(null)
+const financials = ref(null)
+
+async function loadFinancials(projectName) {
+  if (!projectName) return
+  try {
+    const r = await call('next_pms.api.project_report.get_project_financials', { project: projectName })
+    financials.value = r?.message || r
+  } catch (e) { console.error('financials load failed', e) }
+}
 
 onMounted(async () => {
   loading.value = true
@@ -168,6 +182,7 @@ onMounted(async () => {
     dashboard.value = await call('next_pms.api.dashboard.get_project_dashboard', {
       project: props.id,
     })
+    loadFinancials(props.id)
   } catch (e) {
     console.error('Failed to load project dashboard:', e)
   } finally {

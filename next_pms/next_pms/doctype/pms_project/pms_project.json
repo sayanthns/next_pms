@@ -17,6 +17,7 @@
   "team_members_section",
   "team_members",
   "budget_section",
+  "sales_order",
   "total_budget",
   "calculated_cost",
   "budget_utilization",
@@ -99,6 +100,13 @@
    "fieldname": "budget_section",
    "fieldtype": "Section Break",
    "label": "Budget"
+  },
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Link",
+   "options": "Sales Order",
+   "label": "Sales Order",
+   "reqd": 1
   },
   {
    "fieldname": "total_budget",

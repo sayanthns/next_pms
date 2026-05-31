@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import flt
 
 from next_pms.api.permissions import is_admin_user, get_user_permissions, get_current_user_feature_permissions
 
@@ -75,6 +76,8 @@ def get_ai_settings():
             "daily_report_recipient": doc.daily_report_recipient or "",
             "daily_report_recipients": getattr(doc, "daily_report_recipients", "") or "",
             "report_detail_level": getattr(doc, "report_detail_level", "Detailed") or "Detailed",
+            "working_hours_per_day": flt(getattr(doc, "working_hours_per_day", 8)) or 8,
+            "weekly_summary_recipient": getattr(doc, "weekly_summary_recipient", "") or "sayanth@enfono.in",
         }
     except Exception:
         return {
@@ -85,12 +88,15 @@ def get_ai_settings():
             "daily_report_recipient": "",
             "daily_report_recipients": "",
             "report_detail_level": "Detailed",
+            "working_hours_per_day": 8,
+            "weekly_summary_recipient": "sayanth@enfono.in",
         }
 
 
 @frappe.whitelist()
 def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
-                      recipient=None, additional_recipients=None, detail_level=None):
+                      recipient=None, additional_recipients=None, detail_level=None,
+                      working_hours_per_day=None, weekly_summary_recipient=None):
     """Save AI settings. Admin only."""
     if not is_admin_user():
         frappe.throw("Only administrators can modify AI settings.", frappe.PermissionError)
@@ -120,6 +126,11 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
     if detail_level is not None:
         if hasattr(doc, "report_detail_level"):
             doc.report_detail_level = detail_level
+
+    if working_hours_per_day is not None and hasattr(doc, "working_hours_per_day"):
+        doc.working_hours_per_day = flt(working_hours_per_day) or 8
+    if weekly_summary_recipient is not None and hasattr(doc, "weekly_summary_recipient"):
+        doc.weekly_summary_recipient = weekly_summary_recipient
 
     doc.save(ignore_permissions=True)
     frappe.db.commit()

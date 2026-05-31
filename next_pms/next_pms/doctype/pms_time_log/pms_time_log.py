@@ -2,11 +2,30 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
-from frappe.utils import now_datetime, time_diff_in_seconds, get_datetime
+from frappe.utils import now_datetime, time_diff_in_seconds, get_datetime, flt
 
 
 class PMSTimeLog(Document):
+    def before_insert(self):
+        self.validate_budget_available()
+
+    def validate_budget_available(self):
+        # Block NEW time entries (timer start or manual) when the project budget is exhausted.
+        # Stopping/updating an existing log is an UPDATE, not insert -> not blocked.
+        if not self.task:
+            return
+        project = frappe.db.get_value("PMS Task", self.task, "project")
+        if not project:
+            return
+        util = flt(frappe.db.get_value("PMS Project", project, "budget_utilization"))
+        if util >= 95:
+            frappe.throw(
+                _("Project budget at {0}% (>= 95%). New time entries are blocked until the budget is increased. Use 'Request budget increase'.").format(round(util)),
+                title=_("Budget Exhausted"),
+            )
+
     def validate(self):
         self.validate_running_timer()
         self.calculate_duration()

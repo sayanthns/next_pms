@@ -1,6 +1,40 @@
 import frappe
+from frappe import _
 from frappe.utils import flt
 from next_pms.api.permissions import check_project_access
+
+
+@frappe.whitelist()
+def request_budget_increase(project):
+    """Email a budget-increase request to the approver (sayanth@enfono.in)."""
+    check_project_access(project)
+    APPROVER = "sayanth@enfono.in"
+    p = frappe.db.get_value(
+        "PMS Project", project,
+        ["project_name", "total_budget", "calculated_cost", "budget_utilization"],
+        as_dict=True,
+    )
+    if not p:
+        frappe.throw(_("Project not found"))
+    requester = frappe.session.user
+    requester_name = frappe.db.get_value("User", requester, "full_name") or requester
+    msg = (
+        "<h3>Budget Increase Request</h3>"
+        f"<p><b>{requester_name}</b> ({requester}) requests a budget increase.</p>"
+        "<table style='border-collapse:collapse;'>"
+        f"<tr><td style='padding:6px 12px; border:1px solid #e5e7eb;'>Project</td><td style='padding:6px 12px; border:1px solid #e5e7eb;'>{p.project_name}</td></tr>"
+        f"<tr><td style='padding:6px 12px; border:1px solid #e5e7eb;'>Current Budget</td><td style='padding:6px 12px; border:1px solid #e5e7eb;'>{flt(p.total_budget):,.2f}</td></tr>"
+        f"<tr><td style='padding:6px 12px; border:1px solid #e5e7eb;'>Actual Cost</td><td style='padding:6px 12px; border:1px solid #e5e7eb;'>{flt(p.calculated_cost):,.2f}</td></tr>"
+        f"<tr><td style='padding:6px 12px; border:1px solid #e5e7eb;'>Utilisation</td><td style='padding:6px 12px; border:1px solid #e5e7eb;'>{flt(p.budget_utilization):.0f}%</td></tr>"
+        "</table>"
+        "<p>Raise the Total Budget on the project to unblock time logging.</p>"
+    )
+    frappe.sendmail(
+        recipients=[APPROVER],
+        subject=_("Budget increase request: {0}").format(p.project_name),
+        message=msg, now=True,
+    )
+    return {"success": True, "message": _("Request sent to {0}").format(APPROVER)}
 
 
 @frappe.whitelist()
