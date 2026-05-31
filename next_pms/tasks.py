@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, add_days, getdate, date_diff, get_datetime
+from frappe.utils import now_datetime, add_days, getdate, get_datetime
 from next_pms.utils import get_pms_url
 
 
@@ -195,7 +195,9 @@ def _get_active_members(from_dt, to_dt):
         return []
     enabled = frappe.get_all(
         "User",
-        filters={"name": ["in", list(members)], "enabled": 1},
+        # System User only: portal/customer (Website User) accounts that happen to be
+        # project members must not receive internal weekly stats emails.
+        filters={"name": ["in", list(members)], "enabled": 1, "user_type": "System User"},
         fields=["name"],
     )
     return [u.name for u in enabled]
@@ -216,6 +218,10 @@ def _member_week_stats(user, week_start, week_end, from_dt, to_dt):
     target_hours = compute_target_hours(user, week_start, week_end)
     utilization = compute_utilization(logged_hours, target_hours)
 
+    # Approximation: PMS Task has no completion_date, so we proxy "completed this week"
+    # as status=Done AND last-modified within the window. A Done task edited later in the
+    # week can be over-counted. Acceptable for a summary; a dedicated completion_date field
+    # is the proper fix (tracked as a follow-up).
     tasks_completed = frappe.db.sql(
         """
         SELECT COUNT(*) FROM `tabPMS Task`
@@ -250,11 +256,16 @@ def _member_week_stats(user, week_start, week_end, from_dt, to_dt):
 
 
 def send_weekly_summary():
-    """Saturday 07:00 - per active member: own weekly stats email.
+    """Saturday 07:00 cron - per active member: own weekly stats email.
     Configured recipient (default sayanth@enfono.in): all-members table.
+
+    Window = the just-completed work week, Monday 00:00 .. Friday 23:59. The job
+    fires Saturday morning, so Saturday is intentionally NOT counted as a target
+    day (no one has worked it yet) - counting it would deflate utilization.
     """
-    week_end = getdate()
-    week_start = get_week_start(week_end)
+    today = getdate()
+    week_end = add_days(today, -1)  # Friday (job runs Saturday morning)
+    week_start = get_week_start(week_end)  # Monday of that week
     from_dt = str(week_start) + " 00:00:00"
     to_dt = str(week_end) + " 23:59:59"
 
@@ -264,24 +275,36 @@ def send_weekly_summary():
     for user in members:
         stats = _member_week_stats(user, week_start, week_end, from_dt, to_dt)
         team_rows.append(stats)
-        frappe.sendmail(
-            recipients=[user],
-            subject=_("Your Weekly Work Summary"),
-            message=_build_member_weekly_html(stats, str(week_start), str(week_end)),
-            now=True,
-        )
+        try:
+            frappe.sendmail(
+                recipients=[user],
+                subject=_("Your Weekly Work Summary"),
+                message=_build_member_weekly_html(stats, str(week_start), str(week_end)),
+                now=True,
+            )
+        except Exception:
+            frappe.log_error(
+                title=f"Weekly summary email failed for {user}",
+                message=frappe.get_traceback(),
+            )
 
     recipient = (
         frappe.db.get_single_value("PMS AI Settings", "weekly_summary_recipient")
         or "sayanth@enfono.in"
     )
     if team_rows:
-        frappe.sendmail(
-            recipients=[recipient],
-            subject=_("Team Weekly Work Summary"),
-            message=_build_team_weekly_html(team_rows, str(week_start), str(week_end)),
-            now=True,
-        )
+        try:
+            frappe.sendmail(
+                recipients=[recipient],
+                subject=_("Team Weekly Work Summary"),
+                message=_build_team_weekly_html(team_rows, str(week_start), str(week_end)),
+                now=True,
+            )
+        except Exception:
+            frappe.log_error(
+                title=f"Team weekly summary email failed for {recipient}",
+                message=frappe.get_traceback(),
+            )
 
     frappe.db.commit()
 
