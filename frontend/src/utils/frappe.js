@@ -4,7 +4,9 @@
  * Includes request deduplication and short-lived TTL cache.
  */
 
-const BASE_URL = "";
+import { isNative, apiBase, getToken } from './native'
+
+function BASE() { return apiBase() }  // "" on web (same-origin), absolute https in native
 
 // --- Request deduplication & TTL cache ---
 const _inflightRequests = new Map(); // key -> Promise (dedup concurrent identical calls)
@@ -66,6 +68,10 @@ function getHeaders() {
   if (csrf) {
     headers["X-Frappe-CSRF-Token"] = csrf;
   }
+  if (isNative()) {
+    const t = getToken()
+    if (t) headers["Authorization"] = "token " + t
+  }
   return headers;
 }
 
@@ -90,7 +96,7 @@ export async function call(method, args = {}, opts = {}) {
   }
 
   const promise = (async () => {
-    const response = await fetch(`${BASE_URL}/api/method/${method}`, {
+    const response = await fetch(`${BASE()}/api/method/${method}`, {
       method: "POST",
       headers: getHeaders(),
       credentials: "include",
@@ -138,7 +144,7 @@ export async function getList(doctype, options = {}) {
   });
 
   const response = await fetch(
-    `${BASE_URL}/api/method/frappe.client.get_list?${params}`,
+    `${BASE()}/api/method/frappe.client.get_list?${params}`,
     {
       headers: getHeaders(),
       credentials: "include",
@@ -150,7 +156,7 @@ export async function getList(doctype, options = {}) {
 
 export async function getDoc(doctype, name) {
   const response = await fetch(
-    `${BASE_URL}/api/resource/${doctype}/${encodeURIComponent(name)}`,
+    `${BASE()}/api/resource/${doctype}/${encodeURIComponent(name)}`,
     {
       headers: getHeaders(),
       credentials: "include",
