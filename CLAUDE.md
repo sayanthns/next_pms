@@ -140,12 +140,18 @@ Other: PMS Favorite Project, PMS Checkin, PMS Activity Rate, PMS AI Settings, PM
 
 ## Deployment Checklist
 
-1. `cd apps/next_pms && git pull`
-2. `bench use <site>` (if multi-site — server has: office, katcherp, enfono-office-new, spice)
-3. `bench migrate`
+> **Server = Office Server (EFTSP-009, 156.67.105.6), bench user `v15`, path `/home/v15/frappe-bench`.**
+> **next_pms is installed on site `enfono-office-new` ONLY** (verified 2026-05-31) — NOT office/katcherp/spice. Migrate that site.
+> **Access:** office public :22 is firewalled. Reach ONLY via control→Tailscale: `ssh root@194.163.160.83` → `ssh -o ConnectTimeout=55 -i /root/.ssh/id_ed25519 root@100.104.220.9`. The server-manager API/agent CANNOT reach office (8s handshake cap). Deploy is MANUAL.
+> **Maintenance window: 02:00–05:00 IST only** for migrate/build/restart.
+
+1. `cd /home/v15/frappe-bench/apps/next_pms && git fetch origin && git checkout main && git pull` (→ latest main)
+2. `cd /home/v15/frappe-bench && bench --site enfono-office-new migrate`
+3. `/home/v15/frappe-bench/env/bin/pip install -e apps/next_pms` (only if Python deps changed)
 4. `bench build --app next_pms`
 5. `cd apps/next_pms/frontend && yarn && yarn build`
-6. `sudo supervisorctl restart all`
+6. As **root** (v15 lacks supervisorctl sudo): `supervisorctl restart frappe-bench-web: frappe-bench-workers:`
+7. In PMS app → PMS AI Settings: set `working_hours_per_day` (8) + `weekly_summary_recipient` (open + Save once so the single persists the defaults).
 
 ## Standing Rules
 
