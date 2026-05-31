@@ -44,9 +44,6 @@ scheduler_events = {
     "hourly": [
         "next_pms.tasks.check_long_running_timers",
     ],
-    "weekly": [
-        "next_pms.tasks.send_weekly_summary",
-    ],
     "cron": {
         "0 3 * * *": [
             "next_pms.api.ai_report.generate_daily_report",
@@ -54,6 +51,9 @@ scheduler_events = {
         "0 8 * * 1-6": [
             "next_pms.api.project_report.send_scheduled_project_reports",
             "next_pms.api.project_report.send_scheduled_multi_project_reports",
+        ],
+        "0 7 * * 6": [
+            "next_pms.tasks.send_weekly_summary",
         ],
     },
 }

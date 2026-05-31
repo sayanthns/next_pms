@@ -41,3 +41,8 @@ class TestHours(FrappeTestCase):
 
     def test_working_days_reverse_range_empty(self):
         self.assertEqual(_hours.working_days_in_range("2026-06-10", "2026-06-01"), [])
+
+    def test_week_start_is_monday(self):
+        from next_pms.tasks import get_week_start
+        # 2026-06-06 is a Saturday; its week starts Monday 2026-06-01
+        self.assertEqual(str(get_week_start("2026-06-06")), "2026-06-01")
