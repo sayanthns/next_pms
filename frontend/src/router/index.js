@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { isNative, getToken } from "@/utils/native";
 
 // Lazy-load all views for faster initial page load
 const DashboardView = () => import("@/views/DashboardView.vue");
@@ -143,6 +144,11 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/native-login",
+    name: "NativeLogin",
+    component: () => import("@/views/NativeLogin.vue"),
+  },
 ];
 
 const router = createRouter({
@@ -152,6 +158,14 @@ const router = createRouter({
 
 // Route guards for role-based access and portal token auth
 router.beforeEach(async (to, from, next) => {
+  // Native (APK) auth gate: force the native login screen until a token exists.
+  if (isNative() && to.name !== 'NativeLogin' && !getToken()) {
+    return next({ name: 'NativeLogin' });
+  }
+  if (isNative() && to.name === 'NativeLogin' && getToken()) {
+    return next('/');
+  }
+
   // Portal token login: if ?token= is present, log in via API first
   if (to.meta.isPortal && to.query.token) {
     try {

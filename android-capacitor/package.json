@@ -1,0 +1,21 @@
+{
+  "name": "next-pms-android",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cap:copy": "npx cap copy android",
+    "cap:sync": "npx cap sync android",
+    "build:debug": "cd android && ./gradlew assembleDebug --no-daemon",
+    "build:release": "cd android && ./gradlew assembleRelease --no-daemon"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/cli": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/preferences": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
