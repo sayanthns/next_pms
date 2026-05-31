@@ -1,10 +1,11 @@
 # apps/next_pms/next_pms/api/auth.py
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 
 
 @frappe.whitelist(allow_guest=True)
-@frappe.rate_limit(key="usr", limit=10, seconds=300)
+@rate_limit(key="usr", limit=10, seconds=300)
 def get_api_credentials(usr, pwd):
     """Native-app login endpoint.
 
