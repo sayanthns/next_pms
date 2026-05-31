@@ -42,6 +42,7 @@ def get_employee_for_user(user):
         filters={"user_id": user, "status": "Active"},
         fields=["name", "holiday_list"],
         limit=1,
+        ignore_permissions=True,
     )
     if not employees:
         employees = frappe.get_all(
@@ -49,6 +50,7 @@ def get_employee_for_user(user):
             filters={"user_id": user},
             fields=["name", "holiday_list"],
             limit=1,
+            ignore_permissions=True,
         )
     return employees[0] if employees else None
 
@@ -65,39 +67,74 @@ def get_holiday_dates(holiday_list_name, from_date, to_date):
             "weekly_off": 0,
         },
         fields=["holiday_date"],
+        ignore_permissions=True,
     )
     return {str(h.holiday_date) for h in holidays}
 
 
-def get_leave_dates(employee_name, from_date, to_date):
-    """Approved-leave dates (str) within range for an employee."""
+def _get_leave_day_sets(employee_name, from_date, to_date):
+    """Return (full_day_dates, half_day_dates) of APPROVED, non-cancelled leave in range.
+
+    Frappe quirk: on cancel, Leave Application keeps status='Approved' but
+    docstatus=2 — so we must exclude docstatus 2 explicitly. Half-day leaves
+    (`half_day=1`, `half_day_date`) deduct only 0.5 of a working day, so they
+    are tracked separately from full-day leave.
+    """
     if not employee_name:
-        return set()
+        return set(), set()
     leaves = frappe.get_all(
         "Leave Application",
         filters={
             "employee": employee_name,
             "status": "Approved",
+            "docstatus": ["!=", 2],
             "from_date": ["<=", str(getdate(to_date))],
             "to_date": [">=", str(getdate(from_date))],
         },
-        fields=["from_date", "to_date"],
+        fields=["from_date", "to_date", "half_day", "half_day_date"],
+        ignore_permissions=True,
     )
     fd = getdate(from_date)
     td = getdate(to_date)
-    leave_dates = set()
+    full_dates = set()
+    half_dates = set()
     for leave in leaves:
+        half_str = None
+        if leave.half_day and leave.half_day_date:
+            hd = getdate(leave.half_day_date)
+            if fd <= hd <= td:
+                half_str = str(hd)
+                half_dates.add(half_str)
         ld = getdate(leave.from_date)
         lt = getdate(leave.to_date)
         while ld <= lt:
-            if fd <= ld <= td:
-                leave_dates.add(str(ld))
+            ds = str(ld)
+            if fd <= ld <= td and ds != half_str:
+                full_dates.add(ds)
             ld += timedelta(days=1)
-    return leave_dates
+    # A date marked half-day on any leave never counts as a full leave day.
+    full_dates -= half_dates
+    return full_dates, half_dates
+
+
+def get_leave_dates(employee_name, from_date, to_date):
+    """Full-day approved-leave dates (str) within range (excludes cancelled + half-days)."""
+    full_dates, _half = _get_leave_day_sets(employee_name, from_date, to_date)
+    return full_dates
+
+
+def get_half_leave_dates(employee_name, from_date, to_date):
+    """Half-day approved-leave dates (str) within range (excludes cancelled)."""
+    _full, half_dates = _get_leave_day_sets(employee_name, from_date, to_date)
+    return half_dates
 
 
 def effective_working_days(user, from_date, to_date):
-    """Non-Sunday days minus holidays minus approved leave, as sorted str list."""
+    """Non-Sunday days minus holidays minus full-day approved leave, as sorted str list.
+
+    Half-day leaves remain in the list (the person is still partly available);
+    their 0.5-day deduction is applied in compute_target_hours.
+    """
     all_days = {str(d) for d in working_days_in_range(from_date, to_date)}
     employee = get_employee_for_user(user)
     employee_name = employee.name if employee else None
@@ -109,9 +146,17 @@ def effective_working_days(user, from_date, to_date):
 
 
 def compute_target_hours(user, from_date, to_date):
-    """Target hours over a range = effective working days x configured hours/day."""
-    days = len(effective_working_days(user, from_date, to_date))
-    return round(days * get_working_hours_per_day(), 2)
+    """Target hours over a range = effective working days x configured hours/day,
+    minus 0.5 day per half-day leave that still falls on a working day."""
+    working = set(effective_working_days(user, from_date, to_date))
+    employee = get_employee_for_user(user)
+    employee_name = employee.name if employee else None
+    half_dates = get_half_leave_dates(employee_name, from_date, to_date)
+    half_count = len(half_dates & working)
+    effective_days = len(working) - 0.5 * half_count
+    if effective_days < 0:
+        effective_days = 0
+    return round(effective_days * get_working_hours_per_day(), 2)
 
 
 def compute_utilization(logged_hours, target_hours):
