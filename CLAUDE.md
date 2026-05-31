@@ -147,12 +147,15 @@ Other: PMS Favorite Project, PMS Checkin, PMS Activity Rate, PMS AI Settings, PM
 ## Deployment Checklist
 
 > **Server = Office Server (EFTSP-009, 156.67.105.6), bench user `v15`, path `/home/v15/frappe-bench`.**
-> **next_pms is installed on site `enfono-office-new` ONLY** (verified 2026-05-31) — NOT office/katcherp/spice. Migrate that site.
+> **next_pms is installed on TWO sites — migrate BOTH every deploy:**
+>   - **`office`** = `office.enfono.com` ← the team's PRIMARY working site (their projects/time logs live here).
+>   - **`enfono-office-new`** = `office.enfonoerp.com`.
+>   NOT on katcherp/spice. ⚠️ Migrating only one site = the other runs new code against an old schema → "Unknown column" / "Field does not exist" crashes (happened 2026-05-31: forgot `office`, broke financials + productivity). `bench migrate` per site syncs that site's DB; the app CODE is shared across the bench.
 > **Access:** office public :22 is firewalled. Reach ONLY via control→Tailscale: `ssh root@194.163.160.83` → `ssh -o ConnectTimeout=55 -i /root/.ssh/id_ed25519 root@100.104.220.9`. The server-manager API/agent CANNOT reach office (8s handshake cap). Deploy is MANUAL.
 > **Maintenance window: 02:00–05:00 IST only** for migrate/build/restart.
 
 1. `cd /home/v15/frappe-bench/apps/next_pms && git fetch origin && git checkout main && git pull` (→ latest main)
-2. `cd /home/v15/frappe-bench && bench --site enfono-office-new migrate`
+2. `cd /home/v15/frappe-bench && bench --site office migrate && bench --site enfono-office-new migrate` (BOTH)
 3. `/home/v15/frappe-bench/env/bin/pip install -e apps/next_pms` (only if Python deps changed)
 4. `bench build --app next_pms`
 5. `cd apps/next_pms/frontend && yarn && yarn build`

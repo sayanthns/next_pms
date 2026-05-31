@@ -17,8 +17,16 @@ DEFAULT_WORKING_HOURS_PER_DAY = 8.0
 
 
 def get_working_hours_per_day():
-    """Configured fixed working hours per day. Defaults to 8 when unset/zero."""
-    value = frappe.db.get_single_value("PMS AI Settings", "working_hours_per_day")
+    """Configured fixed working hours per day. Defaults to 8 when unset/zero.
+
+    Defensive: frappe.db.get_single_value raises if the field doesn't exist on the
+    DocType (e.g. a site not yet migrated). We must NOT let that crash every report —
+    fall back to the 8h default instead.
+    """
+    try:
+        value = frappe.db.get_single_value("PMS AI Settings", "working_hours_per_day")
+    except Exception:
+        value = None
     hours = flt(value)
     return hours if hours > 0 else DEFAULT_WORKING_HOURS_PER_DAY
 
