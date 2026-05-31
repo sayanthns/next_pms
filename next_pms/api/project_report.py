@@ -1,6 +1,30 @@
 import frappe
-from frappe.utils import today, getdate, format_date, add_days
+from frappe.utils import today, getdate, format_date, add_days, flt
 from next_pms.api.permissions import is_admin_user
+
+
+def _financials_dict(so_value, budget, actual):
+    so_value = flt(so_value); budget = flt(budget); actual = flt(actual)
+    return {
+        "so_value": round(so_value, 2),
+        "budget": round(budget, 2),
+        "actual": round(actual, 2),
+        "budget_util": round(actual / budget * 100, 1) if budget > 0 else 0,
+        "so_util": round(actual / so_value * 100, 1) if so_value > 0 else 0,
+    }
+
+
+@frappe.whitelist()
+def get_project_financials(project):
+    """SO value vs budget vs actual cost for a project."""
+    proj = frappe.db.get_value(
+        "PMS Project", project,
+        ["sales_order", "total_budget", "calculated_cost"], as_dict=True,
+    ) or {}
+    so_value = 0
+    if proj.get("sales_order"):
+        so_value = frappe.db.get_value("Sales Order", proj["sales_order"], "grand_total") or 0
+    return _financials_dict(so_value, proj.get("total_budget"), proj.get("calculated_cost"))
 
 
 @frappe.whitelist()
@@ -62,7 +86,10 @@ def get_project_report_data(project, date=None):
     done_tasks = frappe.db.count("PMS Task", {"project": project, "status": "Done"})
     progress_pct = round((done_tasks / total_tasks * 100) if total_tasks else 0)
 
+    financials = get_project_financials(project)
+
     return {
+        "financials": financials,
         "project_name": proj.project_name,
         "project_status": proj.status,
         "client": proj.client,

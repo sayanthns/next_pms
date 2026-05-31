@@ -68,6 +68,24 @@
       </tr>
     </table>
 
+    <!-- Financials: SO Value / Budget / Actual / Util% -->
+    {% if proj.financials %}
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border-bottom: 1px solid #e5e7eb;">
+      <tr style="background: #f8fafc;">
+        <td style="padding: 6px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 25%; font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">SO Value</td>
+        <td style="padding: 6px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 25%; font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Budget</td>
+        <td style="padding: 6px 12px; text-align: center; border-right: 1px solid #e5e7eb; width: 25%; font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Actual</td>
+        <td style="padding: 6px 12px; text-align: center; width: 25%; font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Util%</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 12px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 12px; font-weight: 700; color: #1e293b;">{{ "{:,.2f}".format(proj.financials.so_value) }}</td>
+        <td style="padding: 8px 12px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 12px; font-weight: 700; color: #1e293b;">{{ "{:,.2f}".format(proj.financials.budget) }}</td>
+        <td style="padding: 8px 12px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 12px; font-weight: 700; color: #1e293b;">{{ "{:,.2f}".format(proj.financials.actual) }}</td>
+        <td style="padding: 8px 12px; text-align: center; font-size: 12px; font-weight: 700; color: #1e293b;">{{ "{:.0f}".format(proj.financials.budget_util) }}%</td>
+      </tr>
+    </table>
+    {% endif %}
+
     <!-- Tasks Completed -->
     {% if proj.tasks_done %}
     <div style="padding: 12px 28px; border-bottom: 1px solid #f3f4f6;">
