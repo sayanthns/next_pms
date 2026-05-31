@@ -1,3 +1,4 @@
+# apps/next_pms/next_pms/next_pms/doctype/pms_project/test_pms_project.py
 # Copyright (c) 2024, Next PMS and Contributors
 # See license.txt
 
@@ -6,4 +7,47 @@ from frappe.tests.utils import FrappeTestCase
 
 
 class TestPMSProject(FrappeTestCase):
-	pass
+    def tearDown(self):
+        frappe.db.rollback()
+
+    def _ensure_customer(self):
+        # `client` (Link -> Customer) is reqd on PMS Project; ensure a test Customer exists
+        name = "ZZ Test Customer"
+        if not frappe.db.exists("Customer", name):
+            frappe.get_doc({
+                "doctype": "Customer",
+                "customer_name": name,
+            }).insert(ignore_permissions=True)
+        return name
+
+    def _new_project(self, **kwargs):
+        doc = frappe.get_doc({
+            "doctype": "PMS Project",
+            "project_name": kwargs.get("project_name", "ZZ Test Project"),
+            # client and project_manager are reqd:1 on PMS Project — set them so the
+            # ONLY thing that can fail insert is the total_budget rule under test.
+            "client": self._ensure_customer(),
+            "project_manager": "Administrator",
+            "status": "Active",
+            "total_budget": kwargs.get("total_budget", 1000),
+        })
+        return doc
+
+    def test_new_project_requires_positive_budget(self):
+        doc = self._new_project(total_budget=0)
+        with self.assertRaises(frappe.ValidationError):
+            doc.insert(ignore_permissions=True)
+
+    def test_new_project_with_budget_passes(self):
+        doc = self._new_project(total_budget=5000)
+        doc.insert(ignore_permissions=True)
+        self.assertEqual(doc.total_budget, 5000)
+
+    def test_existing_project_without_budget_can_save(self):
+        # Legacy project: insert with budget, then zero it in DB and ensure save still works
+        doc = self._new_project(total_budget=5000)
+        doc.insert(ignore_permissions=True)
+        frappe.db.set_value("PMS Project", doc.name, "total_budget", 0)
+        reloaded = frappe.get_doc("PMS Project", doc.name)
+        reloaded.description = "edited"
+        reloaded.save(ignore_permissions=True)  # must NOT throw (grandfathered)

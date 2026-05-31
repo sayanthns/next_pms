@@ -2,13 +2,21 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt
 
 
 class PMSProject(Document):
 	def validate(self):
+		self.validate_budget()
 		self.calculate_project_cost()
 		self.validate_dates()
+
+	def validate_budget(self):
+		# Mandatory only on new projects; existing budget-less projects are grandfathered.
+		if self.is_new() and flt(self.total_budget) <= 0:
+			frappe.throw(_("Total Budget is required and must be greater than 0"))
 
 	def validate_dates(self):
 		if self.start_date and self.end_date:

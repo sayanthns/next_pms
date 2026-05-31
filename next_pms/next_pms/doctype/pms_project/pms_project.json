@@ -103,7 +103,8 @@
   {
    "fieldname": "total_budget",
    "fieldtype": "Currency",
-   "label": "Total Budget"
+   "label": "Total Budget",
+   "reqd": 1
   },
   {
    "description": "Auto-calculated from task costs",

@@ -3,6 +3,7 @@ import json
 import requests
 from frappe.utils import today, now_datetime, getdate, format_date, add_days
 from next_pms.utils import get_pms_url
+from next_pms.api._hours import compute_target_hours, compute_utilization
 from collections import defaultdict
 
 
@@ -258,6 +259,10 @@ def _build_user_metrics(report_date):
             WHERE user = %s AND DATE(start_time) = %s AND is_running = 0
         """, (user, report_date))[0][0] or 0
 
+        # Fixed-baseline daily target (8h if report_date is an effective working day, else 0)
+        day_target = compute_target_hours(user, report_date, report_date)
+        day_utilization = compute_utilization(time_today, day_target)
+
         # Check-in/out from PMS Checkin
         checkin_data = frappe.db.sql("""
             SELECT checkin_time, checkout_time, total_hours
@@ -282,6 +287,8 @@ def _build_user_metrics(report_date):
             "estimated_hours": round(est_hours, 2),
             "actual_hours": round(actual_hours, 2),
             "hours_logged_today": round(float(time_today), 2),
+            "target_hours": day_target,
+            "utilization_pct": day_utilization,
             "productivity_pct": productivity,
             "checkin_time": str(checkin_info.get("checkin_time", "")) if checkin_info.get("checkin_time") else "-",
             "checkout_time": str(checkin_info.get("checkout_time", "")) if checkin_info.get("checkout_time") else "-",
