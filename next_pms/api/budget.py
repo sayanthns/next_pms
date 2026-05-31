@@ -7,6 +7,7 @@ from next_pms.api.permissions import check_project_access
 @frappe.whitelist()
 def request_budget_increase(project):
     """Email a budget-increase request to the approver (sayanth@enfono.in)."""
+    check_project_access(project)
     APPROVER = "sayanth@enfono.in"
     p = frappe.db.get_value(
         "PMS Project", project,
