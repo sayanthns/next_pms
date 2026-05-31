@@ -10,6 +10,7 @@ from frappe.utils import flt
 class PMSProject(Document):
 	def validate(self):
 		self.validate_budget()
+		self.validate_sales_order()
 		self.calculate_project_cost()
 		self.validate_dates()
 
@@ -17,6 +18,11 @@ class PMSProject(Document):
 		# Mandatory only on new projects; existing budget-less projects are grandfathered.
 		if self.is_new() and flt(self.total_budget) <= 0:
 			frappe.throw(_("Total Budget is required and must be greater than 0"))
+
+	def validate_sales_order(self):
+		# Mandatory only on new projects; existing projects grandfathered.
+		if self.is_new() and not self.sales_order:
+			frappe.throw(_("Sales Order is required"))
 
 	def validate_dates(self):
 		if self.start_date and self.end_date:
