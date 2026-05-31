@@ -59,4 +59,5 @@ class TestPMSProject(FrappeTestCase):
         frappe.db.set_value("PMS Project", doc.name, "total_budget", 0)
         reloaded = frappe.get_doc("PMS Project", doc.name)
         reloaded.description = "edited"
-        reloaded.save(ignore_permissions=True, ignore_links=True)  # must NOT throw (grandfathered)
+        reloaded.flags.ignore_links = True  # fake SO link; save() has no ignore_links kwarg
+        reloaded.save(ignore_permissions=True)  # must NOT throw (grandfathered)
