@@ -34,3 +34,12 @@ Branch `feature/android-apk`. Spec `docs/superpowers/specs/2026-05-31-android-ap
 - Signing config (env-driven) + scripts/build-apk.sh added (main 4fab11a). Signed release built: dist-apk/next-pms-1.0.0.apk (3.2MB, apksigner-verified CN=Next PMS).
 - Rebuild anytime: `bash scripts/build-apk.sh <version>`.
 - PENDING: on-device login test; verify WebView Origin == allow_cors entry.
+
+## Update 2026-06-01 — APK works, layout blocked on-device (PAUSED)
+- APK fully functional: login (get_api_credentials token), data, signed pipeline (scripts/build-apk.sh). versionName visible (1.0.1+).
+- BLOCKER: in the phone's Android System WebView (MIUI), the responsive layout doesn't apply — bottom-nav hidden, card grids overflow. Web/PWA renders identical CSS perfectly in Chrome.
+- Confirmed NOT a code bug: built native CSS is byte-identical to web build; `@media (max-width:768px){.bottom-nav{display:flex}}` present; on-device diagnostic showed iw=369 mq768=true. So the WebView reports mobile width yet doesn't apply @media.
+- Tried: hash-history fix (blank screen → fixed), Preferences static-import (Preferences.then crash → fixed), versionName bump, on-screen error catcher, and a class-based override (html.is-mobile + mobile-force.css, no @media) — user reports "same" on 1.0.4 (possibly stale install / or WebView dropping even class CSS / unverified).
+- ROOT-CAUSE UNVERIFIABLE without on-device DevTools (chrome://inspect via USB). Next step when resumed: USB-debug the device, inspect the WebView DOM/CSS at runtime — do NOT keep blind-rebuilding.
+- INTERIM: PWA (office.enfono.com/next-pms → Add to Home screen) is fully mobile-working — use that. APK not required for mobile use.
+- Commits through main 705c2eb. mobile-force.css + main.js is-mobile toggle in place (web-safe, only <=768).
