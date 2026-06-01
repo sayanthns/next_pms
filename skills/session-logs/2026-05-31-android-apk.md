@@ -27,3 +27,10 @@ Branch `feature/android-apk`. Spec `docs/superpowers/specs/2026-05-31-android-ap
 ## Next session
 1. Get keystore pw+alias → add signing config + `build-apk.sh` → signed release APK.
 2. Deploy auth endpoint to office + enfono-office-new + set `allow_cors` → sideload + device-test login.
+
+## Update 2026-06-01 — signed release + backend deployed
+- Backend deployed to office+enfono-office-new (main bc891f4): get_api_credentials LIVE (401 on bad creds), allow_cors set both sites.
+- NEW EFTPMS keystore created (alias next-pms, SHA-256 f097c9fa…) — NOT fatehhr's. Keystore + password gitignored (android-capacitor/keystore/, SECRET-DO-NOT-COMMIT.env). Password also in user's password manager.
+- Signing config (env-driven) + scripts/build-apk.sh added (main 4fab11a). Signed release built: dist-apk/next-pms-1.0.0.apk (3.2MB, apksigner-verified CN=Next PMS).
+- Rebuild anytime: `bash scripts/build-apk.sh <version>`.
+- PENDING: on-device login test; verify WebView Origin == allow_cors entry.
