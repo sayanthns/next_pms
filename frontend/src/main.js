@@ -32,3 +32,19 @@ initNativeAuth()
       showFatal(e && e.stack ? e.stack : e);
     }
   });
+
+// TEMP native viewport diagnostic — shows the WebView's real CSS width so we can
+// see why mobile @media isn't firing. Remove after diagnosis.
+if (isNative()) {
+  setTimeout(() => {
+    const b = document.createElement("div");
+    b.style.cssText =
+      "position:fixed;top:0;left:0;z-index:99999;background:#111;color:#0f0;" +
+      "font:12px monospace;padding:4px 6px;pointer-events:none;";
+    const mq = window.matchMedia("(max-width: 768px)").matches;
+    b.textContent =
+      "iw=" + window.innerWidth + " cw=" + document.documentElement.clientWidth +
+      " dpr=" + window.devicePixelRatio + " mq768=" + mq;
+    document.body.appendChild(b);
+  }, 600);
+}
