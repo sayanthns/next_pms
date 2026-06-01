@@ -1,0 +1,44 @@
+/* mobile-force.css
+ * Forces the mobile layout via an `html.is-mobile` class set by JS (main.js)
+ * from window.innerWidth. This deliberately AVOIDS @media: some Android System
+ * WebViews (notably MIUI) fail to apply @media rules even when
+ * window.matchMedia reports the query as matching, so the app rendered the
+ * desktop layout inside the APK while Chrome/PWA rendered mobile correctly.
+ * Plain class selectors are always honoured. Web/desktop is unaffected
+ * (the class is only added when innerWidth <= 768).
+ */
+
+/* Never let a single wide child create horizontal scroll / clipping. */
+html, body, #app { overflow-x: hidden; max-width: 100vw; }
+
+/* ---- App shell ---- */
+html.is-mobile .sidebar { transform: translateX(-240px) !important; }
+html.is-mobile .sidebar-mini .sidebar { transform: translateX(-240px) !important; }
+html.is-mobile .main-content,
+html.is-mobile .sidebar-mini .main-content {
+  margin-left: 0 !important;
+  padding-bottom: 76px !important; /* clear the fixed bottom nav */
+}
+html.is-mobile .sidebar-overlay,
+html.is-mobile .mobile-menu-btn,
+html.is-mobile .sidebar-toggle-mobile,
+html.is-mobile .sidebar-toggle-desktop { display: none !important; }
+html.is-mobile .bottom-nav { display: flex !important; }
+
+/* ---- Card grids → stack ---- */
+html.is-mobile .summary-cards { grid-template-columns: 1fr 1fr !important; }
+html.is-mobile .project-grid,
+html.is-mobile .kpi-cards,
+html.is-mobile .stat-cards,
+html.is-mobile .cards-grid,
+html.is-mobile .report-grid,
+html.is-mobile .metrics-grid { grid-template-columns: 1fr !important; }
+
+/* ---- Wide tables scroll instead of clipping the page ---- */
+html.is-mobile .section-card table,
+html.is-mobile .mini-table { display: block; width: 100%; overflow-x: auto; }
+
+/* ---- Drawers / modals full-width on phone ---- */
+html.is-mobile .drawer,
+html.is-mobile .modal,
+html.is-mobile .side-drawer { max-width: 100vw !important; }

@@ -4,6 +4,17 @@ import App from "./App.vue";
 import router from "./router";
 import { isNative, initNativeAuth } from "@/utils/native";
 import "@/styles/theme.css";
+import "@/styles/mobile-force.css";
+
+// Drive mobile layout from a class (not @media): some Android WebViews mis-apply
+// @media even when matchMedia matches. Toggle html.is-mobile by viewport width.
+function syncMobileClass() {
+  const mobile = window.innerWidth <= 768;
+  document.documentElement.classList.toggle("is-mobile", mobile);
+}
+syncMobileClass();
+window.addEventListener("resize", syncMobileClass);
+window.addEventListener("orientationchange", syncMobileClass);
 
 // Native-only on-screen error catcher: if the app fails to render (blank screen
 // on a phone with no devtools), show the error text in #app so it can be reported.
@@ -32,19 +43,3 @@ initNativeAuth()
       showFatal(e && e.stack ? e.stack : e);
     }
   });
-
-// TEMP native viewport diagnostic — shows the WebView's real CSS width so we can
-// see why mobile @media isn't firing. Remove after diagnosis.
-if (isNative()) {
-  setTimeout(() => {
-    const b = document.createElement("div");
-    b.style.cssText =
-      "position:fixed;top:0;left:0;z-index:99999;background:#111;color:#0f0;" +
-      "font:12px monospace;padding:4px 6px;pointer-events:none;";
-    const mq = window.matchMedia("(max-width: 768px)").matches;
-    b.textContent =
-      "iw=" + window.innerWidth + " cw=" + document.documentElement.clientWidth +
-      " dpr=" + window.devicePixelRatio + " mq768=" + mq;
-    document.body.appendChild(b);
-  }, 600);
-}
