@@ -105,14 +105,12 @@
    "fieldname": "sales_order",
    "fieldtype": "Link",
    "options": "Sales Order",
-   "label": "Sales Order",
-   "reqd": 1
+   "label": "Sales Order"
   },
   {
    "fieldname": "total_budget",
    "fieldtype": "Currency",
-   "label": "Total Budget",
-   "reqd": 1
+   "label": "Total Budget"
   },
   {
    "description": "Auto-calculated from task costs",
