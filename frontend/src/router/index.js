@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, createWebHashHistory } from "vue-router";
 import { isNative, getToken } from "@/utils/native";
 
 // Lazy-load all views for faster initial page load
@@ -152,7 +152,9 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory("/next-pms/"),
+  // Native (bundled Capacitor) loads at https://localhost/ — hash history always
+  // resolves from index.html regardless of path. Web keeps the /next-pms/ base.
+  history: isNative() ? createWebHashHistory() : createWebHistory("/next-pms/"),
   routes,
 });
 
