@@ -24,6 +24,8 @@ export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 : "${PMS_KEY_PW:?set PMS_KEY_PW}"
 : "${PMS_KEY_ALIAS:?set PMS_KEY_ALIAS}"
 VERSION="${1:-1.0.0}"
+export PMS_VERSION_NAME="$VERSION"
+export PMS_VERSION_CODE="${2:-$(echo "$VERSION" | tr -d '.')}"   # e.g. 1.0.1 -> 101
 
 echo "▶ Native web build"
 ( cd "$REPO_ROOT/frontend" && yarn build:native )
