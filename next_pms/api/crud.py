@@ -1047,6 +1047,28 @@ def get_task_overtime_hours(task):
 # Task Report
 # ═══════════════════════════════════════════════════════════════
 
+def _aggregate_window_hours(logs):
+    """Sum duration_hours per task from a list of time-log rows.
+    Returns {task_name: hours}. Pure — no DB access."""
+    window_hours = {}
+    for log in logs:
+        task = log.get("task")
+        if task:
+            window_hours[task] = window_hours.get(task, 0) + (log.get("duration_hours") or 0)
+    return window_hours
+
+
+def _apply_window_to_tasks(tasks, window_hours):
+    """Keep only tasks with logs in the window and override actual_hours /
+    calculated_cost with the in-window totals. Pure — no DB access."""
+    out = [t for t in tasks if t["name"] in window_hours]
+    for t in out:
+        t["actual_hours"] = round(window_hours.get(t["name"], 0), 2)
+        if t.get("hourly_rate") is not None:
+            t["calculated_cost"] = round(t["actual_hours"] * (t.get("hourly_rate") or 0), 2)
+    return out
+
+
 @frappe.whitelist()
 def get_task_report(filters=None):
     """Get comprehensive task report with filters.
@@ -1077,22 +1099,36 @@ def get_task_report(filters=None):
     if filters.get("status"):
         db_filters["status"] = filters["status"]
 
-    # For developers, force filter to only their assigned tasks
-    if is_developer_only:
-        db_filters["assigned_to"] = current_user
-
-    # Date range filter on creation
+    # Date range — defines the time-log WINDOW for effort reporting.
+    # Standard effort/timesheet behaviour: filter by when work was LOGGED, not when the
+    # task was created. Window mode engages when both dates are present (the normal case
+    # — the UI defaults both to today). With a partial/empty range we fall back to the
+    # legacy creation-date filter + lifetime hours for backward compatibility.
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
-    if from_date and to_date:
-        db_filters["creation"] = ["between", [from_date, to_date + " 23:59:59"]]
-    elif from_date:
-        db_filters["creation"] = [">=", from_date]
-    elif to_date:
-        db_filters["creation"] = ["<=", to_date + " 23:59:59"]
+    window_mode = bool(from_date and to_date)
 
-    # User filter — tasks assigned to this user
+    # "User" filter means whoever LOGGED the time (PMS Time Log.user) in window mode,
+    # matching the Time Logs view; in legacy mode it means the task assignee.
     user_filter = filters.get("user")
+
+    log_window_filters = None
+    if window_mode:
+        log_window_filters = {
+            "is_running": 0,
+            "start_time": ["between", [from_date + " 00:00:00", to_date + " 23:59:59"]],
+        }
+        effective_log_user = current_user if is_developer_only else user_filter
+        if effective_log_user:
+            log_window_filters["user"] = effective_log_user
+    else:
+        # For developers, force filter to only their assigned tasks
+        if is_developer_only:
+            db_filters["assigned_to"] = current_user
+        if from_date:
+            db_filters["creation"] = [">=", from_date]
+        elif to_date:
+            db_filters["creation"] = ["<=", to_date + " 23:59:59"]
 
     # Build safe field list — only include fields that exist in the DB
     base_fields = [
@@ -1119,7 +1155,8 @@ def get_task_report(filters=None):
         frappe.throw("Failed to fetch task report. Please try again.")
 
     # For developer-only users, also include tasks from the assignees child table
-    if is_developer_only:
+    # (legacy mode only — in window mode the log-user filter governs the task set).
+    if is_developer_only and not window_mode:
         child_assigned = set(frappe.get_all(
             "PMS Task Assignee",
             filters={"user": current_user},
@@ -1142,13 +1179,25 @@ def get_task_report(filters=None):
                 pass
 
     # If user filter (explicit from UI dropdown), find tasks assigned to this user
-    if user_filter:
+    # (legacy mode only — window mode filters by who logged the time instead).
+    if user_filter and not window_mode:
         assigned_tasks = set(frappe.get_all(
             "PMS Task Assignee",
             filters={"user": user_filter},
             pluck="parent",
         ))
         tasks = [t for t in tasks if t.name in assigned_tasks or t.assigned_to == user_filter]
+
+    # Window mode: restrict to tasks with logs in range and override hours/cost with the
+    # in-window totals so the report reconciles with the Time Logs view. Estimated hours
+    # stay lifetime per task (an estimate is not time-phased).
+    if window_mode:
+        logs = frappe.get_all(
+            "PMS Time Log",
+            filters=log_window_filters,
+            fields=["task", "duration_hours"],
+        )
+        tasks = _apply_window_to_tasks(tasks, _aggregate_window_hours(logs))
 
     # Batch-load user full names and project names to avoid N+1 queries
     user_emails = set()
