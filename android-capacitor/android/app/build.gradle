@@ -16,8 +16,23 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def kp = System.getenv("PMS_KEYSTORE_PATH")
+            if (kp != null) {
+                storeFile file(kp)
+                storePassword System.getenv("PMS_KEYSTORE_PW")
+                keyAlias System.getenv("PMS_KEY_ALIAS")
+                keyPassword System.getenv("PMS_KEY_PW")
+            }
+        }
+    }
     buildTypes {
         release {
+            // Use the env-driven release signing config only when a keystore path is provided.
+            if (System.getenv("PMS_KEYSTORE_PATH") != null) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

@@ -36,3 +36,9 @@ android-capacitor/android/app/build/
 android-capacitor/android/build/
 android-capacitor/android/local.properties
 android-capacitor/android/capacitor-cordova-android-plugins/build/
+
+# Android signing secrets — NEVER commit
+android-capacitor/keystore/*.keystore
+android-capacitor/keystore/SECRET-DO-NOT-COMMIT.env
+
+dist-apk/
