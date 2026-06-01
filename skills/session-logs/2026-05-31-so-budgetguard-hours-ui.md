@@ -33,3 +33,9 @@ Last batch added `working_hours_per_day` + `weekly_summary_recipient` to the PMS
 
 ## Deploy
 After local: office (site `enfono-office-new`) via control→Tailscale, window 02:00–05:00 IST (or override). `git pull` (clean stale root-owned dist first) → `bench --site enfono-office-new migrate` (syncs `sales_order`) → `bench build --app next_pms` → root `supervisorctl restart frappe-bench-web: frappe-bench-workers:`. Then verify SO required on new project + timer block at ≥95% + hours setting in AI tab.
+
+## Hotfix 2026-06-01 — reqd:1 broke task create/update on existing projects
+- Symptom: create/edit task on an existing project → MandatoryError [PMS Project]: sales_order.
+- Cause: `reqd:1` on sales_order (Link) → Frappe `_validate_mandatory` runs on EVERY save (ignores is_new). PMS Task.after_insert → update_project_cost → project.save() on an existing SO-less project → throws. Same trap would hit total_budget if NULL.
+- Fix: removed `reqd:1` from BOTH sales_order + total_budget in pms_project.json. New-project enforcement kept in validate_sales_order/validate_budget (is_new gated) + CreateProjectModal required field. LESSON: never use reqd:1 for a field you only want mandatory on NEW docs — it blocks all updates of legacy rows; enforce in controller with is_new().
+- Deployed office + enfono-office-new (main 6298572), migrated both, restarted. Verified: PROJ-4483 (sales_order=None) saves OK.
