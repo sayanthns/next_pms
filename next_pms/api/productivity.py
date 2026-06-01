@@ -168,37 +168,38 @@ def get_employee_productivity(user, period_days=30):
             for h in hols
         ]
 
-    # ── 5. Tasks ──────────────────────────────────────────────────────
+    # ── 5. Tasks worked on in the period ─────────────────────────────
+    # Period-consistent: every task metric below is scoped to the tasks the user
+    # LOGGED time against inside the window, so it matches the daily chart and the
+    # utilization figure. Actual hours = in-window logged hours; estimated hours are
+    # the task's lifetime estimate (an estimate is not time-phased).
+    from next_pms.api.crud import _aggregate_window_hours
+
+    window_hours_by_task = _aggregate_window_hours(time_logs)
+    period_task_names = list(window_hours_by_task.keys())
+
     task_fields = [
         "name", "task_title", "project", "status", "priority",
-        "estimated_hours", "actual_hours", "due_date", "modified",
-        "creation", "assigned_to",
+        "estimated_hours", "due_date", "modified",
     ]
     meta = frappe.get_meta("PMS Task")
     existing = {f.fieldname for f in meta.fields}
-    safe_fields = [f for f in task_fields if f in existing or f in ("name", "creation", "modified")]
+    safe_fields = [f for f in task_fields if f in existing or f in ("name", "modified")]
 
-    all_tasks = frappe.get_all(
-        "PMS Task",
-        filters={"assigned_to": user},
-        fields=safe_fields,
-        limit=0,
+    worked_tasks = (
+        frappe.get_all(
+            "PMS Task",
+            filters={"name": ["in", period_task_names]},
+            fields=safe_fields,
+            limit=0,
+        )
+        if period_task_names
+        else []
     )
-
-    period_tasks = frappe.get_all(
-        "PMS Task",
-        filters={
-            "assigned_to": user,
-            "modified": ["between", [from_str + " 00:00:00", to_str + " 23:59:59"]],
-        },
-        fields=safe_fields,
-        limit=0,
-    )
-    period_task_names = {t.name for t in period_tasks}
 
     # ── 6. Per-project breakdown ──────────────────────────────────────
     project_map = {}
-    for t in all_tasks:
+    for t in worked_tasks:
         proj = t.project or "__no_project__"
         if proj not in project_map:
             project_map[proj] = {
@@ -210,7 +211,7 @@ def get_employee_productivity(user, period_days=30):
         pm = project_map[proj]
         pm["total"] += 1
         pm["estimated_hours"] += t.estimated_hours or 0
-        pm["actual_hours"] += t.actual_hours or 0
+        pm["actual_hours"] += window_hours_by_task.get(t.name, 0)
         if t.status == "Done":
             pm["done"] += 1
         elif t.status in ("In Progress", "In Review"):
@@ -247,15 +248,15 @@ def get_employee_productivity(user, period_days=30):
         projects_data.append(pm)
     projects_data.sort(key=lambda x: -x["total"])
 
-    # Overall across all projects
-    total_estimated = round(sum(t.estimated_hours or 0 for t in all_tasks), 2)
-    total_actual = round(sum(t.actual_hours or 0 for t in all_tasks), 2)
-    total_tasks = len(all_tasks)
-    done_count = sum(1 for t in all_tasks if t.status == "Done")
-    in_progress_count = sum(1 for t in all_tasks if t.status in ("In Progress", "In Review"))
-    backlog_count = sum(1 for t in all_tasks if t.status in ("Backlog", "To Do"))
+    # Overall across the period (tasks worked on in the window)
+    total_estimated = round(sum(t.estimated_hours or 0 for t in worked_tasks), 2)
+    total_actual = total_logged_hours  # == sum of in-window logged hours
+    total_tasks = len(worked_tasks)
+    done_count = sum(1 for t in worked_tasks if t.status == "Done")
+    in_progress_count = sum(1 for t in worked_tasks if t.status in ("In Progress", "In Review"))
+    backlog_count = sum(1 for t in worked_tasks if t.status in ("Backlog", "To Do"))
     overdue_count = sum(
-        1 for t in all_tasks
+        1 for t in worked_tasks
         if t.due_date and getdate(t.due_date) < to_date and t.status != "Done"
     )
 
@@ -268,7 +269,7 @@ def get_employee_productivity(user, period_days=30):
     )
 
     # ── 7. On-time completion ─────────────────────────────────────────
-    done_tasks_all = [t for t in all_tasks if t.status == "Done"]
+    done_tasks_all = [t for t in worked_tasks if t.status == "Done"]
     tasks_with_due = [t for t in done_tasks_all if t.due_date]
     on_time = [t for t in tasks_with_due if getdate(t.modified) <= getdate(t.due_date)]
     on_time_pct = (
