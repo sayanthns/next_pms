@@ -12,7 +12,7 @@
     </div>
     <div class="billing-cards">
       <div class="bcard ok"><span class="bval">{{ fmt(summary.payments_received) }}</span><span class="blbl">Payments Received</span></div>
-      <div class="bcard warn"><span class="bval">{{ fmt(summary.payments_pending) }}</span><span class="blbl">Payments Pending</span></div>
+      <div class="bcard warn"><span class="bval" :class="{ over: summary.outstanding > 0 }">{{ fmt(summary.outstanding) }}</span><span class="blbl">Outstanding (Budget − Received)</span></div>
     </div>
 
     <!-- Expenses -->
@@ -25,7 +25,7 @@
         <input v-model.number="exp.amount" type="number" min="0" step="0.01" placeholder="Amount" class="bin" />
         <input v-model="exp.expense_date" type="date" class="bin" />
         <select v-model="exp.category" class="bin">
-          <option>Subcontractor</option><option>Software</option><option>Travel</option><option>Hardware</option><option>Other</option>
+          <option>Subcontract</option><option>Software</option><option>Travel</option><option>Onsite Charges</option><option>Server</option><option>Additional Works</option><option>AMC</option><option>Other</option>
         </select>
         <input v-model="exp.description" type="text" placeholder="Description" class="bin bin-grow" />
         <button class="bbtn" :disabled="busy">Add</button>
@@ -49,14 +49,14 @@
     <div class="billing-section">
       <div class="bs-head">
         <h3>Client Payments</h3>
-        <span class="bs-sub">Money-in. Mark Received needs a linked Payment Entry.</span>
+        <span class="bs-sub">Money received. A linked ERPNext Payment Entry is required.</span>
       </div>
       <form v-if="canManage" class="brow" @submit.prevent="addPayment">
         <input v-model.number="pay.amount" type="number" min="0" step="0.01" placeholder="Amount" class="bin" />
         <input v-model="pay.payment_date" type="date" class="bin" />
         <input v-model="pay.description" type="text" placeholder="Milestone / note" class="bin bin-grow" />
-        <input v-model="pay.payment_entry" type="text" placeholder="Payment Entry (optional)" class="bin" />
-        <button class="bbtn" :disabled="busy">Add</button>
+        <input v-model="pay.payment_entry" type="text" placeholder="Payment Entry (required)" class="bin" required />
+        <button class="bbtn" :disabled="busy || !pay.amount || !pay.payment_entry">Add</button>
       </form>
       <table class="btable" v-if="payments.length">
         <thead><tr><th>Date</th><th>Description</th><th class="r">Amount</th><th>Status</th><th>Payment Entry</th><th v-if="canManage"></th></tr></thead>
@@ -68,26 +68,12 @@
             <td><span class="pill" :class="p.status === 'Received' ? 'pill-ok' : 'pill-warn'">{{ p.status }}</span></td>
             <td>{{ p.payment_entry || '—' }}</td>
             <td v-if="canManage" class="r">
-              <button v-if="p.status !== 'Received'" class="blink" @click="openReceive(p)">Mark Received</button>
               <button class="blink-del" @click="delPayment(p.name)">Delete</button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="bempty">No payments tracked.</p>
-    </div>
-
-    <!-- Mark Received dialog -->
-    <div v-if="receiveFor" class="bmodal" @click.self="receiveFor = null">
-      <div class="bmodal-card">
-        <h4>Mark Payment Received</h4>
-        <p class="bs-sub">Link the ERPNext Payment Entry that confirms this money.</p>
-        <input v-model="receivePE" type="text" placeholder="Payment Entry ID (e.g. ACC-PAY-2026-00001)" class="bin bin-grow" />
-        <div class="bmodal-actions">
-          <button class="bbtn-ghost" @click="receiveFor = null">Cancel</button>
-          <button class="bbtn" :disabled="busy || !receivePE" @click="confirmReceive">Confirm</button>
-        </div>
-      </div>
+      <p v-else class="bempty">No payments recorded.</p>
     </div>
   </div>
 </template>
@@ -111,8 +97,6 @@ const busy = ref(false)
 const today = new Date().toISOString().slice(0, 10)
 const exp = reactive({ amount: null, expense_date: today, category: 'Other', description: '' })
 const pay = reactive({ amount: null, payment_date: today, description: '', payment_entry: '' })
-const receiveFor = ref(null)
-const receivePE = ref('')
 
 function fmt(v) { return settingsStore.formatCurrency(v || 0) }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—' }
@@ -155,6 +139,7 @@ async function delExpense(name) {
 
 async function addPayment() {
   if (!pay.amount || pay.amount <= 0) { errorMsg.value = 'Enter a valid payment amount.'; return }
+  if (!pay.payment_entry) { errorMsg.value = 'A Payment Entry is required to record a client payment.'; return }
   busy.value = true; errorMsg.value = ''
   try {
     await call('next_pms.api.billing.add_project_payment', {
@@ -164,18 +149,6 @@ async function addPayment() {
     pay.amount = null; pay.description = ''; pay.payment_entry = ''
     await loadAll()
   } catch (err) { errorMsg.value = (err && err.message) || 'Failed to add payment.' }
-  finally { busy.value = false }
-}
-
-function openReceive(p) { receiveFor.value = p; receivePE.value = '' }
-
-async function confirmReceive() {
-  busy.value = true; errorMsg.value = ''
-  try {
-    await call('next_pms.api.billing.mark_payment_received', { name: receiveFor.value.name, payment_entry: receivePE.value })
-    receiveFor.value = null
-    await loadAll()
-  } catch (err) { errorMsg.value = (err && err.message) || 'Failed to mark received.' }
   finally { busy.value = false }
 }
 

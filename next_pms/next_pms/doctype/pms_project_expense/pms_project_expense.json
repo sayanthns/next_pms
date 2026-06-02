@@ -48,7 +48,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Category",
-   "options": "Subcontractor\nSoftware\nTravel\nHardware\nOther",
+   "options": "Subcontract\nSoftware\nTravel\nOnsite Charges\nServer\nAdditional Works\nAMC\nOther",
    "default": "Other"
   },
   {

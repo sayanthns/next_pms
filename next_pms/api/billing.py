@@ -73,16 +73,20 @@ def add_project_payment(project, amount, payment_date=None, description=None, pa
     _check_project(project)
     if flt(amount) <= 0:
         frappe.throw(_("Payment amount must be greater than zero."))
-    # If a Payment Entry is supplied up front, mark it Received immediately.
-    status = "Received" if payment_entry else "Pending"
+    # A client payment must be backed by a real ERPNext Payment Entry — we only
+    # track money actually received.
+    if not payment_entry:
+        frappe.throw(_("A Payment Entry is required to record a client payment."))
+    if not frappe.db.exists("Payment Entry", payment_entry):
+        frappe.throw(_("Payment Entry {0} not found.").format(payment_entry))
     doc = frappe.get_doc({
         "doctype": "PMS Project Payment",
         "project": project,
         "amount": flt(amount),
         "payment_date": getdate(payment_date) if payment_date else today(),
         "description": description,
-        "payment_entry": payment_entry or None,
-        "status": status,
+        "payment_entry": payment_entry,
+        "status": "Received",
     }).insert(ignore_permissions=True)
     frappe.db.commit()
     return {"success": True, "name": doc.name, "status": doc.status}
@@ -156,4 +160,60 @@ def get_project_billing_summary(project):
         "payments_received": received,
         "payments_pending": pending,
         "payments_total": received + pending,
+        # Outstanding to collect against the contract value.
+        "outstanding": budget - received,
     }
+
+
+@frappe.whitelist()
+def get_projects_finance_summary():
+    """All-projects finance roll-up for the Reports → Finance screen.
+    One row per project: budget, labour, expenses, spent, remaining, received,
+    outstanding (budget − received). Managers/Admins only."""
+    _require_billing_manager()
+
+    projects = frappe.get_all(
+        "PMS Project",
+        filters={"status": ["!=", "Cancelled"]},
+        fields=["name", "project_name", "client", "status", "total_budget",
+                "calculated_cost", "total_expenses"],
+        order_by="modified desc",
+    )
+    if not projects:
+        return {"rows": [], "totals": {}}
+
+    names = [p.name for p in projects]
+    received_map = {}
+    for r in frappe.db.get_all(
+        "PMS Project Payment",
+        filters={"project": ["in", names], "status": "Received"},
+        fields=["project", "amount"],
+    ):
+        received_map[r.project] = received_map.get(r.project, 0) + flt(r.amount)
+
+    rows = []
+    tot = {"budget": 0, "labour": 0, "expenses": 0, "spent": 0, "remaining": 0,
+           "received": 0, "outstanding": 0}
+    for p in projects:
+        budget = flt(p.total_budget)
+        labour = flt(p.calculated_cost)
+        expenses = flt(p.total_expenses)
+        spent = labour + expenses
+        received = flt(received_map.get(p.name, 0))
+        row = {
+            "project": p.name,
+            "project_name": p.project_name,
+            "client": p.client,
+            "status": p.status,
+            "budget": budget,
+            "labour": labour,
+            "expenses": expenses,
+            "spent": spent,
+            "remaining": budget - spent,
+            "received": received,
+            "outstanding": budget - received,
+        }
+        rows.append(row)
+        for k in tot:
+            tot[k] += row[k]
+    return {"rows": rows, "totals": tot}

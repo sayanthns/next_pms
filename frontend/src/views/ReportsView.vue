@@ -25,10 +25,22 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Client Reports
       </button>
+      <button
+        v-if="settingsStore.canViewFinance"
+        class="reports-tab-btn"
+        :class="{ active: reportTab === 'finance' }"
+        @click="reportTab = 'finance'"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Finance
+      </button>
     </div>
 
     <!-- Client Reports Tab -->
     <ClientReportsTab v-if="!embedded && reportTab === 'client-reports'" />
+
+    <!-- Project Finance Tab -->
+    <ProjectFinanceTab v-if="!embedded && reportTab === 'finance'" />
 
     <!-- Analytics Tab: Project Selector (shown if no projectId prop and not embedded) -->
     <template v-if="embedded || reportTab === 'analytics'">
@@ -450,6 +462,7 @@ import { useSettingsStore } from '@/store/settings'
 import { getList, call } from '@/utils/frappe'
 import BudgetWidget from '@/components/BudgetWidget.vue'
 import ClientReportsTab from '@/components/ClientReportsTab.vue'
+import ProjectFinanceTab from '@/components/ProjectFinanceTab.vue'
 
 const props = defineProps({
   projectId: {
