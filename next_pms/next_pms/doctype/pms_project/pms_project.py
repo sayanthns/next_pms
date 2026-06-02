@@ -60,8 +60,15 @@ class PMSProject(Document):
 			fields=["calculated_cost"],
 		)
 		self.calculated_cost = sum(t.calculated_cost or 0 for t in tasks)
+		# Spend = labour cost (from time logs) + logged project expenses.
+		self.total_expenses = flt(
+			frappe.db.get_value(
+				"PMS Project Expense", {"project": self.name}, "sum(amount)"
+			)
+		)
+		spent = flt(self.calculated_cost) + flt(self.total_expenses)
 		if self.total_budget:
-			self.budget_utilization = (self.calculated_cost / self.total_budget) * 100
+			self.budget_utilization = (spent / self.total_budget) * 100
 		else:
 			self.budget_utilization = 0
 
@@ -70,3 +77,29 @@ class PMSProject(Document):
 			if member.user == user:
 				return member.hourly_rate or 0
 		return 0
+
+
+def update_project_financials(project):
+	"""Recompute a project's labour cost, expenses and utilization WITHOUT a full
+	save (avoids re-validation / timestamp churn). Called from expense changes and
+	anywhere spend must be refreshed."""
+	if not project or not frappe.db.exists("PMS Project", project):
+		return
+	labour = flt(
+		frappe.db.get_value("PMS Task", {"project": project}, "sum(calculated_cost)")
+	)
+	expenses = flt(
+		frappe.db.get_value("PMS Project Expense", {"project": project}, "sum(amount)")
+	)
+	total_budget = flt(frappe.db.get_value("PMS Project", project, "total_budget"))
+	utilization = ((labour + expenses) / total_budget * 100) if total_budget else 0
+	frappe.db.set_value(
+		"PMS Project",
+		project,
+		{
+			"calculated_cost": labour,
+			"total_expenses": expenses,
+			"budget_utilization": utilization,
+		},
+		update_modified=False,
+	)

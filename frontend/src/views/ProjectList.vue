@@ -119,20 +119,15 @@
           </span>
         </div>
 
-        <p v-if="project.client" class="project-client">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-          {{ project.client }}
-        </p>
-
         <div v-if="project.start_date || (settingsStore.canViewFinance && project.total_budget)" class="card-details">
           <span v-if="project.start_date" class="detail-item">
             &#128197; {{ formatDate(project.start_date) }}
           </span>
           <span v-if="settingsStore.canViewFinance && project.total_budget" class="detail-item">
             &#128176; {{ formatCurrency(project.total_budget) }}
+          </span>
+          <span v-if="settingsStore.canViewFinance && project.total_budget" class="detail-item" :class="{ 'detail-over': project.budget_remaining < 0 }">
+            &#9878; {{ formatCurrency(project.budget_remaining) }} left
           </span>
         </div>
 
@@ -172,10 +167,10 @@
           <tr>
             <th>Project</th>
             <th>Status</th>
-            <th>Client</th>
             <th>Progress</th>
             <th>Tasks</th>
             <th v-if="settingsStore.canViewFinance">Budget</th>
+            <th v-if="settingsStore.canViewFinance">Remaining</th>
           </tr>
         </thead>
         <tbody>
@@ -197,7 +192,6 @@
             <td>
               <span class="status-badge" :class="statusClass(project.status)">{{ project.status }}</span>
             </td>
-            <td class="table-client">{{ project.client || '—' }}</td>
             <td>
               <div class="table-progress">
                 <div class="progress-bar-mini">
@@ -211,6 +205,9 @@
             </td>
             <td v-if="settingsStore.canViewFinance" class="table-budget">
               {{ project.total_budget ? formatCurrency(project.total_budget) : '—' }}
+            </td>
+            <td v-if="settingsStore.canViewFinance" class="table-budget" :class="{ 'table-over': project.budget_remaining < 0 }">
+              {{ project.total_budget ? formatCurrency(project.budget_remaining) : '—' }}
             </td>
           </tr>
         </tbody>
@@ -936,5 +933,10 @@ function statusBorderColor(status) {
   background: #fef3c7;
   border-color: #f59e0b;
   color: #b45309;
+}
+.detail-over,
+.table-over {
+  color: #dc2626;
+  font-weight: 600;
 }
 </style>

@@ -107,6 +107,26 @@
         <p v-if="otpSent" class="budget-otp-sent">OTP sent to the approver(s). Ask them for the code, then Save.</p>
       </div>
 
+      <!-- Reopen approval: shown when moving a project OUT of Completed needs an OTP -->
+      <div v-if="needsStatusOtp" class="budget-otp-box">
+        <div class="budget-otp-title">Reopening needs approval</div>
+        <p class="budget-otp-note">An OTP must be sent to an approver and entered here to move this project out of Completed.</p>
+        <div class="budget-otp-row">
+          <input
+            v-model="statusOtp"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            class="form-input"
+            placeholder="Enter 6-digit OTP"
+          />
+          <button type="button" class="btn-send-otp" :disabled="sendingStatusOtp" @click="sendStatusOtp">
+            {{ sendingStatusOtp ? 'Sending…' : (statusOtpSent ? 'Resend OTP' : 'Send OTP') }}
+          </button>
+        </div>
+        <p v-if="statusOtpSent" class="budget-otp-sent">OTP sent to the approver(s). Ask them for the code, then Save.</p>
+      </div>
+
       <div v-if="errorMsg" class="form-error-banner">{{ errorMsg }}</div>
 
       <div class="form-group">
@@ -171,6 +191,10 @@ const needsOtp = ref(false)
 const budgetOtp = ref('')
 const otpSent = ref(false)
 const sendingOtp = ref(false)
+const needsStatusOtp = ref(false)
+const statusOtp = ref('')
+const statusOtpSent = ref(false)
+const sendingStatusOtp = ref(false)
 
 async function sendBudgetOtp() {
   sendingOtp.value = true
@@ -185,6 +209,22 @@ async function sendBudgetOtp() {
     errorMsg.value = (e && e.message) || 'Failed to send OTP.'
   } finally {
     sendingOtp.value = false
+  }
+}
+
+async function sendStatusOtp() {
+  sendingStatusOtp.value = true
+  try {
+    await call('next_pms.api.budget.request_status_change_otp', {
+      project: props.project.name,
+      new_status: form.value.status,
+    })
+    statusOtpSent.value = true
+    errorMsg.value = ''
+  } catch (e) {
+    errorMsg.value = (e && e.message) || 'Failed to send OTP.'
+  } finally {
+    sendingStatusOtp.value = false
   }
 }
 const customers = ref([])
@@ -265,6 +305,9 @@ watch(() => props.show, (val) => {
     needsOtp.value = false
     budgetOtp.value = ''
     otpSent.value = false
+    needsStatusOtp.value = false
+    statusOtp.value = ''
+    statusOtpSent.value = false
     if (!customers.value.length) {
       loadCustomers()
     }
@@ -300,19 +343,28 @@ async function handleSubmit() {
         report_recipients: form.value.report_recipients || '',
       }),
       budget_otp: budgetOtp.value || null,
+      status_otp: statusOtp.value || null,
     })
     needsOtp.value = false
     budgetOtp.value = ''
     otpSent.value = false
+    needsStatusOtp.value = false
+    statusOtp.value = ''
+    statusOtpSent.value = false
     emit('updated', result)
   } catch (e) {
     console.error('Failed to update project:', e)
     const msg = (e && e.message) || 'Failed to update project. Please try again.'
     if (msg.includes('BUDGET_OTP_REQUIRED')) {
-      // Reveal the OTP field; strip the internal marker from the shown message.
+      // Reveal the budget OTP field; strip the internal marker from the shown message.
       needsOtp.value = true
       errorMsg.value = msg.replace(/BUDGET_OTP_REQUIRED:?\s*/, '').trim() ||
         'Budget increase needs an approver OTP.'
+    } else if (msg.includes('STATUS_OTP_REQUIRED')) {
+      // Reveal the reopen OTP field.
+      needsStatusOtp.value = true
+      errorMsg.value = msg.replace(/STATUS_OTP_REQUIRED:?\s*/, '').trim() ||
+        'Reopening a completed project needs an approver OTP.'
     } else {
       errorMsg.value = msg
     }

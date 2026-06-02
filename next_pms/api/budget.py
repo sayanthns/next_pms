@@ -93,6 +93,65 @@ def verify_budget_otp(project, otp):
     frappe.cache.delete_value(key)
 
 
+# ── Status-change (reopen) OTP — reuses the same approver list ──────────────
+STATUS_OTP_REQUIRED = "STATUS_OTP_REQUIRED"
+
+
+def _status_otp_key(project, user):
+    return f"pms_status_otp:{project}:{user}"
+
+
+@frappe.whitelist()
+def request_status_change_otp(project, new_status):
+    """Email a 6-digit OTP to the approvers so a non-approver can reopen (move out of
+    Completed) a project."""
+    check_project_access(project)
+    p = frappe.db.get_value(
+        "PMS Project", project, ["project_name", "status"], as_dict=True
+    )
+    if not p:
+        frappe.throw(_("Project not found"))
+
+    requester = frappe.session.user
+    requester_name = frappe.db.get_value("User", requester, "full_name") or requester
+    otp = str(random.randint(100000, 999999))
+    frappe.cache.set_value(_status_otp_key(project, requester), otp, expires_in_sec=1800)
+
+    approvers = get_budget_approvers()
+    msg = f"""
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif; max-width:520px;">
+      <h3 style="margin:0 0 12px;">Reopen Project Approval</h3>
+      <p style="margin:0 0 12px;"><b>{requester_name}</b> ({requester}) wants to move
+      <b>{p.project_name}</b> from <b>Completed</b> to <b>{frappe.utils.escape_html(str(new_status))}</b>.</p>
+      <div style="background:#fef2f2; border-radius:10px; padding:18px; text-align:center;">
+        <p style="color:#991b1b; font-size:13px; margin:0 0 8px;">Approval OTP</p>
+        <p style="font-size:34px; font-weight:800; letter-spacing:8px; color:#dc2626; margin:0;">{otp}</p>
+      </div>
+      <p style="color:#6b7280; font-size:12px; margin-top:12px;">Share this code with {requester_name}
+      only if you approve reopening this project. It expires in <b>30 minutes</b>.</p>
+    </div>
+    """
+    frappe.sendmail(
+        recipients=approvers,
+        subject=_("Reopen project OTP: {0}").format(p.project_name),
+        message=msg, now=True,
+    )
+    return {"success": True, "message": _("OTP sent to the approver(s).")}
+
+
+def verify_status_change_otp(project, otp):
+    """Validate the OTP a non-approver supplies to reopen a Completed project."""
+    if not otp:
+        frappe.throw(_("{0}: Reopening a completed project needs an approver OTP.").format(STATUS_OTP_REQUIRED))
+    key = _status_otp_key(project, frappe.session.user)
+    stored = frappe.cache.get_value(key)
+    if not stored:
+        frappe.throw(_("{0}: OTP expired — request a new one.").format(STATUS_OTP_REQUIRED))
+    if str(otp).strip() != str(stored).strip():
+        frappe.throw(_("{0}: Invalid OTP. Please try again.").format(STATUS_OTP_REQUIRED))
+    frappe.cache.delete_value(key)
+
+
 @frappe.whitelist()
 def request_budget_increase(project):
     """Email a budget-increase request to the approver (sayanth@enfono.in)."""

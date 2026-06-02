@@ -20,6 +20,7 @@
   "sales_order",
   "total_budget",
   "calculated_cost",
+  "total_expenses",
   "budget_utilization",
   "client_portal_section",
   "client_portal_enabled",
@@ -113,10 +114,17 @@
    "label": "Total Budget"
   },
   {
-   "description": "Auto-calculated from task costs",
+   "description": "Auto-calculated from task costs (labour)",
    "fieldname": "calculated_cost",
    "fieldtype": "Currency",
    "label": "Calculated Cost",
+   "read_only": 1
+  },
+  {
+   "description": "Auto-summed from project expenses",
+   "fieldname": "total_expenses",
+   "fieldtype": "Currency",
+   "label": "Total Expenses",
    "read_only": 1
   },
   {

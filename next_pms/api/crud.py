@@ -224,10 +224,11 @@ def delete_timelog(timelog):
 
 
 @frappe.whitelist()
-def update_project(project, fields, budget_otp=None):
+def update_project(project, fields, budget_otp=None, status_otp=None):
     """Update allowed project fields. Admin, owner, or PM can update.
     Raising total_budget requires an approver OTP unless the current user is a
-    configured budget approver (see budget.get_budget_approvers)."""
+    configured budget approver. Reopening a Completed project (status leaving
+    'Completed') likewise needs an approver OTP for non-approvers."""
     if not can_modify_document("PMS Project", project):
         frappe.throw("You do not have permission to edit this project.", frappe.PermissionError)
 
@@ -251,6 +252,15 @@ def update_project(project, fields, budget_otp=None):
         new_budget = flt(fields.get("total_budget"))
         if new_budget > old_budget and not is_budget_approver():
             verify_budget_otp(project, budget_otp)
+
+    # Reopen gate: leaving 'Completed' (reopen / move to Active etc.) needs an
+    # approver OTP for non-approvers. On Hold and all other transitions are free.
+    if "status" in fields:
+        from next_pms.api.budget import is_budget_approver, verify_status_change_otp
+
+        new_status = fields.get("status")
+        if doc.status == "Completed" and new_status != "Completed" and not is_budget_approver():
+            verify_status_change_otp(project, status_otp)
 
     for key, value in fields.items():
         if key in allowed_fields:

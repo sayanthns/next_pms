@@ -108,6 +108,8 @@
       <div class="tab-content">
         <ProjectDashboard v-if="activeTab === 'overview'" :id="id" :embedded="true" />
 
+        <ProjectBilling v-if="activeTab === 'billing'" :projectId="id" :canManage="settingsStore.canViewFinance" />
+
         <div v-if="activeTab === 'tasks'" class="tasks-tab">
           <div class="view-toggle-bar">
             <div class="view-toggle">
@@ -505,6 +507,7 @@ import { useSettingsStore } from '@/store/settings'
 import { call } from '@/utils/frappe'
 import { useAutoRefresh, joinRoom, leaveRoom } from '@/utils/realtime'
 import ProjectDashboard from '@/views/ProjectDashboard.vue'
+import ProjectBilling from '@/components/ProjectBilling.vue'
 import ProjectBoard from '@/views/ProjectBoard.vue'
 import ProjectTaskList from '@/views/ProjectTaskList.vue'
 import ProjectGantt from '@/views/ProjectGantt.vue'
@@ -536,6 +539,9 @@ const tabs = computed(() => {
     { key: 'files', label: 'Files', icon: 'files' },
     { key: 'timelogs', label: 'Time Logs', icon: 'timelogs' },
   ].filter(t => perms[t.key] !== false)
+  if (settingsStore.canViewFinance) {
+    base.push({ key: 'billing', label: 'Billing', icon: 'budget' })
+  }
   if (settingsStore.canViewAnalytics && perms.analytics !== false) {
     base.push({ key: 'analytics', label: 'Analytics', icon: 'analytics' })
   }

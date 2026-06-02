@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import flt
 from next_pms.api.permissions import get_user_projects, check_project_access, get_current_user_feature_permissions
 
 
@@ -141,6 +142,7 @@ def get_all_projects_summary():
             "end_date",
             "total_budget",
             "calculated_cost",
+            "total_expenses",
             "budget_utilization",
             "department",
         ],
@@ -185,6 +187,10 @@ def get_all_projects_summary():
             else 0
         )
         project["team_members"] = team_map.get(project.name, [])
+        # Remaining = budget − (labour + expenses). Can go negative (over budget).
+        spent = flt(project.get("calculated_cost")) + flt(project.get("total_expenses"))
+        project["spent"] = spent
+        project["budget_remaining"] = flt(project.get("total_budget")) - spent
 
     return projects
 
