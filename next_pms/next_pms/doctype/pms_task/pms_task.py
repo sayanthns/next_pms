@@ -2,9 +2,11 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import getdate
 from next_pms.utils import get_pms_url
+from next_pms.next_pms.doctype.pms_time_log.pms_time_log import SUPPORT_TASK_TYPES
 
 
 class PMSTask(Document):
@@ -25,6 +27,19 @@ class PMSTask(Document):
 
     def validate(self):
         self.validate_dates()
+        self.validate_project_stage()
+
+    def validate_project_stage(self):
+        # In a Completed project, only Support tasks may be CREATED. Existing tasks
+        # stay editable. (Planning projects allow task creation but block time logging.)
+        if not self.is_new() or not self.project:
+            return
+        status = frappe.db.get_value("PMS Project", self.project, "status")
+        if status == "Completed" and (self.task_type or "") not in SUPPORT_TASK_TYPES:
+            frappe.throw(
+                _("This project is Completed — only Support tasks can be created here."),
+                title=_("Task Creation Blocked"),
+            )
 
     def validate_dates(self):
         if self.start_date and self.due_date:

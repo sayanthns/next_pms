@@ -29,19 +29,31 @@
         <span class="checkin-warning-icon">&#9888;</span>
         Please check in first before starting a timer.
       </div>
+      <!-- Project not Active: timer disabled with reason (no error on click) -->
       <button
+        v-if="timerDisabled"
+        class="timer-btn timer-start timer-disabled"
+        disabled
+        :title="timerDisabledReason"
+      >
+        <span class="timer-play-icon">&#9654;</span>
+        <span>Timer unavailable</span>
+      </button>
+      <button
+        v-else
         class="timer-btn timer-start"
         @click="handleStart"
       >
         <span class="timer-play-icon">&#9654;</span>
         <span>Start Timer</span>
       </button>
+      <div v-if="timerDisabled" class="timer-disabled-note">{{ timerDisabledReason }}</div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTimerStore } from '@/store/timer'
 
 const props = defineProps({
@@ -53,12 +65,23 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  // Project lifecycle status of this task's project. When 'Planning', time logging
+  // is not allowed yet, so the start button is disabled with a reason (no click error).
+  projectStatus: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits(['timerStarted', 'timerStopped'])
 
 const timerStore = useTimerStore()
 const checkinWarning = ref(false)
+
+const timerDisabled = computed(() => props.projectStatus === 'Planning')
+const timerDisabledReason = computed(() =>
+  timerDisabled.value ? 'Timer enabled once the project is Active (currently in Planning).' : ''
+)
 
 async function handleStart() {
   try {
@@ -139,6 +162,19 @@ onUnmounted(() => {
 
 .timer-start:hover {
   background: #1D4ED8;
+}
+
+.timer-disabled,
+.timer-disabled:hover {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.timer-disabled-note {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #6b7280;
 }
 
 .timer-stop {

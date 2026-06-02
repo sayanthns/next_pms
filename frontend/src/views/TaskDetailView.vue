@@ -154,7 +154,7 @@
 
         <!-- Timer -->
         <div class="timer-section">
-          <Timer :taskName="task.name" :taskTitle="task.task_title" @timerStopped="onTimerStopped" @timerStarted="onTimerStarted" />
+          <Timer :taskName="task.name" :taskTitle="task.task_title" :projectStatus="projectStatus" @timerStopped="onTimerStopped" @timerStarted="onTimerStarted" />
         </div>
 
         <!-- Info Grid -->
@@ -585,6 +585,7 @@ const markingDone = ref(false)
 const activityLog = ref([])
 const activityLoading = ref(false)
 const overtimeData = ref(null)
+const projectStatus = ref('')
 
 // Edit mode
 const isEditing = ref(false)
@@ -875,6 +876,16 @@ watch(() => props.id, () => {
 
 async function loadTask() {
   await taskStore.fetchTask(props.id)
+  // Project lifecycle status — drives whether the timer button is enabled.
+  projectStatus.value = ''
+  if (task.value && task.value.project) {
+    try {
+      const pv = await call('frappe.client.get_value', {
+        doctype: 'PMS Project', filters: { name: task.value.project }, fieldname: 'status',
+      })
+      projectStatus.value = pv?.message?.status || pv?.status || ''
+    } catch { projectStatus.value = '' }
+  }
   // Load time logs, subtasks, attachments, links, activity, overtime in parallel
   loadTimeLogs()
   loadSubtasks()
