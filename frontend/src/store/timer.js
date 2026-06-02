@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { call } from "@/utils/frappe";
+import { call, showAlert } from "@/utils/frappe";
 import { eventBus, EVENTS } from "@/utils/eventBus";
 
 export const useTimerStore = defineStore("timer", () => {
@@ -154,6 +154,12 @@ export const useTimerStore = defineStore("timer", () => {
             }
           } catch (e2) { console.error('budget request failed', e2) }
         }
+      } else if (!/check ?in/i.test(emsg)) {
+        // Surface the server reason (project Planning / Completed non-support task /
+        // running-timer conflict, etc.) so the user knows WHY the timer didn't start,
+        // instead of the button silently doing nothing. Check-in is handled inline by Timer.vue.
+        const clean = emsg.replace(/^[\w.]*(?:Error|Exception):\s*/, '').trim() || 'Could not start timer.'
+        showAlert(clean, 'red')
       }
       throw error;
     }

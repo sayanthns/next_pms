@@ -192,7 +192,10 @@ export function unsubscribeRealtime(event, callback) {
 }
 
 export function showAlert(message, indicator = "blue") {
-  if (window.frappe) {
-    window.frappe.show_alert({ message, indicator });
+  if (window.frappe && typeof window.frappe.show_alert === "function") {
+    window.frappe.show_alert({ message, indicator }, indicator === "red" ? 7 : 5);
+  } else if (typeof window !== "undefined") {
+    // Fallback so the user always gets feedback even when frappe's desk JS isn't loaded.
+    window.alert(message);
   }
 }

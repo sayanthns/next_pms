@@ -70,6 +70,8 @@ async function handleStart() {
       checkinWarning.value = true
       setTimeout(() => { checkinWarning.value = false }, 5000)
     } else {
+      // Non-check-in reasons (project Planning / Completed non-support / etc.) are
+      // surfaced as a red alert by the timer store; just log here.
       console.error('Failed to start timer:', error)
     }
   }
