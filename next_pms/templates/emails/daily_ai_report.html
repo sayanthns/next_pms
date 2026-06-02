@@ -86,40 +86,52 @@
       <thead>
         <tr style="background: #f1f0ff;">
           <th style="padding: 10px 6px; text-align: left; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">User</th>
-          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Check In</th>
-          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Check Out</th>
-          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Office Hrs</th>
-          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Allocated</th>
-          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Done</th>
           <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Logged</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Target</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Utilization</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Done</th>
           <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #6b7280; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Efficiency</th>
+          <th style="padding: 10px 6px; text-align: center; font-size: 10px; color: #9ca3af; text-transform: uppercase; border-bottom: 2px solid #e5e7eb;">Login Hrs<br><span style="font-size:8px; font-weight:400; text-transform:none;">(info only)</span></th>
         </tr>
       </thead>
       <tbody>
         {% for u in user_metrics %}
         <tr style="border-bottom: 1px solid #f3f4f6;">
           <td style="padding: 10px 6px; font-weight: 600; color: #1a1a2e;">{{ u.full_name }}</td>
-          <td style="padding: 10px 6px; text-align: center; color: #374151; font-size: 11px;">{{ u.checkin_time }}</td>
-          <td style="padding: 10px 6px; text-align: center; color: #374151; font-size: 11px;">{{ u.checkout_time }}</td>
-          <td style="padding: 10px 6px; text-align: center; font-weight: 600; color: #059669;">{{ u.office_hours }}h</td>
-          <td style="padding: 10px 6px; text-align: center; color: #374151;">{{ u.tasks_allocated }}</td>
-          <td style="padding: 10px 6px; text-align: center; font-weight: 700; color: #2563eb;">{{ u.tasks_completed }}</td>
-          <td style="padding: 10px 6px; text-align: center; color: #374151;">{{ u.hours_logged_today }}h</td>
+          <td style="padding: 10px 6px; text-align: center; font-weight: 700; color: #2563eb;">{{ u.hours_logged_today }}h</td>
+          <td style="padding: 10px 6px; text-align: center; color: #374151;">{{ u.target_hours }}h</td>
           <td style="padding: 10px 6px; text-align: center; font-weight: 700;">
-            {% if u.productivity_pct >= 90 %}
-              <span style="color: #059669;">{{ u.productivity_pct }}%</span>
-            {% elif u.productivity_pct >= 60 %}
-              <span style="color: #d97706;">{{ u.productivity_pct }}%</span>
-            {% elif u.productivity_pct > 0 %}
-              <span style="color: #dc2626;">{{ u.productivity_pct }}%</span>
+            {% if u.utilization_pct >= 90 %}
+              <span style="color: #059669;">{{ u.utilization_pct }}%</span>
+            {% elif u.utilization_pct >= 60 %}
+              <span style="color: #d97706;">{{ u.utilization_pct }}%</span>
             {% else %}
-              <span style="color: #9ca3af;">-</span>
+              <span style="color: #dc2626;">{{ u.utilization_pct }}%</span>
             {% endif %}
+          </td>
+          <td style="padding: 10px 6px; text-align: center; font-weight: 700; color: #2563eb;">{{ u.tasks_completed }}</td>
+          <td style="padding: 10px 6px; text-align: center; font-weight: 700;">
+            {% if u.efficiency_pct is none %}
+              <span style="color: #9ca3af;">-</span>
+            {% elif u.efficiency_pct >= 90 %}
+              <span style="color: #059669;">{{ u.efficiency_pct }}%</span>
+            {% elif u.efficiency_pct >= 60 %}
+              <span style="color: #d97706;">{{ u.efficiency_pct }}%</span>
+            {% else %}
+              <span style="color: #dc2626;">{{ u.efficiency_pct }}%</span>
+            {% endif %}
+          </td>
+          <td style="padding: 10px 6px; text-align: center; color: #9ca3af; font-size: 11px;">
+            {{ u.login_hours }}h{% if u.missed_checkout %} <span style="color:#dc2626;" title="No checkout recorded">&#9888;</span>{% endif %}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    <div style="margin-top: 12px; font-size: 11px; color: #9ca3af; line-height: 1.5;">
+      <strong>Utilization</strong> = Logged &divide; 8h target. <strong>Efficiency</strong> = estimate &divide; actual for tasks completed that day (&gt;100% = faster than estimated).
+      <strong>Login Hrs</strong> = check-in&rarr;check-out time, shown for information only &mdash; not used in any score. &#9888; = no checkout recorded.
+    </div>
   </div>
   {% endif %}
 

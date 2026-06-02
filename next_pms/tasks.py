@@ -344,42 +344,97 @@ def _util_color(util):
     return "#EF4444"
 
 
+def _performance_message(utilization, missed_checkin_days=0, missed_checkouts=0):
+    """Return (headline, color, note) encouragement banner based on utilization.
+    >=90 congratulate, 60-89 encourage, <60 nudge. Pure — no DB."""
+    u = utilization or 0
+    if u >= 90:
+        headline = "Outstanding week — excellent utilization. Congratulations! \U0001F389"
+        color = "#10B981"
+    elif u >= 60:
+        headline = "Solid week — keep it up, almost at target. \U0001F4AA"
+        color = "#F59E0B"
+    else:
+        headline = "Below target this week — let's pick it up next week. \U0001F4C8"
+        color = "#EF4444"
+    flags = []
+    if missed_checkin_days:
+        flags.append(f"{missed_checkin_days} missed check-in(s)")
+    if missed_checkouts:
+        flags.append(f"{missed_checkouts} missed checkout(s)")
+    note = ("Reminder: " + ", ".join(flags) + " — please remember to check in and out daily.") if flags else ""
+    return headline, color, note
+
+
+def _stat_card(label, value, value_color="#111827"):
+    return f"""
+        <td style="padding:14px 10px; border:1px solid #eef0f3; background:#ffffff; text-align:center; width:33%;">
+            <div style="font-size:22px; font-weight:800; color:{value_color};">{value}</div>
+            <div style="font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:#9ca3af; margin-top:4px;">{label}</div>
+        </td>"""
+
+
 def _build_member_weekly_html(stats, from_str, to_str):
     color = _util_color(stats["utilization"])
     miss_ci = stats.get("missed_checkin_days", 0)
     miss_co = stats.get("missed_checkouts", 0)
-    ci_color = "#EF4444" if miss_ci else "#111827"
-    co_color = "#EF4444" if miss_co else "#111827"
+    ci_color = "#EF4444" if miss_ci else "#10B981"
+    co_color = "#EF4444" if miss_co else "#10B981"
+    headline, hcolor, note = _performance_message(stats["utilization"], miss_ci, miss_co)
+    note_html = (
+        f'<div style="margin-top:8px; font-size:12px; color:#b45309;">{note}</div>' if note else ""
+    )
     return f"""
-    <h3>Your Weekly Work Summary</h3>
-    <p>Hi {stats['full_name']},</p>
-    <p>Summary for <strong>{from_str}</strong> to <strong>{to_str}</strong>:</p>
-    <table style="border-collapse:collapse; max-width:520px;">
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Hours Logged</td>
-            <td style="padding:8px; border:1px solid #e5e7eb;"><strong>{stats['logged_hours']:.1f}h</strong></td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Target Hours</td>
-            <td style="padding:8px; border:1px solid #e5e7eb;">{stats['target_hours']:.1f}h</td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Utilization</td>
-            <td style="padding:8px; border:1px solid #e5e7eb; color:{color}; font-weight:600;">{stats['utilization']:.0f}%</td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Tasks Completed</td>
-            <td style="padding:8px; border:1px solid #e5e7eb;">{stats['tasks_completed']}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Tasks In Progress</td>
-            <td style="padding:8px; border:1px solid #e5e7eb;">{stats['tasks_in_progress']}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Projects Worked On</td>
-            <td style="padding:8px; border:1px solid #e5e7eb;">{stats['project_count']}</td></tr>
-        <tr><td colspan="2" style="padding:6px 8px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600; color:#374151;">Attendance</td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Days Checked In</td>
-            <td style="padding:8px; border:1px solid #e5e7eb;">{stats.get('days_checked_in', 0)} / {stats.get('working_days', 0)}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Missed Check-ins</td>
-            <td style="padding:8px; border:1px solid #e5e7eb; color:{ci_color}; font-weight:600;">{miss_ci}</td></tr>
-        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Missed Checkouts</td>
-            <td style="padding:8px; border:1px solid #e5e7eb; color:{co_color}; font-weight:600;">{miss_co}</td></tr>
-    </table>
-    <p style="margin-top:16px; color:#6b7280; font-size:13px;">
-        Target = 8h x working days (excludes Sundays, holidays, approved leave).
-        Days Checked In counts working days with a check-in. Missed Checkouts = check-ins with no checkout recorded.
-        Automated weekly summary from Next PMS.
-    </p>
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; max-width:560px; margin:0 auto; background:#f5f6f8; padding:24px;">
+      <div style="background:linear-gradient(135deg,#4f46e5,#2563eb); border-radius:12px 12px 0 0; padding:24px 28px; color:#ffffff;">
+        <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; opacity:0.85;">Next PMS &middot; Weekly Summary</div>
+        <div style="font-size:22px; font-weight:800; margin-top:6px;">Hi {stats['full_name']},</div>
+        <div style="font-size:13px; opacity:0.9; margin-top:4px;">{from_str} &nbsp;&rarr;&nbsp; {to_str}</div>
+      </div>
+
+      <div style="background:#ffffff; padding:18px 28px; border-left:4px solid {hcolor};">
+        <div style="font-size:15px; font-weight:700; color:{hcolor};">{headline}</div>
+        {note_html}
+      </div>
+
+      <div style="background:#ffffff; padding:8px 20px 20px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate; border-spacing:8px;">
+          <tr>
+            {_stat_card("Hours Logged", f"{stats['logged_hours']:.1f}h", "#2563eb")}
+            {_stat_card("Target", f"{stats['target_hours']:.1f}h")}
+            {_stat_card("Utilization", f"{stats['utilization']:.0f}%", color)}
+          </tr>
+          <tr>
+            {_stat_card("Tasks Done", stats['tasks_completed'], "#059669")}
+            {_stat_card("In Progress", stats['tasks_in_progress'])}
+            {_stat_card("Projects", stats['project_count'])}
+          </tr>
+        </table>
+
+        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#6b7280; margin:14px 6px 6px;">Attendance</div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:13px;">
+          <tr>
+            <td style="padding:10px 12px; border:1px solid #eef0f3;">Days Checked In</td>
+            <td style="padding:10px 12px; border:1px solid #eef0f3; text-align:right; font-weight:700;">{stats.get('days_checked_in', 0)} / {stats.get('working_days', 0)}</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px; border:1px solid #eef0f3;">Missed Check-ins</td>
+            <td style="padding:10px 12px; border:1px solid #eef0f3; text-align:right; font-weight:700; color:{ci_color};">{miss_ci}</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px; border:1px solid #eef0f3;">Missed Checkouts</td>
+            <td style="padding:10px 12px; border:1px solid #eef0f3; text-align:right; font-weight:700; color:{co_color};">{miss_co}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background:#ffffff; border-radius:0 0 12px 12px; padding:16px 28px; border-top:1px solid #eef0f3; color:#9ca3af; font-size:11px; line-height:1.6;">
+        Target = 8h &times; working days (excludes Sundays, holidays, approved leave).
+        Utilization = Hours Logged &divide; Target. Days Checked In counts working days with a check-in;
+        Missed Checkouts = check-ins with no checkout recorded.
+        <br>Automated weekly summary from Next PMS.
+      </div>
+    </div>
     """
 
 

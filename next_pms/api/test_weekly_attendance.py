@@ -1,7 +1,11 @@
 # apps/next_pms/next_pms/api/test_weekly_attendance.py
 from frappe.tests.utils import FrappeTestCase
 
-from next_pms.tasks import _attendance_counts, _build_member_weekly_html
+from next_pms.tasks import (
+    _attendance_counts,
+    _build_member_weekly_html,
+    _performance_message,
+)
 
 
 class TestWeeklyAttendance(FrappeTestCase):
@@ -56,3 +60,23 @@ class TestWeeklyAttendance(FrappeTestCase):
         self.assertIn("Days Checked In", html)
         self.assertIn("4 / 5", html)
         self.assertIn("Missed Checkouts", html)
+        self.assertIn("Weekly Summary", html)
+        # util 81 -> encourage band; missed flags -> reminder note
+        self.assertIn("keep it up", html.lower())
+        self.assertIn("Reminder:", html)
+
+    def test_performance_message_bands(self):
+        hi, c, _ = _performance_message(95)
+        self.assertIn("Congratulations", hi)
+        self.assertEqual(c, "#10B981")
+        mid, _, _ = _performance_message(70)
+        self.assertIn("Solid week", mid)
+        lo, c2, _ = _performance_message(30)
+        self.assertEqual(c2, "#EF4444")
+        # no flags -> empty note
+        _, _, note = _performance_message(95, 0, 0)
+        self.assertEqual(note, "")
+        # flags -> reminder note
+        _, _, note2 = _performance_message(95, 2, 1)
+        self.assertIn("missed check-in", note2)
+        self.assertIn("missed checkout", note2)

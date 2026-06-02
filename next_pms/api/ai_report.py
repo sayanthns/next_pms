@@ -243,15 +243,6 @@ def _build_user_metrics(report_date):
             "status": ["in", ["In Progress", "In Review"]],
         })
 
-        # Hours: estimated vs actual for tasks assigned to user
-        hours_data = frappe.db.sql("""
-            SELECT
-                COALESCE(SUM(estimated_hours), 0) as est,
-                COALESCE(SUM(actual_hours), 0) as actual
-            FROM `tabPMS Task`
-            WHERE assigned_to = %s AND status != 'Cancelled'
-        """, (user,), as_dict=True)[0]
-
         # Time logged today
         time_today = frappe.db.sql("""
             SELECT COALESCE(SUM(duration_hours), 0) as hours
@@ -273,10 +264,26 @@ def _build_user_metrics(report_date):
 
         checkin_info = checkin_data[0] if checkin_data else {}
 
-        # Productivity score
-        est_hours = float(hours_data.est or 0)
-        actual_hours = float(hours_data.actual or 0)
-        productivity = round((actual_hours / est_hours * 100), 1) if est_hours > 0 else 0
+        # Period efficiency = estimate vs actual for tasks COMPLETED on the report
+        # date only (NOT lifetime). >100% = finished faster than estimated. None when
+        # nothing was completed that day. (The old lifetime est/actual produced wild
+        # numbers like 283% in a daily report.)
+        comp = frappe.db.sql(
+            """
+            SELECT COALESCE(SUM(estimated_hours), 0) AS est,
+                   COALESCE(SUM(actual_hours), 0) AS act
+            FROM `tabPMS Task`
+            WHERE assigned_to = %s AND status = 'Done' AND DATE(modified) = %s
+            """,
+            (user, report_date), as_dict=True,
+        )[0]
+        eff_act = float(comp.act or 0)
+        efficiency_pct = round(float(comp.est or 0) / eff_act * 100, 1) if eff_act > 0 else None
+
+        # Login (check-in→check-out) hours are INFORMATIONAL ONLY — never used in any
+        # score. All scoring uses the fixed 8h target (utilization = logged ÷ target).
+        has_checkin = bool(checkin_info.get("checkin_time"))
+        missed_checkout = has_checkin and not checkin_info.get("checkout_time")
 
         metrics.append({
             "user": user,
@@ -284,15 +291,14 @@ def _build_user_metrics(report_date):
             "tasks_allocated": tasks_allocated,
             "tasks_completed": tasks_completed,
             "tasks_in_progress": tasks_in_progress,
-            "estimated_hours": round(est_hours, 2),
-            "actual_hours": round(actual_hours, 2),
             "hours_logged_today": round(float(time_today), 2),
             "target_hours": day_target,
             "utilization_pct": day_utilization,
-            "productivity_pct": productivity,
+            "efficiency_pct": efficiency_pct,
             "checkin_time": str(checkin_info.get("checkin_time", "")) if checkin_info.get("checkin_time") else "-",
             "checkout_time": str(checkin_info.get("checkout_time", "")) if checkin_info.get("checkout_time") else "-",
-            "office_hours": round(float(checkin_info.get("total_hours", 0)), 2) if checkin_info.get("total_hours") else 0,
+            "login_hours": round(float(checkin_info.get("total_hours", 0)), 2) if checkin_info.get("total_hours") else 0,
+            "missed_checkout": missed_checkout,
         })
 
     return metrics
