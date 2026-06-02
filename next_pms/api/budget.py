@@ -47,7 +47,9 @@ def request_budget_increase_otp(project, new_budget):
     requester = frappe.session.user
     requester_name = frappe.db.get_value("User", requester, "full_name") or requester
     otp = str(random.randint(100000, 999999))
-    frappe.cache.set_value(_budget_otp_key(project, requester), otp, expires_in_sec=300)
+    # 30-min window: approver email delivery can lag a few minutes, so a 5-min OTP
+    # could expire before it even arrives. Wider window keeps it usable.
+    frappe.cache.set_value(_budget_otp_key(project, requester), otp, expires_in_sec=1800)
 
     approvers = get_budget_approvers()
     msg = f"""
@@ -66,7 +68,7 @@ def request_budget_increase_otp(project, new_budget):
         <p style="font-size:34px; font-weight:800; letter-spacing:8px; color:#dc2626; margin:0;">{otp}</p>
       </div>
       <p style="color:#6b7280; font-size:12px; margin-top:12px;">Share this code with {requester_name}
-      only if you approve the increase. It expires in <b>5 minutes</b>. If you did not expect this, ignore it.</p>
+      only if you approve the increase. It expires in <b>30 minutes</b>. If you did not expect this, ignore it.</p>
     </div>
     """
     frappe.sendmail(
