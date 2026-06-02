@@ -128,6 +128,35 @@ def delete_project_payment(name):
     return {"success": True}
 
 
+@frappe.whitelist()
+def list_payment_entries(project, search=None):
+    """Submitted incoming (Receive) Payment Entries selectable for this project's
+    client, for the picker. Filters to the project's client when set, excludes PEs
+    already linked to a project payment. Managers/Admins only."""
+    _require_billing_manager()
+    _check_project(project)
+    client = frappe.db.get_value("PMS Project", project, "client")
+    filters = {"docstatus": 1, "payment_type": "Receive"}
+    if client:
+        filters["party_type"] = "Customer"
+        filters["party"] = client
+    if search:
+        filters["name"] = ["like", f"%{search}%"]
+    used = set(frappe.get_all(
+        "PMS Project Payment",
+        filters={"payment_entry": ["is", "set"]},
+        pluck="payment_entry",
+    ))
+    rows = frappe.get_all(
+        "Payment Entry",
+        filters=filters,
+        fields=["name", "paid_amount", "posting_date", "reference_no", "mode_of_payment", "party_name"],
+        order_by="posting_date desc, creation desc",
+        limit_page_length=50,
+    )
+    return [r for r in rows if r.name not in used]
+
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 @frappe.whitelist()
 def get_project_billing_summary(project):

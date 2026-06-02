@@ -55,9 +55,15 @@
         <input v-model.number="pay.amount" type="number" min="0" step="0.01" placeholder="Amount" class="bin" />
         <input v-model="pay.payment_date" type="date" class="bin" />
         <input v-model="pay.description" type="text" placeholder="Milestone / note" class="bin bin-grow" />
-        <input v-model="pay.payment_entry" type="text" placeholder="Payment Entry (required)" class="bin" required />
+        <select v-model="pay.payment_entry" class="bin" required>
+          <option value="" disabled>Select Payment Entry (required)</option>
+          <option v-for="pe in paymentEntries" :key="pe.name" :value="pe.name">
+            {{ pe.name }} — {{ fmt(pe.paid_amount) }}{{ pe.posting_date ? ' · ' + fmtDate(pe.posting_date) : '' }}
+          </option>
+        </select>
         <button class="bbtn" :disabled="busy || !pay.amount || !pay.payment_entry">Add</button>
       </form>
+      <p v-if="canManage && !paymentEntries.length" class="bhint">No unlinked Payment Entries found for this client. Create a Receive-type Payment Entry for this customer in ERPNext Accounts first.</p>
       <table class="btable" v-if="payments.length">
         <thead><tr><th>Date</th><th>Description</th><th class="r">Amount</th><th>Status</th><th>Payment Entry</th><th v-if="canManage"></th></tr></thead>
         <tbody>
@@ -92,6 +98,7 @@ const settingsStore = useSettingsStore()
 const summary = ref({})
 const expenses = ref([])
 const payments = ref([])
+const paymentEntries = ref([])
 const errorMsg = ref('')
 const busy = ref(false)
 const today = new Date().toISOString().slice(0, 10)
@@ -103,14 +110,16 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—' }
 
 async function loadAll() {
   try {
-    const [s, e, p] = await Promise.all([
+    const [s, e, p, pe] = await Promise.all([
       call('next_pms.api.billing.get_project_billing_summary', { project: props.projectId }),
       call('next_pms.api.billing.list_project_expenses', { project: props.projectId }),
       call('next_pms.api.billing.list_project_payments', { project: props.projectId }),
+      props.canManage ? call('next_pms.api.billing.list_payment_entries', { project: props.projectId }) : Promise.resolve([]),
     ])
     summary.value = s || {}
     expenses.value = e || []
     payments.value = p || []
+    paymentEntries.value = pe || []
   } catch (err) {
     errorMsg.value = (err && err.message) || 'Failed to load billing.'
   }
@@ -185,6 +194,7 @@ onMounted(loadAll)
 .btable th, .btable td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; text-align: left; }
 .btable th.r, .btable td.r { text-align: right; }
 .bempty { color: #9ca3af; font-size: 13px; margin: 4px 0 0; }
+.bhint { color: #b45309; font-size: 12px; margin: 6px 0 0; }
 .pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
 .pill-ok { background: #d1fae5; color: #065f46; } .pill-warn { background: #fef3c7; color: #92400e; }
 .blink { background: none; border: none; color: #2563eb; font-size: 12px; cursor: pointer; margin-right: 8px; }
