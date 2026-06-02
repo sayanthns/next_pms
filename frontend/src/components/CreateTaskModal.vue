@@ -8,6 +8,7 @@
     @submit="handleSubmit"
   >
     <form @submit.prevent="handleSubmit" class="form-fields">
+      <div v-if="errorMsg" class="form-error-banner">{{ errorMsg }}</div>
       <div class="form-group">
         <label class="form-label">Task Title <span class="required">*</span></label>
         <input
@@ -207,6 +208,7 @@ const emit = defineEmits(['close', 'created'])
 const titleInput = ref(null)
 const fileInputRef = ref(null)
 const saving = ref(false)
+const errorMsg = ref('')
 const form = ref(getDefaultForm())
 const availableUsers = ref([])
 const teamMembers = ref([])
@@ -354,6 +356,7 @@ function handleDocumentClick(e) {
 watch(() => props.show, (val) => {
   if (val) {
     form.value = getDefaultForm()
+    errorMsg.value = ''
     selectedAssignees.value = []
     attachedFiles.value = []
     userSearch.value = ''
@@ -367,13 +370,14 @@ watch(() => props.show, (val) => {
 })
 
 async function handleSubmit() {
+  errorMsg.value = ''
   if (!form.value.task_title.trim()) return
   if (!form.value.estimated_hours || form.value.estimated_hours <= 0) {
-    alert('Estimated Hours is required')
+    errorMsg.value = 'Estimated Hours is required.'
     return
   }
   if (!form.value.due_date) {
-    alert('Due Date is required')
+    errorMsg.value = 'Due Date is required.'
     return
   }
   saving.value = true
@@ -400,8 +404,7 @@ async function handleSubmit() {
     emit('created', result)
   } catch (e) {
     console.error('Failed to create task:', e)
-    const msg = e?.messages ? JSON.parse(e.messages)?.[0] : (e?.message || 'Failed to create task')
-    alert(typeof msg === 'string' ? msg : 'Failed to create task. Please try again.')
+    errorMsg.value = (e && e.message) ? e.message : 'Failed to create task. Please try again.'
   } finally {
     saving.value = false
   }
@@ -409,6 +412,15 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+.form-error-banner {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
 .form-fields {
   display: flex;
   flex-direction: column;
