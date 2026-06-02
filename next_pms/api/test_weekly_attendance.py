@@ -4,6 +4,7 @@ from frappe.tests.utils import FrappeTestCase
 from next_pms.tasks import (
     _attendance_counts,
     _build_member_weekly_html,
+    _checkin_reminder_reason,
     _performance_message,
 )
 
@@ -80,3 +81,16 @@ class TestWeeklyAttendance(FrappeTestCase):
         _, _, note2 = _performance_message(95, 2, 1)
         self.assertIn("missed check-in", note2)
         self.assertIn("missed checkout", note2)
+
+    def test_checkin_reminder_reason(self):
+        # no check-in at all -> remind to check in
+        self.assertEqual(_checkin_reminder_reason(None, None), "check-in")
+        self.assertEqual(_checkin_reminder_reason("", None), "check-in")
+        # checked in, no checkout -> remind to check out
+        self.assertEqual(
+            _checkin_reminder_reason("2026-06-01 09:00:00", None), "check-out"
+        )
+        # both present -> no reminder
+        self.assertIsNone(
+            _checkin_reminder_reason("2026-06-01 09:00:00", "2026-06-01 18:00:00")
+        )

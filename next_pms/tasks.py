@@ -475,3 +475,80 @@ def _build_team_weekly_html(team_rows, from_str, to_str):
         Automated weekly summary from Next PMS.
     </p>
     """
+
+
+def _checkin_reminder_reason(checkin_time, checkout_time):
+    """Return the missing-attendance reason for a day, or None if complete. Pure.
+    No check-in at all -> 'check-in'. Checked in but never out -> 'check-out'."""
+    if not checkin_time:
+        return "check-in"
+    if not checkout_time:
+        return "check-out"
+    return None
+
+
+def send_checkin_reminders():
+    """Daily (working days): email each staff member who missed their check-in or
+    check-out on the previous day. Only fires on the person's effective working days
+    (excludes Sundays, holidays, full-day approved leave)."""
+    from next_pms.api._hours import effective_working_days
+
+    rd = add_days(getdate(), -1)
+    rd_str = str(rd)
+    from_dt = rd_str + " 00:00:00"
+    to_dt = rd_str + " 23:59:59"
+
+    members = _get_active_members(from_dt, to_dt)
+    sent = 0
+    for user in members:
+        if rd_str not in set(effective_working_days(user, rd, rd)):
+            continue  # not a working day for this user
+        ci = (
+            frappe.db.get_value(
+                "PMS Checkin",
+                {"user": user, "date": rd_str},
+                ["checkin_time", "checkout_time"],
+                as_dict=True,
+            )
+            or {}
+        )
+        reason = _checkin_reminder_reason(ci.get("checkin_time"), ci.get("checkout_time"))
+        if not reason:
+            continue
+        full_name = frappe.db.get_value("User", user, "full_name") or user
+        try:
+            frappe.sendmail(
+                recipients=[user],
+                subject=_("Reminder: missing {0} on {1}").format(reason, rd_str),
+                message=_build_checkin_reminder_html(full_name, reason, rd_str),
+                now=True,
+            )
+            sent += 1
+        except Exception:
+            frappe.log_error(
+                title=f"Check-in reminder email failed for {user}",
+                message=frappe.get_traceback(),
+            )
+    frappe.db.commit()
+    return {"sent": sent, "date": rd_str}
+
+
+def _build_checkin_reminder_html(full_name, reason, date_str):
+    label = "check-in and check-out" if reason == "check-in" else "check-out"
+    return f"""
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; max-width:520px; margin:0 auto; background:#f5f6f8; padding:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+        <tr>
+          <td bgcolor="#dc2626" style="background-color:#dc2626; padding:20px 28px; border-radius:12px 12px 0 0;">
+            <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#fee2e2;">Next PMS &middot; Attendance Reminder</div>
+            <div style="font-size:20px; font-weight:800; margin-top:6px; color:#ffffff;">Hi {full_name},</div>
+          </td>
+        </tr>
+      </table>
+      <div style="background:#ffffff; border-radius:0 0 12px 12px; padding:22px 28px; color:#374151; font-size:14px; line-height:1.6;">
+        <p style="margin:0 0 12px;">Our records show no <strong>{label}</strong> for you on <strong>{date_str}</strong>.</p>
+        <p style="margin:0 0 12px;">Please remember to check in when you start and check out when you finish &mdash; it keeps your work hours and weekly summary accurate.</p>
+        <p style="margin:16px 0 0; color:#9ca3af; font-size:12px;">Automated attendance reminder from Next PMS. If you were on leave or this is a mistake, please update your check-in record.</p>
+      </div>
+    </div>
+    """

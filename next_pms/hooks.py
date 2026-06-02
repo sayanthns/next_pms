@@ -55,6 +55,9 @@ scheduler_events = {
         "0 7 * * 6": [
             "next_pms.tasks.send_weekly_summary",
         ],
+        "30 8 * * 1-6": [
+            "next_pms.tasks.send_checkin_reminders",
+        ],
     },
 }
 
