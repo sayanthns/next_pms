@@ -18,7 +18,9 @@ class PMSProjectExpense(Document):
     def after_insert(self):
         self._sync_project()
 
-    def on_trash(self):
+    def after_delete(self):
+        # after_delete (not on_trash): recompute only once the row is actually gone,
+        # otherwise the sum still includes this expense.
         self._sync_project()
 
     def _sync_project(self):
