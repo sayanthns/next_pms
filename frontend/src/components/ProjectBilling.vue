@@ -55,7 +55,7 @@
         <input v-model.number="pay.amount" type="number" min="0" step="0.01" placeholder="Amount" class="bin" />
         <input v-model="pay.payment_date" type="date" class="bin" />
         <input v-model="pay.description" type="text" placeholder="Milestone / note" class="bin bin-grow" />
-        <select v-model="pay.payment_entry" class="bin" required>
+        <select v-model="pay.payment_entry" class="bin bin-select" required>
           <option value="" disabled>Select Payment Entry (required)</option>
           <option v-for="pe in paymentEntries" :key="pe.name" :value="pe.name">
             {{ pe.name }} — {{ fmt(pe.paid_amount) }}{{ pe.posting_date ? ' · ' + fmtDate(pe.posting_date) : '' }}
@@ -184,9 +184,12 @@ onMounted(loadAll)
 .bs-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
 .bs-head h3 { margin: 0; font-size: 15px; font-weight: 700; }
 .bs-sub { font-size: 11px; color: #9ca3af; }
-.brow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-.bin { padding: 8px 10px; border: 1px solid var(--border-default, #e5e7eb); border-radius: 8px; font-size: 13px; }
+.brow { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: stretch; }
+.bin { box-sizing: border-box; height: 38px; padding: 8px 10px; border: 1px solid var(--border-default, #e5e7eb); border-radius: 8px; font-size: 13px; background: #fff; color: var(--text-primary, #111827); }
 .bin-grow { flex: 1; min-width: 140px; }
+select.bin { cursor: pointer; max-width: 100%; }
+.bin-select { flex: 1 1 240px; min-width: 200px; }
+.brow .bbtn { height: 38px; }
 .bbtn { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-weight: 600; font-size: 13px; cursor: pointer; }
 .bbtn:disabled { opacity: 0.6; cursor: not-allowed; }
 .bbtn-ghost { background: #f3f4f6; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
