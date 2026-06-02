@@ -243,6 +243,17 @@ def _member_week_stats(user, week_start, week_end, from_dt, to_dt):
             if row.project:
                 projects_touched.add(row.project)
 
+    # Attendance over the week. Denominator = effective working days (excludes
+    # Sundays, holidays, full-day approved leave) — same basis as the 8h target.
+    from next_pms.api._hours import effective_working_days
+
+    working_day_strs = set(effective_working_days(user, week_start, week_end))
+    checkins = frappe.get_all(
+        "PMS Checkin",
+        filters={"user": user, "date": ["between", [str(week_start), str(week_end)]]},
+        fields=["date", "checkout_time"],
+    )
+
     return {
         "user": user,
         "full_name": full_name,
@@ -252,6 +263,22 @@ def _member_week_stats(user, week_start, week_end, from_dt, to_dt):
         "tasks_completed": tasks_completed,
         "tasks_in_progress": tasks_in_progress,
         "project_count": len(projects_touched),
+        **_attendance_counts(working_day_strs, checkins),
+    }
+
+
+def _attendance_counts(working_day_strs, checkins):
+    """Attendance tallies for a week. Pure — no DB.
+    working_day_strs: iterable of 'YYYY-MM-DD' effective working days.
+    checkins: list of dicts/objects with .date and .checkout_time.
+    """
+    working = set(str(d) for d in working_day_strs)
+    checked = {str(c["date"]) for c in checkins if c.get("date")}
+    return {
+        "working_days": len(working),
+        "days_checked_in": len(checked & working),
+        "missed_checkin_days": len(working - checked),
+        "missed_checkouts": sum(1 for c in checkins if not c.get("checkout_time")),
     }
 
 
@@ -319,6 +346,10 @@ def _util_color(util):
 
 def _build_member_weekly_html(stats, from_str, to_str):
     color = _util_color(stats["utilization"])
+    miss_ci = stats.get("missed_checkin_days", 0)
+    miss_co = stats.get("missed_checkouts", 0)
+    ci_color = "#EF4444" if miss_ci else "#111827"
+    co_color = "#EF4444" if miss_co else "#111827"
     return f"""
     <h3>Your Weekly Work Summary</h3>
     <p>Hi {stats['full_name']},</p>
@@ -336,9 +367,17 @@ def _build_member_weekly_html(stats, from_str, to_str):
             <td style="padding:8px; border:1px solid #e5e7eb;">{stats['tasks_in_progress']}</td></tr>
         <tr><td style="padding:8px; border:1px solid #e5e7eb;">Projects Worked On</td>
             <td style="padding:8px; border:1px solid #e5e7eb;">{stats['project_count']}</td></tr>
+        <tr><td colspan="2" style="padding:6px 8px; border:1px solid #e5e7eb; background:#f9fafb; font-weight:600; color:#374151;">Attendance</td></tr>
+        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Days Checked In</td>
+            <td style="padding:8px; border:1px solid #e5e7eb;">{stats.get('days_checked_in', 0)} / {stats.get('working_days', 0)}</td></tr>
+        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Missed Check-ins</td>
+            <td style="padding:8px; border:1px solid #e5e7eb; color:{ci_color}; font-weight:600;">{miss_ci}</td></tr>
+        <tr><td style="padding:8px; border:1px solid #e5e7eb;">Missed Checkouts</td>
+            <td style="padding:8px; border:1px solid #e5e7eb; color:{co_color}; font-weight:600;">{miss_co}</td></tr>
     </table>
     <p style="margin-top:16px; color:#6b7280; font-size:13px;">
         Target = 8h x working days (excludes Sundays, holidays, approved leave).
+        Days Checked In counts working days with a check-in. Missed Checkouts = check-ins with no checkout recorded.
         Automated weekly summary from Next PMS.
     </p>
     """
