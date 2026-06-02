@@ -20,7 +20,9 @@
         "weekly_summary_recipient",
         "section_break_attendance",
         "attendance_reminder_enabled",
-        "attendance_manager_recipients"
+        "attendance_manager_recipients",
+        "section_break_budget",
+        "budget_approver_emails"
     ],
     "fields": [
         {
@@ -122,6 +124,18 @@
             "label": "Manager Digest Recipients (comma-separated emails)",
             "default": "salman@enfono.com",
             "description": "These managers receive a single daily digest of everyone who missed check-in/out."
+        },
+        {
+            "fieldname": "section_break_budget",
+            "fieldtype": "Section Break",
+            "label": "Budget Approval"
+        },
+        {
+            "fieldname": "budget_approver_emails",
+            "fieldtype": "Small Text",
+            "label": "Budget Approver Emails (comma-separated)",
+            "default": "sayanth@enfono.in, muhsin@enfono.in",
+            "description": "These users can raise a project's Total Budget directly. Anyone else must enter an OTP emailed to these approvers."
         }
     ],
     "index_web_pages_for_search": 0,

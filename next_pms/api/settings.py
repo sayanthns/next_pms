@@ -81,6 +81,7 @@ def get_ai_settings():
             "weekly_summary_recipient": getattr(doc, "weekly_summary_recipient", "") or "sayanth@enfono.in",
             "attendance_reminder_enabled": bool(getattr(doc, "attendance_reminder_enabled", 1)),
             "attendance_manager_recipients": getattr(doc, "attendance_manager_recipients", "") or "",
+            "budget_approver_emails": getattr(doc, "budget_approver_emails", "") or "sayanth@enfono.in, muhsin@enfono.in",
         }
     except Exception:
         return {
@@ -96,6 +97,7 @@ def get_ai_settings():
             "weekly_summary_recipient": "sayanth@enfono.in",
             "attendance_reminder_enabled": True,
             "attendance_manager_recipients": "",
+            "budget_approver_emails": "sayanth@enfono.in, muhsin@enfono.in",
         }
 
 
@@ -104,7 +106,7 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
                       recipient=None, additional_recipients=None, detail_level=None,
                       working_hours_per_day=None, weekly_summary_recipient=None,
                       weekly_summary_enabled=None, attendance_reminder_enabled=None,
-                      attendance_manager_recipients=None):
+                      attendance_manager_recipients=None, budget_approver_emails=None):
     """Save AI settings. Admin only."""
     if not is_admin_user():
         frappe.throw("Only administrators can modify AI settings.", frappe.PermissionError)
@@ -145,6 +147,8 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
         doc.attendance_reminder_enabled = 1 if str(attendance_reminder_enabled).lower() in ("true", "1", "yes") else 0
     if attendance_manager_recipients is not None and hasattr(doc, "attendance_manager_recipients"):
         doc.attendance_manager_recipients = attendance_manager_recipients
+    if budget_approver_emails is not None and hasattr(doc, "budget_approver_emails"):
+        doc.budget_approver_emails = budget_approver_emails
 
     doc.save(ignore_permissions=True)
     frappe.db.commit()

@@ -87,6 +87,28 @@
         />
       </div>
 
+      <!-- Budget-increase approval: shown when the backend requires an OTP -->
+      <div v-if="needsOtp" class="budget-otp-box">
+        <div class="budget-otp-title">Budget increase needs approval</div>
+        <p class="budget-otp-note">An OTP must be sent to a budget approver and entered here to raise the Total Budget.</p>
+        <div class="budget-otp-row">
+          <input
+            v-model="budgetOtp"
+            type="text"
+            inputmode="numeric"
+            maxlength="6"
+            class="form-input"
+            placeholder="Enter 6-digit OTP"
+          />
+          <button type="button" class="btn-send-otp" :disabled="sendingOtp" @click="sendBudgetOtp">
+            {{ sendingOtp ? 'Sending…' : (otpSent ? 'Resend OTP' : 'Send OTP') }}
+          </button>
+        </div>
+        <p v-if="otpSent" class="budget-otp-sent">OTP sent to the approver(s). Ask them for the code, then Save.</p>
+      </div>
+
+      <div v-if="errorMsg" class="form-error-banner">{{ errorMsg }}</div>
+
       <div class="form-group">
         <label class="form-label">Description</label>
         <textarea
@@ -144,6 +166,27 @@ const emit = defineEmits(['close', 'updated'])
 
 const nameInput = ref(null)
 const saving = ref(false)
+const errorMsg = ref('')
+const needsOtp = ref(false)
+const budgetOtp = ref('')
+const otpSent = ref(false)
+const sendingOtp = ref(false)
+
+async function sendBudgetOtp() {
+  sendingOtp.value = true
+  try {
+    await call('next_pms.api.budget.request_budget_increase_otp', {
+      project: props.project.name,
+      new_budget: form.value.total_budget || 0,
+    })
+    otpSent.value = true
+    errorMsg.value = ''
+  } catch (e) {
+    errorMsg.value = (e && e.message) || 'Failed to send OTP.'
+  } finally {
+    sendingOtp.value = false
+  }
+}
 const customers = ref([])
 const departments = ref([])
 const salesOrders = ref([])
@@ -218,6 +261,10 @@ watch(() => props.show, (val) => {
       auto_send_report: !!props.project.auto_send_report,
       report_recipients: props.project.report_recipients || '',
     }
+    errorMsg.value = ''
+    needsOtp.value = false
+    budgetOtp.value = ''
+    otpSent.value = false
     if (!customers.value.length) {
       loadCustomers()
     }
@@ -233,6 +280,7 @@ watch(() => props.show, (val) => {
 
 async function handleSubmit() {
   if (!form.value.project_name.trim()) return
+  errorMsg.value = ''
   saving.value = true
   try {
     const result = await call('next_pms.api.crud.update_project', {
@@ -251,11 +299,23 @@ async function handleSubmit() {
         auto_send_report: form.value.auto_send_report ? 1 : 0,
         report_recipients: form.value.report_recipients || '',
       }),
+      budget_otp: budgetOtp.value || null,
     })
+    needsOtp.value = false
+    budgetOtp.value = ''
+    otpSent.value = false
     emit('updated', result)
   } catch (e) {
     console.error('Failed to update project:', e)
-    alert('Failed to update project. Please try again.')
+    const msg = (e && e.message) || 'Failed to update project. Please try again.'
+    if (msg.includes('BUDGET_OTP_REQUIRED')) {
+      // Reveal the OTP field; strip the internal marker from the shown message.
+      needsOtp.value = true
+      errorMsg.value = msg.replace(/BUDGET_OTP_REQUIRED:?\s*/, '').trim() ||
+        'Budget increase needs an approver OTP.'
+    } else {
+      errorMsg.value = msg
+    }
   } finally {
     saving.value = false
   }
@@ -263,6 +323,60 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+.form-error-banner {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.budget-otp-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.budget-otp-title {
+  font-weight: 700;
+  color: #9a3412;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.budget-otp-note {
+  font-size: 12px;
+  color: #9a3412;
+  margin: 0 0 10px;
+}
+.budget-otp-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.budget-otp-row .form-input {
+  flex: 1;
+}
+.btn-send-otp {
+  white-space: nowrap;
+  background: #ea580c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-send-otp:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.budget-otp-sent {
+  font-size: 12px;
+  color: #166534;
+  margin: 8px 0 0;
+}
 .form-fields {
   display: flex;
   flex-direction: column;

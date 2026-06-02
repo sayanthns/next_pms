@@ -1,7 +1,7 @@
 import frappe
 import json
 import random
-from frappe.utils import today, now_datetime, add_to_date
+from frappe.utils import today, now_datetime, add_to_date, flt
 
 from next_pms.api.permissions import is_admin_user, get_current_user_feature_permissions
 
@@ -224,8 +224,10 @@ def delete_timelog(timelog):
 
 
 @frappe.whitelist()
-def update_project(project, fields):
-    """Update allowed project fields. Admin, owner, or PM can update."""
+def update_project(project, fields, budget_otp=None):
+    """Update allowed project fields. Admin, owner, or PM can update.
+    Raising total_budget requires an approver OTP unless the current user is a
+    configured budget approver (see budget.get_budget_approvers)."""
     if not can_modify_document("PMS Project", project):
         frappe.throw("You do not have permission to edit this project.", frappe.PermissionError)
 
@@ -239,6 +241,17 @@ def update_project(project, fields):
     }
 
     doc = frappe.get_doc("PMS Project", project)
+
+    # Budget-increase gate: a non-approver raising Total Budget must supply an OTP
+    # that an approver received by email.
+    if "total_budget" in fields:
+        from next_pms.api.budget import is_budget_approver, verify_budget_otp
+
+        old_budget = flt(doc.total_budget)
+        new_budget = flt(fields.get("total_budget"))
+        if new_budget > old_budget and not is_budget_approver():
+            verify_budget_otp(project, budget_otp)
+
     for key, value in fields.items():
         if key in allowed_fields:
             doc.set(key, value)

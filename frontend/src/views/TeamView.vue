@@ -522,6 +522,20 @@
               />
             </div>
           </div>
+
+          <div class="ai-field-group">
+            <h4 class="ai-group-title">Budget Approval</h4>
+            <p class="ai-group-desc">These users can raise a project's Total Budget directly. Anyone else must enter an OTP emailed to these approvers.</p>
+            <div class="ai-field">
+              <label class="ai-label">Budget Approver Emails (comma-separated)</label>
+              <input
+                v-model="aiSettings.budgetApprovers"
+                type="text"
+                class="ai-input"
+                placeholder="sayanth@enfono.in, muhsin@enfono.in"
+              />
+            </div>
+          </div>
           <div class="ai-actions">
             <button class="ai-btn ai-btn-save" @click="saveAiSettings" :disabled="aiSaving">
               {{ aiSaving ? 'Saving...' : 'Save AI Settings' }}
@@ -791,6 +805,7 @@ const aiSettings = ref({
   weeklyEnabled: true,
   attendanceEnabled: true,
   attendanceManagers: 'salman@enfono.com',
+  budgetApprovers: 'sayanth@enfono.in, muhsin@enfono.in',
 })
 const aiSaving = ref(false)
 const aiTesting = ref(false)
@@ -819,6 +834,7 @@ async function loadAiSettings() {
       aiSettings.value.weeklyEnabled = data.weekly_summary_enabled !== false
       aiSettings.value.attendanceEnabled = data.attendance_reminder_enabled !== false
       aiSettings.value.attendanceManagers = data.attendance_manager_recipients || ''
+      aiSettings.value.budgetApprovers = data.budget_approver_emails || ''
     }
     aiLoaded.value = true
   } catch (e) {
@@ -842,6 +858,7 @@ async function saveAiSettings() {
       weekly_summary_enabled: aiSettings.value.weeklyEnabled ? 'true' : 'false',
       attendance_reminder_enabled: aiSettings.value.attendanceEnabled ? 'true' : 'false',
       attendance_manager_recipients: aiSettings.value.attendanceManagers || '',
+      budget_approver_emails: aiSettings.value.budgetApprovers || '',
     })
     aiSettings.value.apiKey = ''
     // Reload settings from server to confirm save
