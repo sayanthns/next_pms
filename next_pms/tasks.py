@@ -386,11 +386,15 @@ def _build_member_weekly_html(stats, from_str, to_str):
     )
     return f"""
     <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; max-width:560px; margin:0 auto; background:#f5f6f8; padding:24px;">
-      <div style="background:linear-gradient(135deg,#4f46e5,#2563eb); border-radius:12px 12px 0 0; padding:24px 28px; color:#ffffff;">
-        <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; opacity:0.85;">Next PMS &middot; Weekly Summary</div>
-        <div style="font-size:22px; font-weight:800; margin-top:6px;">Hi {stats['full_name']},</div>
-        <div style="font-size:13px; opacity:0.9; margin-top:4px;">{from_str} &nbsp;&rarr;&nbsp; {to_str}</div>
-      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+        <tr>
+          <td bgcolor="#2563eb" style="background-color:#2563eb; background:linear-gradient(135deg,#4f46e5,#2563eb); padding:24px 28px; border-radius:12px 12px 0 0;">
+            <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#dbeafe;">Next PMS &middot; Weekly Summary</div>
+            <div style="font-size:22px; font-weight:800; margin-top:6px; color:#ffffff;">Hi {stats['full_name']},</div>
+            <div style="font-size:13px; color:#dbeafe; margin-top:4px;">{from_str} &nbsp;&rarr;&nbsp; {to_str}</div>
+          </td>
+        </tr>
+      </table>
 
       <div style="background:#ffffff; padding:18px 28px; border-left:4px solid {hcolor};">
         <div style="font-size:15px; font-weight:700; color:{hcolor};">{headline}</div>
