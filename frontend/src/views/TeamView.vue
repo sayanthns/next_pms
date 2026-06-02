@@ -493,6 +493,34 @@
                 placeholder="sayanth@enfono.in"
               />
             </div>
+            <div class="ai-field ai-field-toggle">
+              <label class="ai-label">Enable Weekly Summary</label>
+              <label class="toggle-wrap">
+                <input type="checkbox" v-model="aiSettings.weeklyEnabled" />
+                <span class="toggle-text">{{ aiSettings.weeklyEnabled ? 'Enabled' : 'Disabled' }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="ai-field-group">
+            <h4 class="ai-group-title">Attendance Reminders</h4>
+            <p class="ai-group-desc">Staff who miss check-in/out get a reminder; the managers below get one daily digest of all misses.</p>
+            <div class="ai-field ai-field-toggle">
+              <label class="ai-label">Enable Attendance Reminders</label>
+              <label class="toggle-wrap">
+                <input type="checkbox" v-model="aiSettings.attendanceEnabled" />
+                <span class="toggle-text">{{ aiSettings.attendanceEnabled ? 'Enabled' : 'Disabled' }}</span>
+              </label>
+            </div>
+            <div class="ai-field">
+              <label class="ai-label">Manager Digest Recipients (comma-separated)</label>
+              <input
+                v-model="aiSettings.attendanceManagers"
+                type="text"
+                class="ai-input"
+                placeholder="salman@enfono.com"
+              />
+            </div>
           </div>
           <div class="ai-actions">
             <button class="ai-btn ai-btn-save" @click="saveAiSettings" :disabled="aiSaving">
@@ -760,6 +788,9 @@ const aiSettings = ref({
   recipient: 'sayanth@enfono.in',
   workingHoursPerDay: 8,
   weeklySummaryRecipient: 'sayanth@enfono.in',
+  weeklyEnabled: true,
+  attendanceEnabled: true,
+  attendanceManagers: 'salman@enfono.com',
 })
 const aiSaving = ref(false)
 const aiTesting = ref(false)
@@ -785,6 +816,9 @@ async function loadAiSettings() {
       aiSettings.value.detailLevel = data.report_detail_level || 'Detailed'
       aiSettings.value.workingHoursPerDay = data.working_hours_per_day || 8
       aiSettings.value.weeklySummaryRecipient = data.weekly_summary_recipient || 'sayanth@enfono.in'
+      aiSettings.value.weeklyEnabled = data.weekly_summary_enabled !== false
+      aiSettings.value.attendanceEnabled = data.attendance_reminder_enabled !== false
+      aiSettings.value.attendanceManagers = data.attendance_manager_recipients || ''
     }
     aiLoaded.value = true
   } catch (e) {
@@ -805,6 +839,9 @@ async function saveAiSettings() {
       detail_level: aiSettings.value.detailLevel || 'Detailed',
       working_hours_per_day: aiSettings.value.workingHoursPerDay || 8,
       weekly_summary_recipient: aiSettings.value.weeklySummaryRecipient || 'sayanth@enfono.in',
+      weekly_summary_enabled: aiSettings.value.weeklyEnabled ? 'true' : 'false',
+      attendance_reminder_enabled: aiSettings.value.attendanceEnabled ? 'true' : 'false',
+      attendance_manager_recipients: aiSettings.value.attendanceManagers || '',
     })
     aiSettings.value.apiKey = ''
     // Reload settings from server to confirm save
@@ -1637,6 +1674,23 @@ onUnmounted(() => {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
+}
+
+.ai-field-group {
+  border-top: 1px solid var(--border-default);
+  margin-top: 18px;
+  padding-top: 16px;
+}
+.ai-group-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+.ai-group-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
 }
 
 .ai-actions {
