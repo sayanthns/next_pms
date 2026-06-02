@@ -76,6 +76,43 @@ function getHeaders() {
 }
 
 /**
+ * Pull the clean user-facing message out of a Frappe error response.
+ * Prefers `_server_messages` (what frappe.throw sets — clean text + title), and
+ * only falls back to the raw traceback tail in `exc` so users never see a full
+ * Python traceback in an alert.
+ */
+export function extractServerMessage(data) {
+  if (data && data._server_messages) {
+    try {
+      const arr = JSON.parse(data._server_messages);
+      const parts = arr.map((m) => {
+        try {
+          const o = JSON.parse(m);
+          return (o.message || o).toString();
+        } catch {
+          return String(m);
+        }
+      });
+      const msg = parts.join(" ").replace(/<[^>]+>/g, "").trim();
+      if (msg) return msg;
+    } catch {
+      /* fall through */
+    }
+  }
+  if (data && data.exc) {
+    try {
+      const exc = JSON.parse(data.exc);
+      const last = String(exc[exc.length - 1] || "").trim().split("\n").pop().trim();
+      // Strip "frappe.exceptions.SomeError: " prefix if present.
+      return last.replace(/^[\w.]*(?:Error|Exception):\s*/, "") || "Server error";
+    } catch {
+      /* fall through */
+    }
+  }
+  return "Server error";
+}
+
+/**
  * Call a Frappe whitelisted method.
  * @param {string} method - Dotted method path
  * @param {object} args - Method arguments
@@ -103,9 +140,8 @@ export async function call(method, args = {}, opts = {}) {
       body: JSON.stringify(args),
     });
     const data = await response.json();
-    if (data.exc) {
-      const error = JSON.parse(data.exc);
-      throw new Error(error[error.length - 1] || "Server error");
+    if (data._server_messages || data.exc) {
+      throw new Error(extractServerMessage(data));
     }
     return data.message;
   })();
