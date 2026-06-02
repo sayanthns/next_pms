@@ -156,9 +156,48 @@
             </label>
           </div>
         </div>
+        <hr class="ai-divider" />
+        <h3 class="ai-subtitle">Working Hours & Weekly Summary</h3>
+        <div class="ai-form-row">
+          <div class="ai-field">
+            <label class="ai-label">Working Hours / Day</label>
+            <input v-model.number="aiSettings.workingHoursPerDay" type="number" min="1" max="24" step="0.5" class="ai-input" placeholder="8" />
+          </div>
+          <div class="ai-field ai-field-toggle">
+            <label class="ai-label">Enable Weekly Summary</label>
+            <label class="toggle-wrap">
+              <input type="checkbox" v-model="aiSettings.weeklyEnabled" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">{{ aiSettings.weeklyEnabled ? 'Enabled' : 'Disabled' }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="ai-field">
+          <label class="ai-label">Weekly Team Summary Recipient</label>
+          <input v-model="aiSettings.weeklyRecipient" type="email" class="ai-input" placeholder="sayanth@enfono.in" />
+        </div>
+
+        <hr class="ai-divider" />
+        <h3 class="ai-subtitle">Attendance Reminders</h3>
+        <p class="section-desc">Staff who miss check-in/out get a reminder; managers below get one daily digest.</p>
+        <div class="ai-form-row">
+          <div class="ai-field ai-field-toggle">
+            <label class="ai-label">Enable Attendance Reminders</label>
+            <label class="toggle-wrap">
+              <input type="checkbox" v-model="aiSettings.attendanceEnabled" />
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">{{ aiSettings.attendanceEnabled ? 'Enabled' : 'Disabled' }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="ai-field">
+          <label class="ai-label">Manager Digest Recipients (comma-separated)</label>
+          <input v-model="aiSettings.attendanceManagers" type="text" class="ai-input" placeholder="salman@enfono.com" />
+        </div>
+
         <div class="ai-actions">
           <button class="ai-btn ai-btn-save" @click="saveAiSettings" :disabled="aiSaving">
-            {{ aiSaving ? 'Saving...' : 'Save AI Settings' }}
+            {{ aiSaving ? 'Saving...' : 'Save Settings' }}
           </button>
           <button class="ai-btn ai-btn-test" @click="sendTestReport" :disabled="aiTesting">
             {{ aiTesting ? 'Sending...' : 'Send Test Report' }}
@@ -307,6 +346,11 @@ const aiSettings = ref({
   model: 'gpt-4o',
   enabled: false,
   recipient: 'sayanth@enfono.in',
+  workingHoursPerDay: 8,
+  weeklyEnabled: true,
+  weeklyRecipient: 'sayanth@enfono.in',
+  attendanceEnabled: true,
+  attendanceManagers: 'salman@enfono.com',
 })
 const aiSaving = ref(false)
 const aiTesting = ref(false)
@@ -328,6 +372,11 @@ async function loadAiSettings() {
       aiSettings.value.model = data.ai_model || 'gpt-4o'
       aiSettings.value.enabled = data.daily_report_enabled || false
       aiSettings.value.recipient = data.daily_report_recipient || ''
+      if (data.working_hours_per_day != null) aiSettings.value.workingHoursPerDay = data.working_hours_per_day
+      aiSettings.value.weeklyEnabled = data.weekly_summary_enabled !== false
+      aiSettings.value.weeklyRecipient = data.weekly_summary_recipient || ''
+      aiSettings.value.attendanceEnabled = data.attendance_reminder_enabled !== false
+      aiSettings.value.attendanceManagers = data.attendance_manager_recipients || ''
     }
   } catch (e) {
     console.error('Failed to load AI settings:', e)
@@ -343,6 +392,11 @@ async function saveAiSettings() {
       model: aiSettings.value.model,
       enabled: aiSettings.value.enabled,
       recipient: aiSettings.value.recipient,
+      working_hours_per_day: aiSettings.value.workingHoursPerDay,
+      weekly_summary_enabled: aiSettings.value.weeklyEnabled,
+      weekly_summary_recipient: aiSettings.value.weeklyRecipient,
+      attendance_reminder_enabled: aiSettings.value.attendanceEnabled,
+      attendance_manager_recipients: aiSettings.value.attendanceManagers,
     })
     if (aiSettings.value.apiKey) {
       aiSettings.value.apiKeySet = true
@@ -717,6 +771,19 @@ onMounted(async () => {
   font-size: 13px;
   color: var(--text-secondary);
   margin: 0 0 20px 0;
+}
+
+.ai-divider {
+  border: none;
+  border-top: 1px solid var(--border-default);
+  margin: 22px 0 16px;
+}
+
+.ai-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
 }
 
 .ai-form {

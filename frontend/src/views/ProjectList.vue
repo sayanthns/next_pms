@@ -88,7 +88,7 @@
     <!-- No results -->
     <div v-else-if="!filteredProjects.length" class="empty-filter">
       <p>No projects match your search or filter.</p>
-      <button class="btn-clear-filter" @click="searchQuery = ''; statusFilter = 'all'; departmentFilter = 'all'; favoriteFilter = false">Clear filters</button>
+      <button class="btn-clear-filter" @click="searchQuery = ''; statusFilter = 'active'; departmentFilter = 'all'; favoriteFilter = false">Clear filters</button>
     </div>
 
     <!-- Grid View -->
@@ -240,7 +240,7 @@ const projectStore = useProjectStore()
 const settingsStore = useSettingsStore()
 const showCreateProject = ref(false)
 const searchQuery = ref('')
-const statusFilter = ref('all')
+const statusFilter = ref('active')
 const viewMode = ref('grid')
 const favoriteProjects = ref([])
 const favoriteFilter = ref(false)

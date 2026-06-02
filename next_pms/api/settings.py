@@ -77,7 +77,10 @@ def get_ai_settings():
             "daily_report_recipients": getattr(doc, "daily_report_recipients", "") or "",
             "report_detail_level": getattr(doc, "report_detail_level", "Detailed") or "Detailed",
             "working_hours_per_day": flt(getattr(doc, "working_hours_per_day", 8)) or 8,
+            "weekly_summary_enabled": bool(getattr(doc, "weekly_summary_enabled", 1)),
             "weekly_summary_recipient": getattr(doc, "weekly_summary_recipient", "") or "sayanth@enfono.in",
+            "attendance_reminder_enabled": bool(getattr(doc, "attendance_reminder_enabled", 1)),
+            "attendance_manager_recipients": getattr(doc, "attendance_manager_recipients", "") or "",
         }
     except Exception:
         return {
@@ -89,14 +92,19 @@ def get_ai_settings():
             "daily_report_recipients": "",
             "report_detail_level": "Detailed",
             "working_hours_per_day": 8,
+            "weekly_summary_enabled": True,
             "weekly_summary_recipient": "sayanth@enfono.in",
+            "attendance_reminder_enabled": True,
+            "attendance_manager_recipients": "",
         }
 
 
 @frappe.whitelist()
 def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
                       recipient=None, additional_recipients=None, detail_level=None,
-                      working_hours_per_day=None, weekly_summary_recipient=None):
+                      working_hours_per_day=None, weekly_summary_recipient=None,
+                      weekly_summary_enabled=None, attendance_reminder_enabled=None,
+                      attendance_manager_recipients=None):
     """Save AI settings. Admin only."""
     if not is_admin_user():
         frappe.throw("Only administrators can modify AI settings.", frappe.PermissionError)
@@ -131,6 +139,12 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
         doc.working_hours_per_day = flt(working_hours_per_day) or 8
     if weekly_summary_recipient is not None and hasattr(doc, "weekly_summary_recipient"):
         doc.weekly_summary_recipient = weekly_summary_recipient
+    if weekly_summary_enabled is not None and hasattr(doc, "weekly_summary_enabled"):
+        doc.weekly_summary_enabled = 1 if str(weekly_summary_enabled).lower() in ("true", "1", "yes") else 0
+    if attendance_reminder_enabled is not None and hasattr(doc, "attendance_reminder_enabled"):
+        doc.attendance_reminder_enabled = 1 if str(attendance_reminder_enabled).lower() in ("true", "1", "yes") else 0
+    if attendance_manager_recipients is not None and hasattr(doc, "attendance_manager_recipients"):
+        doc.attendance_manager_recipients = attendance_manager_recipients
 
     doc.save(ignore_permissions=True)
     frappe.db.commit()

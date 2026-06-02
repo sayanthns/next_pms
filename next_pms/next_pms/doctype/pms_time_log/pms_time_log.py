@@ -7,9 +7,37 @@ from frappe.model.document import Document
 from frappe.utils import now_datetime, time_diff_in_seconds, get_datetime, flt
 
 
+SUPPORT_TASK_TYPES = ("Support", "Support Ticket")
+
+
+def timelog_block_reason(project_status, task_type):
+    """Return a block message if time logging is disallowed for this project stage,
+    else None. Planning -> never allowed; Completed -> Support task types only. Pure."""
+    if project_status == "Planning":
+        return "Project is in Planning stage — time logging is not allowed until it becomes Active."
+    if project_status == "Completed" and (task_type or "") not in SUPPORT_TASK_TYPES:
+        return "Project is Completed — only Support tasks may log time."
+    return None
+
+
 class PMSTimeLog(Document):
     def before_insert(self):
         self.validate_budget_available()
+        self.validate_project_stage()
+
+    def validate_project_stage(self):
+        # Block NEW time entries based on the project's lifecycle stage.
+        if not self.task:
+            return
+        task = frappe.db.get_value(
+            "PMS Task", self.task, ["project", "task_type"], as_dict=True
+        )
+        if not task or not task.project:
+            return
+        status = frappe.db.get_value("PMS Project", task.project, "status")
+        reason = timelog_block_reason(status, task.task_type)
+        if reason:
+            frappe.throw(_(reason), title=_("Time Logging Blocked"))
 
     def validate_budget_available(self):
         # Block NEW time entries (timer start or manual) when the project budget is exhausted.

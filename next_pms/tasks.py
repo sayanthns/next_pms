@@ -290,6 +290,9 @@ def send_weekly_summary():
     fires Saturday morning, so Saturday is intentionally NOT counted as a target
     day (no one has worked it yet) - counting it would deflate utilization.
     """
+    if not getattr(frappe.get_cached_doc("PMS AI Settings"), "weekly_summary_enabled", 1):
+        return
+
     today = getdate()
     week_end = add_days(today, -1)  # Friday (job runs Saturday morning)
     week_start = get_week_start(week_end)  # Monday of that week
@@ -493,6 +496,10 @@ def send_checkin_reminders():
     (excludes Sundays, holidays, full-day approved leave)."""
     from next_pms.api._hours import effective_working_days
 
+    settings = frappe.get_cached_doc("PMS AI Settings")
+    if not getattr(settings, "attendance_reminder_enabled", 1):
+        return {"sent": 0, "skipped": "disabled"}
+
     rd = add_days(getdate(), -1)
     rd_str = str(rd)
     from_dt = rd_str + " 00:00:00"
@@ -500,6 +507,7 @@ def send_checkin_reminders():
 
     members = _get_active_members(from_dt, to_dt)
     sent = 0
+    missed = []  # (full_name, reason) for the manager digest
     for user in members:
         if rd_str not in set(effective_working_days(user, rd, rd)):
             continue  # not a working day for this user
@@ -516,6 +524,7 @@ def send_checkin_reminders():
         if not reason:
             continue
         full_name = frappe.db.get_value("User", user, "full_name") or user
+        missed.append((full_name, reason))
         try:
             frappe.sendmail(
                 recipients=[user],
@@ -529,8 +538,70 @@ def send_checkin_reminders():
                 title=f"Check-in reminder email failed for {user}",
                 message=frappe.get_traceback(),
             )
+
+    # Manager digest — one email listing everyone who missed.
+    managers = _parse_emails(getattr(settings, "attendance_manager_recipients", "") or "")
+    if managers and missed:
+        try:
+            frappe.sendmail(
+                recipients=managers,
+                subject=_("Attendance digest — {0} missed check-in/out on {1}").format(len(missed), rd_str),
+                message=_build_attendance_digest_html(missed, rd_str),
+                now=True,
+            )
+        except Exception:
+            frappe.log_error(
+                title="Attendance manager digest failed",
+                message=frappe.get_traceback(),
+            )
+
     frappe.db.commit()
-    return {"sent": sent, "date": rd_str}
+    return {"sent": sent, "missed": len(missed), "managers": len(managers), "date": rd_str}
+
+
+def _parse_emails(raw):
+    """Split a comma/newline/semicolon-separated email string into a clean list. Pure."""
+    if not raw:
+        return []
+    out = []
+    for part in raw.replace(";", ",").replace("\n", ",").split(","):
+        e = part.strip()
+        if e and e not in out:
+            out.append(e)
+    return out
+
+
+def _build_attendance_digest_html(missed, date_str):
+    rows = ""
+    for full_name, reason in missed:
+        label = "Missed check-in" if reason == "check-in" else "Missed check-out"
+        rows += f"""
+          <tr>
+            <td style="padding:10px 12px; border:1px solid #eef0f3;">{full_name}</td>
+            <td style="padding:10px 12px; border:1px solid #eef0f3; color:#dc2626; font-weight:600;">{label}</td>
+          </tr>"""
+    return f"""
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; max-width:560px; margin:0 auto; background:#f5f6f8; padding:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+        <tr>
+          <td bgcolor="#dc2626" style="background-color:#dc2626; padding:20px 28px; border-radius:12px 12px 0 0;">
+            <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#fee2e2;">Next PMS &middot; Attendance Digest</div>
+            <div style="font-size:20px; font-weight:800; margin-top:6px; color:#ffffff;">{len(missed)} missed check-in/out on {date_str}</div>
+          </td>
+        </tr>
+      </table>
+      <div style="background:#ffffff; border-radius:0 0 12px 12px; padding:18px 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:13px;">
+          <tr style="background:#f9fafb;">
+            <th style="padding:10px 12px; border:1px solid #eef0f3; text-align:left; font-size:11px; text-transform:uppercase; color:#6b7280;">Staff</th>
+            <th style="padding:10px 12px; border:1px solid #eef0f3; text-align:left; font-size:11px; text-transform:uppercase; color:#6b7280;">Issue</th>
+          </tr>
+          {rows}
+        </table>
+        <p style="margin:16px 0 0; color:#9ca3af; font-size:12px;">Each person above also received their own reminder. Automated attendance digest from Next PMS.</p>
+      </div>
+    </div>
+    """
 
 
 def _build_checkin_reminder_html(full_name, reason, date_str):

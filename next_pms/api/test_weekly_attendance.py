@@ -1,10 +1,14 @@
 # apps/next_pms/next_pms/api/test_weekly_attendance.py
 from frappe.tests.utils import FrappeTestCase
 
+from next_pms.next_pms.doctype.pms_time_log.pms_time_log import timelog_block_reason
+
 from next_pms.tasks import (
     _attendance_counts,
+    _build_attendance_digest_html,
     _build_member_weekly_html,
     _checkin_reminder_reason,
+    _parse_emails,
     _performance_message,
 )
 
@@ -94,3 +98,36 @@ class TestWeeklyAttendance(FrappeTestCase):
         self.assertIsNone(
             _checkin_reminder_reason("2026-06-01 09:00:00", "2026-06-01 18:00:00")
         )
+
+    def test_parse_emails(self):
+        self.assertEqual(
+            _parse_emails("a@x.com, b@x.com;c@x.com\nd@x.com"),
+            ["a@x.com", "b@x.com", "c@x.com", "d@x.com"],
+        )
+        self.assertEqual(_parse_emails(""), [])
+        self.assertEqual(_parse_emails(None), [])
+        # dedupes + trims
+        self.assertEqual(_parse_emails(" a@x.com , a@x.com "), ["a@x.com"])
+
+    def test_attendance_digest_html(self):
+        html = _build_attendance_digest_html(
+            [("Neha Fathima", "check-out"), ("Jyothish", "check-in")], "2026-06-01"
+        )
+        self.assertIn("Attendance Digest", html)
+        self.assertIn("Neha Fathima", html)
+        self.assertIn("Missed check-out", html)
+        self.assertIn("Jyothish", html)
+        self.assertIn("Missed check-in", html)
+        self.assertIn("2026-06-01", html)
+
+    def test_timelog_block_reason(self):
+        # Planning -> always blocked
+        self.assertIsNotNone(timelog_block_reason("Planning", "Feature"))
+        self.assertIsNotNone(timelog_block_reason("Planning", "Support"))
+        # Completed -> only Support task types allowed
+        self.assertIsNotNone(timelog_block_reason("Completed", "Feature"))
+        self.assertIsNone(timelog_block_reason("Completed", "Support"))
+        self.assertIsNone(timelog_block_reason("Completed", "Support Ticket"))
+        # Active / On Hold -> allowed
+        self.assertIsNone(timelog_block_reason("Active", "Feature"))
+        self.assertIsNone(timelog_block_reason("On Hold", "Bug"))

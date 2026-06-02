@@ -16,7 +16,11 @@
         "report_detail_level",
         "section_break_hours",
         "working_hours_per_day",
-        "weekly_summary_recipient"
+        "weekly_summary_enabled",
+        "weekly_summary_recipient",
+        "section_break_attendance",
+        "attendance_reminder_enabled",
+        "attendance_manager_recipients"
     ],
     "fields": [
         {
@@ -87,11 +91,37 @@
             "description": "Fixed daily target hours used by all productivity reports."
         },
         {
+            "fieldname": "weekly_summary_enabled",
+            "fieldtype": "Check",
+            "label": "Enable Weekly Summary",
+            "default": "1",
+            "description": "Send each staff member their own weekly summary (Saturdays)."
+        },
+        {
             "fieldname": "weekly_summary_recipient",
             "fieldtype": "Data",
             "label": "Weekly Team Summary Recipient",
             "default": "sayanth@enfono.in",
             "description": "Email that receives the all-members weekly summary (sent Saturdays)."
+        },
+        {
+            "fieldname": "section_break_attendance",
+            "fieldtype": "Section Break",
+            "label": "Attendance Reminders"
+        },
+        {
+            "fieldname": "attendance_reminder_enabled",
+            "fieldtype": "Check",
+            "label": "Enable Attendance Reminders",
+            "default": "1",
+            "description": "Email staff who missed check-in or check-out on the previous working day."
+        },
+        {
+            "fieldname": "attendance_manager_recipients",
+            "fieldtype": "Small Text",
+            "label": "Manager Digest Recipients (comma-separated emails)",
+            "default": "salman@enfono.com",
+            "description": "These managers receive a single daily digest of everyone who missed check-in/out."
         }
     ],
     "index_web_pages_for_search": 0,
