@@ -171,6 +171,7 @@
             <th>Tasks</th>
             <th v-if="settingsStore.canViewFinance">Budget</th>
             <th v-if="settingsStore.canViewFinance">Remaining</th>
+            <th v-if="settingsStore.canViewFinance">Budget %</th>
           </tr>
         </thead>
         <tbody>
@@ -208,6 +209,13 @@
             </td>
             <td v-if="settingsStore.canViewFinance" class="table-budget" :class="{ 'table-over': project.budget_remaining < 0 }">
               {{ project.total_budget ? formatCurrency(project.budget_remaining) : '—' }}
+            </td>
+            <td v-if="settingsStore.canViewFinance" class="table-budget-pct">
+              <div v-if="project.total_budget" class="util-wrap">
+                <div class="util-bar"><div class="util-fill" :style="{ width: Math.min(formatBudgetUtil(project), 100) + '%', background: utilColor(formatBudgetUtil(project)) }"></div></div>
+                <span class="util-pct" :style="{ color: utilColor(formatBudgetUtil(project)) }">{{ formatBudgetUtil(project) }}%</span>
+              </div>
+              <span v-else>—</span>
             </td>
           </tr>
         </tbody>
@@ -355,6 +363,12 @@ function formatBudgetUtil(project) {
 
 function formatCurrency(value) {
   return settingsStore.formatCurrency(value)
+}
+
+function utilColor(pct) {
+  if (pct >= 95) return '#dc2626'
+  if (pct >= 70) return '#d97706'
+  return '#059669'
 }
 
 function formatDate(d) {
@@ -868,6 +882,11 @@ function statusBorderColor(status) {
   font-weight: 600;
   color: var(--text-primary);
 }
+.table-budget-pct { min-width: 110px; }
+.util-wrap { display: flex; align-items: center; gap: 8px; }
+.util-bar { flex: 1; height: 6px; background: #eef0f3; border-radius: 4px; overflow: hidden; min-width: 50px; }
+.util-fill { height: 100%; border-radius: 4px; }
+.util-pct { font-size: 12px; font-weight: 700; min-width: 38px; text-align: right; }
 
 /* Responsive */
 @media (max-width: 768px) {

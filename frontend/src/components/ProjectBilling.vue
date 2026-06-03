@@ -28,7 +28,8 @@
           <option>Subcontract</option><option>Software</option><option>Travel</option><option>Onsite Charges</option><option>Server</option><option>Additional Works</option><option>AMC</option><option>Other</option>
         </select>
         <input v-model="exp.description" type="text" placeholder="Description" class="bin bin-grow" />
-        <button class="bbtn" :disabled="busy">Add</button>
+        <button class="bbtn" :disabled="busy">{{ editExpId ? 'Update' : 'Add' }}</button>
+        <button v-if="editExpId" type="button" class="bbtn-ghost" @click="cancelExpEdit">Cancel</button>
       </form>
       <table class="btable" v-if="expenses.length">
         <thead><tr><th>Date</th><th>Category</th><th>Description</th><th class="r">Amount</th><th v-if="canManage"></th></tr></thead>
@@ -38,7 +39,7 @@
             <td>{{ e.category }}</td>
             <td>{{ e.description || '—' }}</td>
             <td class="r">{{ fmt(e.amount) }}</td>
-            <td v-if="canManage" class="r"><button class="blink-del" @click="delExpense(e.name)">Delete</button></td>
+            <td v-if="canManage" class="r"><button class="blink" @click="editExpense(e)">Edit</button><button class="blink-del" @click="delExpense(e.name)">Delete</button></td>
           </tr>
         </tbody>
       </table>
@@ -57,11 +58,13 @@
         <input v-model="pay.description" type="text" placeholder="Milestone / note" class="bin bin-grow" />
         <select v-model="pay.payment_entry" class="bin bin-select" required>
           <option value="" disabled>Select Payment Entry (required)</option>
+          <option v-if="editPayId && pay.payment_entry && !paymentEntries.some(x => x.name === pay.payment_entry)" :value="pay.payment_entry">{{ pay.payment_entry }} (current)</option>
           <option v-for="pe in paymentEntries" :key="pe.name" :value="pe.name">
             {{ pe.name }} — {{ fmt(pe.paid_amount) }}{{ pe.posting_date ? ' · ' + fmtDate(pe.posting_date) : '' }}
           </option>
         </select>
-        <button class="bbtn" :disabled="busy || !pay.amount || !pay.payment_entry">Add</button>
+        <button class="bbtn" :disabled="busy || !pay.amount || !pay.payment_entry">{{ editPayId ? 'Update' : 'Add' }}</button>
+        <button v-if="editPayId" type="button" class="bbtn-ghost" @click="cancelPayEdit">Cancel</button>
       </form>
       <p v-if="canManage && !paymentEntries.length" class="bhint">No unlinked Payment Entries found for this client. Create a Receive-type Payment Entry for this customer in ERPNext Accounts first.</p>
       <table class="btable" v-if="payments.length">
@@ -74,6 +77,7 @@
             <td><span class="pill" :class="p.status === 'Received' ? 'pill-ok' : 'pill-warn'">{{ p.status }}</span></td>
             <td>{{ p.payment_entry || '—' }}</td>
             <td v-if="canManage" class="r">
+              <button class="blink" @click="editPayment(p)">Edit</button>
               <button class="blink-del" @click="delPayment(p.name)">Delete</button>
             </td>
           </tr>
@@ -104,6 +108,8 @@ const busy = ref(false)
 const today = new Date().toISOString().slice(0, 10)
 const exp = reactive({ amount: null, expense_date: today, category: 'Other', description: '' })
 const pay = reactive({ amount: null, payment_date: today, description: '', payment_entry: '' })
+const editExpId = ref(null)
+const editPayId = ref(null)
 
 function fmt(v) { return settingsStore.formatCurrency(v || 0) }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : '—' }
@@ -129,14 +135,34 @@ async function addExpense() {
   if (!exp.amount || exp.amount <= 0) { errorMsg.value = 'Enter a valid expense amount.'; return }
   busy.value = true; errorMsg.value = ''
   try {
-    await call('next_pms.api.billing.add_project_expense', {
-      project: props.projectId, amount: exp.amount, expense_date: exp.expense_date,
-      category: exp.category, description: exp.description,
-    })
-    exp.amount = null; exp.description = ''
+    if (editExpId.value) {
+      await call('next_pms.api.billing.update_project_expense', {
+        name: editExpId.value, amount: exp.amount, expense_date: exp.expense_date,
+        category: exp.category, description: exp.description,
+      })
+    } else {
+      await call('next_pms.api.billing.add_project_expense', {
+        project: props.projectId, amount: exp.amount, expense_date: exp.expense_date,
+        category: exp.category, description: exp.description,
+      })
+    }
+    cancelExpEdit()
     await loadAll()
-  } catch (err) { errorMsg.value = (err && err.message) || 'Failed to add expense.' }
+  } catch (err) { errorMsg.value = (err && err.message) || 'Failed to save expense.' }
   finally { busy.value = false }
+}
+
+function editExpense(e) {
+  editExpId.value = e.name
+  exp.amount = e.amount
+  exp.expense_date = (e.expense_date || today).slice(0, 10)
+  exp.category = e.category || 'Other'
+  exp.description = e.description || ''
+}
+
+function cancelExpEdit() {
+  editExpId.value = null
+  exp.amount = null; exp.expense_date = today; exp.category = 'Other'; exp.description = ''
 }
 
 async function delExpense(name) {
@@ -151,14 +177,34 @@ async function addPayment() {
   if (!pay.payment_entry) { errorMsg.value = 'A Payment Entry is required to record a client payment.'; return }
   busy.value = true; errorMsg.value = ''
   try {
-    await call('next_pms.api.billing.add_project_payment', {
-      project: props.projectId, amount: pay.amount, payment_date: pay.payment_date,
-      description: pay.description, payment_entry: pay.payment_entry || null,
-    })
-    pay.amount = null; pay.description = ''; pay.payment_entry = ''
+    if (editPayId.value) {
+      await call('next_pms.api.billing.update_project_payment', {
+        name: editPayId.value, amount: pay.amount, payment_date: pay.payment_date,
+        description: pay.description, payment_entry: pay.payment_entry,
+      })
+    } else {
+      await call('next_pms.api.billing.add_project_payment', {
+        project: props.projectId, amount: pay.amount, payment_date: pay.payment_date,
+        description: pay.description, payment_entry: pay.payment_entry,
+      })
+    }
+    cancelPayEdit()
     await loadAll()
-  } catch (err) { errorMsg.value = (err && err.message) || 'Failed to add payment.' }
+  } catch (err) { errorMsg.value = (err && err.message) || 'Failed to save payment.' }
   finally { busy.value = false }
+}
+
+function editPayment(p) {
+  editPayId.value = p.name
+  pay.amount = p.amount
+  pay.payment_date = (p.payment_date || today).slice(0, 10)
+  pay.description = p.description || ''
+  pay.payment_entry = p.payment_entry || ''
+}
+
+function cancelPayEdit() {
+  editPayId.value = null
+  pay.amount = null; pay.payment_date = today; pay.description = ''; pay.payment_entry = ''
 }
 
 async function delPayment(name) {

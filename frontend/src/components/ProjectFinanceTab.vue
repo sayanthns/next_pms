@@ -24,7 +24,7 @@
         <table class="pf-table">
           <thead>
             <tr>
-              <th>Project</th><th>Client</th><th>Status</th>
+              <th>Project</th><th>Status</th>
               <th class="r">Budget</th><th class="r">Labour</th><th class="r">Expenses</th>
               <th class="r">Spent</th><th class="r">Remaining</th><th class="r">Received</th><th class="r">Outstanding</th>
             </tr>
@@ -32,7 +32,6 @@
           <tbody>
             <tr v-for="r in filtered" :key="r.project" @click="goProject(r.project)" class="pf-row">
               <td class="pf-name">{{ r.project_name }}</td>
-              <td>{{ r.client || '—' }}</td>
               <td><span class="pf-status" :class="'st-' + r.status.toLowerCase().replace(' ','-')">{{ r.status }}</span></td>
               <td class="r">{{ fmt(r.budget) }}</td>
               <td class="r">{{ fmt(r.labour) }}</td>
@@ -45,7 +44,7 @@
           </tbody>
           <tfoot>
             <tr class="pf-total">
-              <td colspan="3"><strong>Total ({{ filtered.length }})</strong></td>
+              <td colspan="2"><strong>Total ({{ filtered.length }})</strong></td>
               <td class="r"><strong>{{ fmt(sum('budget')) }}</strong></td>
               <td class="r"><strong>{{ fmt(sum('labour')) }}</strong></td>
               <td class="r"><strong>{{ fmt(sum('expenses')) }}</strong></td>

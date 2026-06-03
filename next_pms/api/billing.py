@@ -58,6 +58,27 @@ def list_project_expenses(project):
 
 
 @frappe.whitelist()
+def update_project_expense(name, amount=None, expense_date=None, category=None, description=None):
+    _require_billing_manager()
+    if not frappe.db.exists("PMS Project Expense", name):
+        frappe.throw(_("Expense not found"))
+    doc = frappe.get_doc("PMS Project Expense", name)
+    if amount is not None:
+        if flt(amount) <= 0:
+            frappe.throw(_("Expense amount must be greater than zero."))
+        doc.amount = flt(amount)
+    if expense_date:
+        doc.expense_date = getdate(expense_date)
+    if category:
+        doc.category = category
+    if description is not None:
+        doc.description = description
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True, "name": doc.name}
+
+
+@frappe.whitelist()
 def delete_project_expense(name):
     _require_billing_manager()
     if frappe.db.exists("PMS Project Expense", name):
@@ -117,6 +138,30 @@ def list_project_payments(project):
         fields=["name", "amount", "payment_date", "status", "payment_entry", "received_on", "description"],
         order_by="payment_date desc, creation desc",
     )
+
+
+@frappe.whitelist()
+def update_project_payment(name, amount=None, payment_date=None, description=None, payment_entry=None):
+    _require_billing_manager()
+    if not frappe.db.exists("PMS Project Payment", name):
+        frappe.throw(_("Payment not found"))
+    doc = frappe.get_doc("PMS Project Payment", name)
+    if amount is not None:
+        if flt(amount) <= 0:
+            frappe.throw(_("Payment amount must be greater than zero."))
+        doc.amount = flt(amount)
+    if payment_date:
+        doc.payment_date = getdate(payment_date)
+    if description is not None:
+        doc.description = description
+    if payment_entry:
+        if not frappe.db.exists("Payment Entry", payment_entry):
+            frappe.throw(_("Payment Entry {0} not found.").format(payment_entry))
+        doc.payment_entry = payment_entry
+        doc.status = "Received"
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True, "name": doc.name}
 
 
 @frappe.whitelist()
