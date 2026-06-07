@@ -122,13 +122,16 @@ def _get_ai_settings():
 
 
 def _get_recipients(settings):
-    """Build list of unique email recipients."""
+    """Build list of unique email recipients.
+
+    Both the primary and additional fields may hold several comma/semicolon/
+    newline-separated addresses — split them ALL so frappe.sendmail receives a
+    real list. A single crammed string ("a@x, b@x") is rejected by SMTP as an
+    invalid RFC 5321 address (553).
+    """
     recipients = []
-    primary = (settings.get("daily_report_recipient") or "").strip()
-    if primary:
-        recipients.append(primary)
-    additional = settings.get("daily_report_recipients") or ""
-    for email in additional.split(","):
+    raw = (settings.get("daily_report_recipient") or "") + "," + (settings.get("daily_report_recipients") or "")
+    for email in raw.replace(";", ",").replace("\n", ",").split(","):
         email = email.strip()
         if email and email not in recipients:
             recipients.append(email)
