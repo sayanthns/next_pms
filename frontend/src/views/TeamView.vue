@@ -443,6 +443,36 @@
               :placeholder="aiSettings.apiKeySet ? '••••••••••• (key is set)' : 'Paste your API key'"
             />
           </div>
+
+          <div class="ai-field-group">
+            <h4 class="ai-group-title">Fallback Provider</h4>
+            <p class="ai-group-desc">Used automatically if the primary AI call fails (e.g. Anthropic outage / no credits).</p>
+            <div class="ai-form-row">
+              <div class="ai-field">
+                <label class="ai-label">Provider</label>
+                <select v-model="aiSettings.fallbackProvider" class="ai-input">
+                  <option value="None">None</option>
+                  <option value="DeepSeek">DeepSeek</option>
+                  <option value="OpenAI">OpenAI</option>
+                  <option value="Claude">Claude</option>
+                </select>
+              </div>
+              <div class="ai-field">
+                <label class="ai-label">Fallback Model</label>
+                <input v-model="aiSettings.fallbackModel" type="text" class="ai-input" placeholder="deepseek-chat" />
+              </div>
+            </div>
+            <div class="ai-field">
+              <label class="ai-label">Fallback API Key</label>
+              <input
+                v-model="aiSettings.fallbackApiKey"
+                type="password"
+                class="ai-input"
+                :placeholder="aiSettings.fallbackApiKeySet ? '••••••••••• (key is set)' : 'Paste fallback provider API key'"
+              />
+            </div>
+          </div>
+
           <div class="ai-form-row">
             <div class="ai-field">
               <label class="ai-label">Primary Recipient Email</label>
@@ -806,6 +836,10 @@ const aiSettings = ref({
   attendanceEnabled: true,
   attendanceManagers: 'salman@enfono.com',
   budgetApprovers: 'sayanth@enfono.in, muhsin@enfono.in',
+  fallbackProvider: 'DeepSeek',
+  fallbackModel: 'deepseek-chat',
+  fallbackApiKey: '',
+  fallbackApiKeySet: false,
 })
 const aiSaving = ref(false)
 const aiTesting = ref(false)
@@ -835,6 +869,9 @@ async function loadAiSettings() {
       aiSettings.value.attendanceEnabled = data.attendance_reminder_enabled !== false
       aiSettings.value.attendanceManagers = data.attendance_manager_recipients || ''
       aiSettings.value.budgetApprovers = data.budget_approver_emails || ''
+      aiSettings.value.fallbackProvider = data.fallback_provider || 'DeepSeek'
+      aiSettings.value.fallbackModel = data.fallback_model || 'deepseek-chat'
+      aiSettings.value.fallbackApiKeySet = data.fallback_api_key_set || false
     }
     aiLoaded.value = true
   } catch (e) {
@@ -859,8 +896,12 @@ async function saveAiSettings() {
       attendance_reminder_enabled: aiSettings.value.attendanceEnabled ? 'true' : 'false',
       attendance_manager_recipients: aiSettings.value.attendanceManagers || '',
       budget_approver_emails: aiSettings.value.budgetApprovers || '',
+      fallback_provider: aiSettings.value.fallbackProvider || 'None',
+      fallback_model: aiSettings.value.fallbackModel || 'deepseek-chat',
+      fallback_api_key: aiSettings.value.fallbackApiKey || '',
     })
     aiSettings.value.apiKey = ''
+    aiSettings.value.fallbackApiKey = ''
     // Reload settings from server to confirm save
     await loadAiSettings()
     showToast('AI settings saved successfully')

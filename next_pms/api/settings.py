@@ -82,6 +82,9 @@ def get_ai_settings():
             "attendance_reminder_enabled": bool(getattr(doc, "attendance_reminder_enabled", 1)),
             "attendance_manager_recipients": getattr(doc, "attendance_manager_recipients", "") or "",
             "budget_approver_emails": getattr(doc, "budget_approver_emails", "") or "sayanth@enfono.in, muhsin@enfono.in",
+            "fallback_provider": getattr(doc, "fallback_provider", "") or "DeepSeek",
+            "fallback_api_key_set": bool(getattr(doc, "fallback_api_key", None)),
+            "fallback_model": getattr(doc, "fallback_model", "") or "deepseek-chat",
         }
     except Exception:
         return {
@@ -98,6 +101,9 @@ def get_ai_settings():
             "attendance_reminder_enabled": True,
             "attendance_manager_recipients": "",
             "budget_approver_emails": "sayanth@enfono.in, muhsin@enfono.in",
+            "fallback_provider": "DeepSeek",
+            "fallback_api_key_set": False,
+            "fallback_model": "deepseek-chat",
         }
 
 
@@ -106,7 +112,8 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
                       recipient=None, additional_recipients=None, detail_level=None,
                       working_hours_per_day=None, weekly_summary_recipient=None,
                       weekly_summary_enabled=None, attendance_reminder_enabled=None,
-                      attendance_manager_recipients=None, budget_approver_emails=None):
+                      attendance_manager_recipients=None, budget_approver_emails=None,
+                      fallback_provider=None, fallback_api_key=None, fallback_model=None):
     """Save AI settings. Admin only."""
     if not is_admin_user():
         frappe.throw("Only administrators can modify AI settings.", frappe.PermissionError)
@@ -149,6 +156,12 @@ def save_ai_settings(provider=None, api_key=None, model=None, enabled=None,
         doc.attendance_manager_recipients = attendance_manager_recipients
     if budget_approver_emails is not None and hasattr(doc, "budget_approver_emails"):
         doc.budget_approver_emails = budget_approver_emails
+    if fallback_provider is not None and hasattr(doc, "fallback_provider"):
+        doc.fallback_provider = fallback_provider
+    if fallback_api_key is not None and fallback_api_key != "" and hasattr(doc, "fallback_api_key"):
+        doc.fallback_api_key = fallback_api_key
+    if fallback_model is not None and hasattr(doc, "fallback_model"):
+        doc.fallback_model = fallback_model
 
     doc.save(ignore_permissions=True)
     frappe.db.commit()

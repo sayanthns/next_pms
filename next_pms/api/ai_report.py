@@ -116,6 +116,9 @@ def _get_ai_settings():
             "daily_report_recipient": doc.daily_report_recipient or "",
             "daily_report_recipients": getattr(doc, "daily_report_recipients", "") or "",
             "report_detail_level": getattr(doc, "report_detail_level", "Detailed") or "Detailed",
+            "fallback_provider": getattr(doc, "fallback_provider", "") or "",
+            "fallback_api_key": doc.get_password("fallback_api_key") if getattr(doc, "fallback_api_key", None) else None,
+            "fallback_model": getattr(doc, "fallback_model", "") or "deepseek-chat",
         }
     except Exception:
         return None
@@ -492,19 +495,61 @@ def _get_project_summary(report_date):
 # ── LLM Integration ─────────────────────────────────────────────
 
 
+def _provider_call(provider, api_key, model, prompt):
+    if provider == "OpenAI":
+        return _call_openai(api_key, model, prompt)
+    if provider == "Claude":
+        return _call_claude(api_key, model, prompt)
+    if provider == "DeepSeek":
+        return _call_deepseek(api_key, model, prompt)
+    raise ValueError(f"Unknown AI provider: {provider}")
+
+
 def _call_llm(settings, full_data, detail_level="Detailed"):
-    """Call the configured LLM provider with comprehensive data."""
+    """Call the configured LLM provider; on failure, fall back to the configured
+    fallback provider (e.g. DeepSeek) so an Anthropic outage / credit issue doesn't
+    blank the report's AI analysis."""
     prompt = _build_analysis_prompt(full_data, detail_level)
     provider = settings.get("ai_provider", "Claude")
     api_key = settings.get("ai_api_key")
     model = settings.get("ai_model", "claude-sonnet-4-20250514")
 
-    if provider == "OpenAI":
-        return _call_openai(api_key, model, prompt)
-    elif provider == "Claude":
-        return _call_claude(api_key, model, prompt)
-    else:
-        raise ValueError(f"Unknown AI provider: {provider}")
+    try:
+        return _provider_call(provider, api_key, model, prompt)
+    except Exception as primary_err:
+        fb_provider = settings.get("fallback_provider") or ""
+        fb_key = settings.get("fallback_api_key")
+        fb_model = settings.get("fallback_model") or "deepseek-chat"
+        if fb_provider and fb_provider != "None" and fb_key:
+            frappe.log_error(
+                f"Primary '{provider}' failed ({primary_err}); using fallback '{fb_provider}'.",
+                "PMS AI Report fallback",
+            )
+            return _provider_call(fb_provider, fb_key, fb_model, prompt)
+        raise
+
+
+def _call_deepseek(api_key, model, prompt):
+    """DeepSeek chat completions — OpenAI-compatible API."""
+    response = requests.post(
+        "https://api.deepseek.com/v1/chat/completions",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": model or "deepseek-chat",
+            "messages": [
+                {"role": "system", "content": "You are an expert project management analyst with process mining expertise."},
+                {"role": "user", "content": prompt},
+            ],
+            "max_tokens": 3000,
+            "temperature": 0.7,
+        },
+        timeout=120,
+    )
+    response.raise_for_status()
+    return response.json()["choices"][0]["message"]["content"]
 
 
 def _build_analysis_prompt(full_data, detail_level="Detailed"):

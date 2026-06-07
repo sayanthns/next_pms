@@ -8,6 +8,9 @@
         "ai_provider",
         "ai_api_key",
         "ai_model",
+        "fallback_provider",
+        "fallback_api_key",
+        "fallback_model",
         "column_break_1",
         "daily_report_enabled",
         "daily_report_recipient",
@@ -45,6 +48,25 @@
             "label": "Model",
             "default": "claude-sonnet-4-20250514",
             "reqd": 0
+        },
+        {
+            "fieldname": "fallback_provider",
+            "fieldtype": "Select",
+            "label": "Fallback Provider",
+            "options": "None\nDeepSeek\nOpenAI\nClaude",
+            "default": "DeepSeek",
+            "description": "Used automatically if the primary provider call fails."
+        },
+        {
+            "fieldname": "fallback_api_key",
+            "fieldtype": "Password",
+            "label": "Fallback API Key"
+        },
+        {
+            "fieldname": "fallback_model",
+            "fieldtype": "Data",
+            "label": "Fallback Model",
+            "default": "deepseek-chat"
         },
         {
             "fieldname": "column_break_1",
