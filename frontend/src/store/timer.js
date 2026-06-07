@@ -142,17 +142,21 @@ export const useTimerStore = defineStore("timer", () => {
     } catch (error) {
       const emsg = (error && (error.message || error._server_messages || String(error))) || ''
       if (/budget/i.test(emsg)) {
-        if (confirm('Project budget exhausted (>=95%). Send a budget-increase request to sayanth@enfono.in?')) {
-          try {
-            const pv = await call('frappe.client.get_value', {
-              doctype: 'PMS Task', filters: { name: taskName }, fieldname: 'project',
-            })
-            const project = pv?.message?.project || pv?.project
-            if (project) {
-              await call('next_pms.api.budget.request_budget_increase', { project })
-              alert('Budget increase request sent to sayanth@enfono.in')
-            }
-          } catch (e2) { console.error('budget request failed', e2) }
+        // Auto-send budget increase request — no confirm popup needed.
+        // Show a non-blocking toast, not a browser dialog.
+        showAlert('Project budget ≥95% — sending increase request...', 'orange')
+        try {
+          const pv = await call('frappe.client.get_value', {
+            doctype: 'PMS Task', filters: { name: taskName }, fieldname: 'project',
+          })
+          const project = pv?.message?.project || pv?.project
+          if (project) {
+            await call('next_pms.api.budget.request_budget_increase', { project })
+            showAlert('Budget increase request sent', 'green')
+          }
+        } catch (e2) {
+          console.error('budget request failed', e2)
+          showAlert('Could not send budget increase request', 'red')
         }
       } else if (!/check ?in/i.test(emsg)) {
         // Surface the server reason (project Planning / Completed non-support task /
