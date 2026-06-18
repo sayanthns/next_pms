@@ -1,6 +1,7 @@
 import frappe
 import json
 import requests
+from frappe import _
 from frappe.utils import today, now_datetime, getdate, format_date, add_days
 from next_pms.utils import get_pms_url
 from next_pms.api._hours import compute_target_hours, compute_utilization
@@ -37,70 +38,78 @@ def generate_daily_report(test=False):
     # Gather comprehensive work data for YESTERDAY (report runs early morning,
     # so the workday that just ended is the previous day)
     report_date = str(add_days(today(), -1))
-    work_data = get_daily_work_summary(report_date)
-    user_metrics = _build_user_metrics(report_date)
-    process_mining = _get_process_mining_data(report_date)
-    time_patterns = _get_time_patterns(report_date)
-    project_summary = _get_project_summary(report_date)
-
-    # Build full data context for AI
-    full_data = {
-        "date": report_date,
-        "overall": work_data.get("overall", {}),
-        "user_metrics": user_metrics,
-        "process_mining": process_mining,
-        "time_patterns": time_patterns,
-        "project_summary": project_summary,
-    }
-
-    # Call LLM for intelligent analysis
     detail_level = settings.get("report_detail_level", "Detailed")
-    ai_parsed = None
-    ai_raw = ""
-    try:
-        ai_raw = _call_llm(settings, full_data, detail_level)
-        ai_parsed = _parse_ai_response(ai_raw)
-    except Exception as e:
-        frappe.log_error(f"PMS AI Report: LLM call failed - {str(e)}")
-        ai_parsed = None
-        ai_raw = f"AI analysis unavailable: {str(e)}"
+    r = _build_report(report_date, settings, detail_level)
 
     # Send email to all recipients
-    _send_report_email(recipients, full_data, ai_parsed, ai_raw, user_metrics,
-                       process_mining, time_patterns, project_summary)
+    _send_report_email(
+        recipients, r["full_data"], r["ai_parsed"], r["ai_raw"],
+        r["user_metrics"], r["process_mining"], r["time_patterns"], r["project_summary"],
+    )
 
     return {"success": True, "message": f"Daily AI report sent to {len(recipients)} recipient(s)."}
 
 
-def _should_skip_report():
-    """Check if today is a weekend or holiday. Returns skip reason or None."""
-    from frappe.utils import getdate
-    report_date = add_days(today(), -1)  # Report covers yesterday
+def _require_finance_viewer():
+    """Mirror settings.can_view_finance (is_admin or is_manager). The API defends
+    itself independently of the frontend tab gating."""
+    roles = set(frappe.get_roles(frappe.session.user))
+    if not ({"System Manager", "Administrator", "PMS Manager"} & roles):
+        frappe.throw(_("You are not permitted to view the daily report."), frappe.PermissionError)
+
+
+@frappe.whitelist()
+def get_daily_report_data(report_date=None):
+    """Read-only, on-demand daily report for the Reports tab. Never emails; ignores
+    daily_report_enabled. Returns metrics + structured AI analysis for report_date."""
+    _require_finance_viewer()
+
+    rd = getdate(report_date) if report_date else add_days(getdate(today()), -1)
+    if rd >= getdate(today()):
+        frappe.throw(_("Report date must be in the past."))
+
+    settings = _get_ai_settings()
+    if not settings:
+        frappe.throw(_("AI settings are not configured."))
+
+    skipped = _should_skip_report_for(rd)
+    r = _build_report(str(rd), settings)
+
+    return {
+        "report_date": str(rd),
+        "skipped_reason": skipped,
+        "overall": r["full_data"].get("overall", {}),
+        "ai": r["ai_parsed"],
+        "ai_raw": r["ai_raw"],
+        "ai_error": r["ai_error"],
+        "user_metrics": r["user_metrics"],
+        "process_mining": r["process_mining"],
+        "time_patterns": r["time_patterns"],
+        "project_summary": r["project_summary"],
+    }
+
+
+def _should_skip_report_for(report_date):
+    """Return a skip reason (str) if report_date is a Sunday or a holiday, else None.
+
+    Note: some staff may work Sundays on shift, but the emailed report is skipped
+    since most of the team is off; shift workers' data appears in Monday's report.
+    The in-app view (get_daily_report_data) surfaces this reason but still shows data.
+    """
     dt = getdate(report_date)
-
-    # Skip if yesterday was Sunday (weekly off)
-    # Note: Some staff may work Sundays on shift, but report is skipped
-    # since most of the team is off. Shift workers' data appears in Monday's report.
-    weekday = dt.weekday()  # 0=Monday ... 6=Sunday
-    if weekday == 6:  # Sunday
-        return f"Skipped: {report_date} was Sunday (weekly off)."
-
-    # Check Frappe Holiday List (if configured)
+    if dt.weekday() == 6:  # 0=Monday ... 6=Sunday
+        return f"{report_date} was Sunday (weekly off)."
     try:
-        # Look for any Holiday List that's the default or linked to the company
-        holiday_lists = frappe.get_all("Holiday List",
-            filters={"holiday_date": report_date},
-            fields=["parent"],
-            ignore_permissions=True,
-        )
-        # Also check the Holiday table directly
-        is_holiday = frappe.db.exists("Holiday", {"holiday_date": report_date})
-        if is_holiday:
-            return f"Skipped: {report_date} is a holiday."
+        if frappe.db.exists("Holiday", {"holiday_date": str(report_date)}):
+            return f"{report_date} is a holiday."
     except Exception:
-        pass  # Holiday List may not exist, continue
-
+        pass  # Holiday table may not exist, continue
     return None
+
+
+def _should_skip_report():
+    """Email-path skip check for yesterday (back-compat wrapper)."""
+    return _should_skip_report_for(add_days(today(), -1))
 
 
 def _get_ai_settings():
@@ -139,6 +148,51 @@ def _get_recipients(settings):
         if email and email not in recipients:
             recipients.append(email)
     return recipients
+
+
+def _build_report(report_date, settings, detail_level=None):
+    """Gather all metrics for report_date and run the LLM analysis.
+    No email, no permission check. Reused by the email job and the view endpoint.
+    On LLM failure: ai_parsed=None, ai_error set, metrics still returned."""
+    report_date = str(report_date)
+    detail_level = detail_level or settings.get("report_detail_level", "Detailed")
+
+    work_data = get_daily_work_summary(report_date)
+    user_metrics = _build_user_metrics(report_date)
+    process_mining = _get_process_mining_data(report_date)
+    time_patterns = _get_time_patterns(report_date)
+    project_summary = _get_project_summary(report_date)
+
+    full_data = {
+        "date": report_date,
+        "overall": work_data.get("overall", {}),
+        "user_metrics": user_metrics,
+        "process_mining": process_mining,
+        "time_patterns": time_patterns,
+        "project_summary": project_summary,
+    }
+
+    ai_parsed = None
+    ai_raw = ""
+    ai_error = None
+    try:
+        ai_raw = _call_llm(settings, full_data, detail_level)
+        ai_parsed = _parse_ai_response(ai_raw)
+    except Exception as e:
+        frappe.log_error(f"PMS AI Report: LLM call failed - {str(e)}")
+        ai_error = str(e)
+        ai_raw = f"AI analysis unavailable: {str(e)}"
+
+    return {
+        "full_data": full_data,
+        "ai_parsed": ai_parsed,
+        "ai_raw": ai_raw,
+        "ai_error": ai_error,
+        "user_metrics": user_metrics,
+        "process_mining": process_mining,
+        "time_patterns": time_patterns,
+        "project_summary": project_summary,
+    }
 
 
 def get_daily_work_summary(report_date=None):
