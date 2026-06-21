@@ -13,8 +13,8 @@ def _plan():
     return {
         "allocations": [{"member": "dev@x.com"}, {"member": "other@x.com"}],
         "projects": [
-            {"project": "Alpha", "team_members": [{"user": "dev@x.com"}]},
-            {"project": "Beta", "team_members": [{"user": "other@x.com"}]},
+            {"project": "Alpha", "team": "dev@x.com"},
+            {"project": "Beta", "team": "other@x.com"},
         ],
         "priorities": [{"project": "Alpha"}],
         "checklist": [{"item": "ship"}],
@@ -94,7 +94,7 @@ class TestPrefillRollForward(FrappeTestCase):
         self.assertEqual(out["projects"][0]["project"], "Alpha")
         self.assertEqual(out["projects"][0]["status_color"], "green")
         self.assertEqual(out["projects"][0]["effort"], "8h")
-        self.assertEqual(out["projects"][0]["team_members"], [{"user": "dev@x.com"}])
+        self.assertEqual(out["projects"][0]["team"], "dev@x.com")
         self.assertEqual(out["allocations"][0]["member"], "dev@x.com")
         self.assertEqual(out["allocations"][0]["planned_hours"], 8.0)
         self.assertEqual(out["allocations"][0]["capacity_hours"], 40)

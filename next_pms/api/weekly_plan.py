@@ -83,7 +83,7 @@ def get_week(week_start=None):
     user = ctx["user"]
     my_projects = _user_project_names(user)
     team_keyed = {p.get("project") for p in plan.get("projects", [])
-                  if user in [m.get("user") for m in (p.get("team_members") or [])]}
+                  if user in [e.strip() for e in (p.get("team") or "").split(",")]}
     keep = my_projects | team_keyed
     plan["allocations"] = [a for a in plan.get("allocations", []) if a.get("member") == user]
     plan["projects"] = [p for p in plan.get("projects", []) if p.get("project") in keep]
@@ -119,7 +119,7 @@ def prefill_week(week_start=None):
             "project": p["name"], "status_label": p["status"],
             "status_color": STATUS_COLOR.get(p["status"], "grey"),
             "effort": _h(effort),
-            "team_members": [{"user": u} for u in members if u],
+            "team": ",".join([u for u in members if u]),
         })
 
     tasks = frappe.get_all("PMS Task", filters={"status": ["!=", "Done"], "assigned_to": ["is", "set"]},
@@ -171,7 +171,7 @@ def roll_forward(from_week, to_week):
     }
 
 
-_SIMPLE_TABLES = ("allocations", "closures", "priorities", "watch_list", "checklist")
+_SIMPLE_TABLES = ("allocations", "projects", "closures", "priorities", "watch_list", "checklist")
 
 
 @frappe.whitelist()
@@ -197,15 +197,6 @@ def save_week(payload):
         doc.set(table, [])
         for row in (payload.get(table) or []):
             doc.append(table, _strip([row])[0])
-
-    # projects carry a grandchild table (team_members)
-    doc.set("projects", [])
-    for row in (payload.get("projects") or []):
-        clean = _strip([row])[0]
-        team = clean.pop("team_members", None) or []
-        prow = doc.append("projects", clean)
-        for m in team:
-            prow.append("team_members", _strip([m])[0])
 
     doc.save()
     return {"name": doc.name, "week_start": str(doc.week_start), "title": doc.title}

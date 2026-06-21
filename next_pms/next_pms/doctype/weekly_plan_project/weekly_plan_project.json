@@ -8,7 +8,7 @@
   "project",
   "project_name",
   "focus",
-  "team_members",
+  "team",
   "effort",
   "status_label",
   "status_color",
@@ -39,10 +39,10 @@
    "in_list_view": 1
   },
   {
-   "fieldname": "team_members",
-   "fieldtype": "Table",
-   "label": "Team",
-   "options": "Weekly Plan Project Member"
+   "fieldname": "team",
+   "fieldtype": "Small Text",
+   "label": "Team (comma-separated users)",
+   "description": "Comma-separated user emails on this project this week."
   },
   {
    "fieldname": "effort",

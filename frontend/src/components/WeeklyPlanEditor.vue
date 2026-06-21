@@ -158,7 +158,7 @@ function hydrate(src) {
   for (const t of ['allocations', 'projects', 'priorities', 'watch_list', 'checklist', 'closures']) {
     if (!Array.isArray(f[t])) f[t] = []
   }
-  f.projects = f.projects.map(p => ({ ...p, team: (p.team_members || []).map(m => m.user).filter(Boolean) }))
+  f.projects = f.projects.map(p => ({ ...p, team: (p.team || '').split(',').map(s => s.trim()).filter(Boolean) }))
   return f
 }
 const form = ref(hydrate(props.initial))
@@ -172,9 +172,8 @@ function buildPayload() {
   const f = JSON.parse(JSON.stringify(form.value))
   f.published = f.published ? 1 : 0
   f.projects = (f.projects || []).map(p => {
-    const team_members = (p.team || []).filter(Boolean).map(u => ({ user: u }))
     const { team, ...rest } = p
-    return { ...rest, team_members }
+    return { ...rest, team: (team || []).filter(Boolean).join(',') }
   })
   return f
 }
@@ -196,7 +195,7 @@ async function prefill() {
   try {
     const d = await call('next_pms.api.weekly_plan.prefill_week', { week_start: form.value.week_start })
     form.value.allocations = d.allocations || []
-    form.value.projects = (d.projects || []).map(p => ({ ...p, team: (p.team_members || []).map(m => m.user) }))
+    form.value.projects = (d.projects || []).map(p => ({ ...p, team: (p.team || '').split(',').map(s => s.trim()).filter(Boolean) }))
     flash('Prefilled people + projects from PMS — edit the judgment bits.', 'ok')
   } catch (e) { flash((e && e.message) || 'Prefill failed.', 'err') }
   finally { busy.value = false }
