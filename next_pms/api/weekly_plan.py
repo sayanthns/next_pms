@@ -46,6 +46,25 @@ def _load_week_dict(name):
     return frappe.get_doc("Weekly Plan", name).as_dict()
 
 
+def _attach_team_names(plan):
+    """Resolve each project's comma-separated team emails to display names so the UI
+    can show real initials/hover, not a single ambiguous letter."""
+    emails = set()
+    for p in plan.get("projects", []):
+        for e in (p.get("team") or "").split(","):
+            e = e.strip()
+            if e:
+                emails.add(e)
+    names = {}
+    if emails:
+        for u in frappe.get_all("User", filters={"name": ["in", list(emails)]},
+                                fields=["name", "full_name"], ignore_permissions=True):
+            names[u.name] = u.full_name or u.name
+    for p in plan.get("projects", []):
+        p["team_list"] = [{"user": e.strip(), "name": names.get(e.strip(), e.strip())}
+                          for e in (p.get("team") or "").split(",") if e.strip()]
+
+
 def _user_project_names(user):
     """Projects the user is on, derived from assigned PMS Tasks (perms bypassed —
     the weekly plan is internal and the caller is already an authenticated dev)."""
@@ -75,6 +94,7 @@ def get_week(week_start=None):
     if not name:
         return None
     plan = _load_week_dict(name)
+    _attach_team_names(plan)
 
     if ctx["is_admin"] or ctx["is_manager"]:
         return plan

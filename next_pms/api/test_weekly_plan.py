@@ -39,6 +39,8 @@ class TestWeeklyPlanScope(FrappeTestCase):
         self.assertEqual(len(out["allocations"]), 2)
         self.assertEqual(len(out["projects"]), 2)
         self.assertEqual(len(out["watch_list"]), 2)
+        # team resolved to display list (name falls back to email when user not found)
+        self.assertEqual(out["projects"][0]["team_list"][0]["user"], "dev@x.com")
 
     def test_developer_scoped(self):
         with patch.object(W, "_user_context", return_value=_ctx(is_developer=True, user="dev@x.com")), \

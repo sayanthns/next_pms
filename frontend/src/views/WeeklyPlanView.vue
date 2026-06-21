@@ -72,7 +72,7 @@
               <tr v-for="p in plan.projects" :key="p.name || p.project">
                 <td class="wp-strong">{{ p.project_name || p.project }}</td>
                 <td>{{ p.focus }}</td>
-                <td><span v-for="(e, i) in teamList(p)" :key="i" class="wp-chip" :title="e">{{ initials(e) }}</span></td>
+                <td><span v-for="(m, i) in (p.team_list || [])" :key="i" class="wp-chip" :title="m.name">{{ initials(m.name) }}</span></td>
                 <td class="r">{{ p.effort }}</td>
                 <td><span class="wp-badge" :class="'bc-' + (p.status_color || 'grey')">{{ p.status_label || '—' }}</span></td>
                 <td><span v-if="p.health" class="wp-badge" :class="'rag-' + p.health.toLowerCase()" :title="p.health_reason">{{ p.health }}</span><span v-else class="wp-muted">—</span></td>
@@ -215,9 +215,10 @@ function taskList(a) {
 }
 function initials(name) {
   if (!name) return '?'
-  const parts = String(name).replace(/@.*/, '').split(/[\s._]+/).filter(Boolean)
-  return ((parts[0] || '')[0] || '' + (parts[1] || '')[0] || '').toUpperCase().slice(0, 2)
-    || String(name)[0].toUpperCase()
+  const base = String(name).replace(/@.*/, '')
+  const parts = base.split(/[\s._]+/).filter(Boolean)
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  return base.slice(0, 2).toUpperCase()
 }
 function avatarColor(name) {
   const colors = ['#1A2E3A', '#2c7d63', '#3A9E7E', '#0891b2', '#E8631A', '#7c3aed', '#1d4ed8', '#16a34a', '#9a3412']
@@ -226,7 +227,6 @@ function avatarColor(name) {
   return colors[h % colors.length]
 }
 function lvlClass(l) { return l === 'High' ? 'bc-red' : l === 'Low' ? 'bc-grey' : 'bc-orange' }
-function teamList(p) { return (p.team || '').split(',').map(s => s.trim()).filter(Boolean) }
 
 const rankedPriorities = computed(() =>
   [...(plan.value?.priorities || [])].sort((a, b) => num(b.wsjf_score) - num(a.wsjf_score)))
