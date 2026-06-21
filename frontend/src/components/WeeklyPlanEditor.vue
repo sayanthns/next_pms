@@ -26,11 +26,11 @@
     <fieldset class="wpe-set"><legend>People (capacity → utilisation)</legend>
       <div class="wpe-rows">
         <div class="wpe-row a" v-for="(r, i) in form.allocations" :key="'a' + i">
-          <input v-model="r.member" placeholder="user@email" />
+          <select v-model="r.member" class="grow"><option value="">— person —</option><option v-for="u in users" :key="u.value" :value="u.value">{{ u.label }}</option></select>
           <input v-model="r.role" placeholder="role" />
           <input v-model.number="r.planned_hours" type="number" step="0.5" placeholder="planned" title="planned hours" />
           <input v-model.number="r.capacity_hours" type="number" step="1" placeholder="cap" title="capacity hours" />
-          <input v-model="r.tasks" placeholder="tasks (one per line in render; comma here)" />
+          <input v-model="r.tasks" class="grow" placeholder="tasks — one per line" />
           <button class="wpe-x" @click="form.allocations.splice(i, 1)" aria-label="remove">✕</button>
         </div>
       </div>
@@ -39,27 +39,36 @@
 
     <!-- Projects -->
     <fieldset class="wpe-set"><legend>Projects (RAG health)</legend>
-      <div class="wpe-rows">
-        <div class="wpe-row p" v-for="(r, i) in form.projects" :key="'p' + i">
-          <input v-model="r.project" placeholder="PMS Project name" />
-          <input v-model="r.focus" placeholder="this week's focus" />
-          <input v-model="r.teamText" placeholder="team emails, comma-sep" />
-          <input v-model="r.effort" placeholder="effort e.g. ~8h" />
-          <input v-model="r.status_label" placeholder="status" />
-          <select v-model="r.status_color"><option v-for="c in COLORS" :key="c" :value="c">{{ c }}</option></select>
-          <select v-model="r.health"><option value="">health</option><option>Green</option><option>Amber</option><option>Red</option></select>
-          <button class="wpe-x" @click="form.projects.splice(i, 1)" aria-label="remove">✕</button>
+      <div class="wpe-prows">
+        <div class="wpe-prow" v-for="(r, i) in form.projects" :key="'p' + i">
+          <div class="wpe-row">
+            <select v-model="r.project" class="grow"><option value="">— project —</option><option v-for="p in projects" :key="p.value" :value="p.value">{{ p.label }}</option></select>
+            <input v-model="r.focus" class="grow" placeholder="this week's focus" />
+            <input v-model="r.effort" placeholder="effort ~8h" />
+            <input v-model="r.status_label" placeholder="status" />
+            <select v-model="r.status_color"><option v-for="c in COLORS" :key="c" :value="c">{{ c }}</option></select>
+            <select v-model="r.health"><option value="">health</option><option>Green</option><option>Amber</option><option>Red</option></select>
+            <button class="wpe-x" @click="form.projects.splice(i, 1)" aria-label="remove">✕</button>
+          </div>
+          <div class="wpe-team">
+            <span class="wpe-teamlbl">Team:</span>
+            <span v-for="(m, j) in r.team" :key="j" class="wpe-teamsel">
+              <select v-model="r.team[j]"><option value="">—</option><option v-for="u in users" :key="u.value" :value="u.value">{{ u.label }}</option></select>
+              <button class="wpe-xs" @click="r.team.splice(j, 1)" aria-label="remove member">✕</button>
+            </span>
+            <button class="wpe-add sm" @click="r.team.push('')">+ member</button>
+          </div>
         </div>
       </div>
-      <button class="wpe-add" @click="form.projects.push({ project: '', focus: '', teamText: '', effort: '', status_label: '', status_color: 'green', health: '' })">+ project</button>
+      <button class="wpe-add" @click="form.projects.push({ project: '', focus: '', team: [], effort: '', status_label: '', status_color: 'green', health: '' })">+ project</button>
     </fieldset>
 
     <!-- Priorities -->
     <fieldset class="wpe-set"><legend>Priorities (WSJF — value/time/risk ÷ size)</legend>
       <div class="wpe-rows">
         <div class="wpe-row pr" v-for="(r, i) in form.priorities" :key="'pr' + i">
-          <input v-model="r.project" placeholder="project" />
-          <input v-model="r.note" placeholder="note" />
+          <input v-model="r.project" class="grow" placeholder="project / theme" />
+          <input v-model="r.note" class="grow" placeholder="note" />
           <input v-model.number="r.user_value" type="number" placeholder="val" title="user/biz value" />
           <input v-model.number="r.time_criticality" type="number" placeholder="time" title="time criticality" />
           <input v-model.number="r.risk_reduction" type="number" placeholder="risk" title="risk reduction" />
@@ -76,35 +85,36 @@
     <fieldset class="wpe-set"><legend>Watch list (RAID)</legend>
       <div class="wpe-rows">
         <div class="wpe-row w" v-for="(r, i) in form.watch_list" :key="'w' + i">
-          <input v-model="r.item" placeholder="watch item" />
+          <input v-model="r.item" class="grow" placeholder="watch item" />
           <select v-model="r.raid_type"><option>Risk</option><option>Assumption</option><option>Issue</option><option>Dependency</option></select>
           <select v-model="r.level"><option>High</option><option>Med</option><option>Low</option></select>
-          <input v-model="r.mitigation" placeholder="how we handle it" />
-          <input v-model="r.owner" placeholder="owner email" />
+          <input v-model="r.mitigation" class="grow" placeholder="how we handle it" />
+          <select v-model="r.owner"><option value="">— owner —</option><option v-for="u in users" :key="u.value" :value="u.value">{{ u.label }}</option></select>
           <button class="wpe-x" @click="form.watch_list.splice(i, 1)" aria-label="remove">✕</button>
         </div>
       </div>
       <button class="wpe-add" @click="form.watch_list.push({ item: '', raid_type: 'Risk', level: 'Med', mitigation: '', owner: '' })">+ watch</button>
     </fieldset>
 
-    <!-- Checklist + Closures -->
+    <!-- Checklist -->
     <fieldset class="wpe-set"><legend>Checklist</legend>
       <div class="wpe-rows">
         <div class="wpe-row c" v-for="(r, i) in form.checklist" :key="'c' + i">
           <input v-model="r.who" placeholder="who/when" />
-          <input v-model="r.item" placeholder="checklist item" />
+          <input v-model="r.item" class="grow" placeholder="checklist item" />
           <button class="wpe-x" @click="form.checklist.splice(i, 1)" aria-label="remove">✕</button>
         </div>
       </div>
       <button class="wpe-add" @click="form.checklist.push({ who: '', item: '' })">+ item</button>
     </fieldset>
 
+    <!-- Closures -->
     <fieldset class="wpe-set"><legend>Closures</legend>
       <div class="wpe-rows">
         <div class="wpe-row cl" v-for="(r, i) in form.closures" :key="'cl' + i">
-          <input v-model="r.project" placeholder="project" />
-          <input v-model="r.work" placeholder="this week" />
-          <input v-model="r.owner" placeholder="owner" />
+          <input v-model="r.project" class="grow" placeholder="project" />
+          <input v-model="r.work" class="grow" placeholder="this week" />
+          <select v-model="r.owner"><option value="">— owner —</option><option v-for="u in users" :key="u.value" :value="u.value">{{ u.label }}</option></select>
           <button class="wpe-x" @click="form.closures.splice(i, 1)" aria-label="remove">✕</button>
         </div>
       </div>
@@ -121,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { call } from '@/utils/frappe'
 
 const props = defineProps({ initial: { type: Object, default: null }, weeks: { type: Array, default: () => [] } })
@@ -132,6 +142,8 @@ const busy = ref(false)
 const msg = ref('')
 const msgType = ref('')
 const rollFrom = ref(null)
+const users = ref([])
+const projects = ref([])
 
 function blank() {
   return {
@@ -146,8 +158,7 @@ function hydrate(src) {
   for (const t of ['allocations', 'projects', 'priorities', 'watch_list', 'checklist', 'closures']) {
     if (!Array.isArray(f[t])) f[t] = []
   }
-  // projects: team_members -> teamText for editing
-  f.projects = f.projects.map(p => ({ ...p, teamText: (p.team_members || []).map(m => m.user).filter(Boolean).join(', ') }))
+  f.projects = f.projects.map(p => ({ ...p, team: (p.team_members || []).map(m => m.user).filter(Boolean) }))
   return f
 }
 const form = ref(hydrate(props.initial))
@@ -161,9 +172,9 @@ function buildPayload() {
   const f = JSON.parse(JSON.stringify(form.value))
   f.published = f.published ? 1 : 0
   f.projects = (f.projects || []).map(p => {
-    const team = (p.teamText || '').split(',').map(s => s.trim()).filter(Boolean).map(u => ({ user: u }))
-    const { teamText, ...rest } = p
-    return { ...rest, team_members: team }
+    const team_members = (p.team || []).filter(Boolean).map(u => ({ user: u }))
+    const { team, ...rest } = p
+    return { ...rest, team_members }
   })
   return f
 }
@@ -185,7 +196,7 @@ async function prefill() {
   try {
     const d = await call('next_pms.api.weekly_plan.prefill_week', { week_start: form.value.week_start })
     form.value.allocations = d.allocations || []
-    form.value.projects = (d.projects || []).map(p => ({ ...p, teamText: (p.team_members || []).map(m => m.user).join(', ') }))
+    form.value.projects = (d.projects || []).map(p => ({ ...p, team: (p.team_members || []).map(m => m.user) }))
     flash('Prefilled people + projects from PMS — edit the judgment bits.', 'ok')
   } catch (e) { flash((e && e.message) || 'Prefill failed.', 'err') }
   finally { busy.value = false }
@@ -203,6 +214,14 @@ async function rollForward() {
 }
 
 function flash(t, type) { msg.value = t; msgType.value = type }
+
+onMounted(async () => {
+  try {
+    const o = await call('next_pms.api.weekly_plan.get_form_options')
+    users.value = o.users || []
+    projects.value = o.projects || []
+  } catch (e) { /* options optional; fields still usable */ }
+})
 </script>
 
 <style scoped>
@@ -227,11 +246,19 @@ function flash(t, type) { msg.value = t; msgType.value = type }
 .wpe-msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 .wpe-set { border: 1px solid #eef2f0; border-radius: 10px; padding: 12px 14px; margin-top: 14px; }
 .wpe-set legend { font-size: 12px; font-weight: 800; color: #1A2E3A; padding: 0 6px; text-transform: uppercase; letter-spacing: .4px; }
-.wpe-rows { display: flex; flex-direction: column; gap: 6px; }
+.wpe-rows, .wpe-prows { display: flex; flex-direction: column; gap: 6px; }
+.wpe-prow { border: 1px solid #f0f3f1; border-radius: 8px; padding: 8px; background: #fbfdfc; }
 .wpe-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.wpe-row input { flex: 1; min-width: 80px; }
-.wpe-row.a input:nth-child(3), .wpe-row.a input:nth-child(4), .wpe-row.pr input[type=number] { flex: 0 0 70px; min-width: 56px; }
+.wpe-row input, .wpe-row select { flex: 0 0 auto; min-width: 70px; }
+.wpe-row .grow { flex: 1; min-width: 120px; }
+.wpe-row.a input:nth-of-type(2), .wpe-row.a input:nth-of-type(3), .wpe-row.pr input[type=number] { flex: 0 0 64px; min-width: 52px; }
+.wpe-team { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; padding-left: 2px; }
+.wpe-teamlbl { font-size: 11px; color: #94a3b8; font-weight: 600; }
+.wpe-teamsel { display: inline-flex; align-items: center; gap: 2px; }
+.wpe-teamsel select { border: 1px solid #d0d5dd; border-radius: 6px; padding: 4px 7px; font-size: 12px; }
 .wpe-wsjf { font-size: 11px; font-weight: 800; color: #2c7d63; background: #eef6f3; border: 1px solid #cfe7dd; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
 .wpe-x { flex: 0 0 auto; width: 26px; height: 26px; border: 1px solid #fbc4c4; background: #fef2f2; color: #b91c1c; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.wpe-xs { width: 18px; height: 18px; border: none; background: none; color: #b91c1c; cursor: pointer; font-size: 11px; }
 .wpe-add { margin-top: 8px; padding: 5px 11px; border: 1px dashed #cfe7dd; background: #f5faf8; color: #2c7d63; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.wpe-add.sm { margin-top: 0; padding: 3px 8px; }
 </style>

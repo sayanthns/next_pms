@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "project",
+  "project_name",
   "focus",
   "team_members",
   "effort",
@@ -21,6 +22,14 @@
    "label": "Project",
    "options": "PMS Project",
    "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "label": "Project Name",
+   "fetch_from": "project.project_name",
+   "read_only": 1,
    "in_list_view": 1
   },
   {

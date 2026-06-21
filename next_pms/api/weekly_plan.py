@@ -209,3 +209,21 @@ def save_week(payload):
 
     doc.save()
     return {"name": doc.name, "week_start": str(doc.week_start), "title": doc.title}
+
+
+@frappe.whitelist()
+def get_form_options():
+    """Manager-only. Dropdown options for the editor: PMS users + active projects."""
+    _require_manager()
+    users = frappe.db.sql(
+        "select distinct u.name, u.full_name from `tabUser` u "
+        "join `tabHas Role` r on r.parent = u.name "
+        "where u.enabled = 1 and r.role in %s order by u.full_name",
+        (("PMS Developer", "PMS Manager"),), as_dict=True)
+    projects = frappe.get_all("PMS Project", filters={"status": ["in", ACTIVE_PROJECT_STATUS]},
+                              fields=["name", "project_name"], order_by="project_name",
+                              ignore_permissions=True)
+    return {
+        "users": [{"value": u.name, "label": u.full_name or u.name} for u in users],
+        "projects": [{"value": p.name, "label": p.project_name or p.name} for p in projects],
+    }

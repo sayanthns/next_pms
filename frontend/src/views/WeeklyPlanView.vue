@@ -70,7 +70,7 @@
             <thead><tr><th>Project</th><th>Focus</th><th>Team</th><th class="r">Effort</th><th>Status</th><th>Health</th></tr></thead>
             <tbody>
               <tr v-for="p in plan.projects" :key="p.name || p.project">
-                <td class="wp-strong">{{ p.project }}</td>
+                <td class="wp-strong">{{ p.project_name || p.project }}</td>
                 <td>{{ p.focus }}</td>
                 <td><span v-for="(m, i) in (p.team_members || [])" :key="i" class="wp-chip">{{ initials(m.full_name || m.user) }}</span></td>
                 <td class="r">{{ p.effort }}</td>

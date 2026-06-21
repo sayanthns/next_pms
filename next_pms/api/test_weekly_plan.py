@@ -141,3 +141,17 @@ class TestSaveWeek(FrappeTestCase):
         self.assertEqual(out["intro"], "round-trip")
         self.assertEqual(out["allocations"][0]["member"], "Administrator")
         self.assertEqual(out["priorities"][0]["wsjf_score"], 7.0)  # (8+4+2)/2 recomputed on save
+
+
+class TestFormOptions(FrappeTestCase):
+    def test_requires_manager(self):
+        with patch.object(W, "_user_context", return_value=_ctx(is_developer=True)):
+            with self.assertRaises(frappe.PermissionError):
+                W.get_form_options()
+
+    def test_returns_users_and_projects_keys(self):
+        out = W.get_form_options()  # run-tests session = Administrator
+        self.assertIn("users", out)
+        self.assertIn("projects", out)
+        self.assertIsInstance(out["users"], list)
+        self.assertIsInstance(out["projects"], list)
