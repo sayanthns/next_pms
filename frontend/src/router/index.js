@@ -88,6 +88,11 @@ const routes = [
     meta: { requiresAnalytics: true },
   },
   {
+    path: "/weekly-plan",
+    name: "WeeklyPlan",
+    component: () => import("@/views/WeeklyPlanView.vue"),
+  },
+  {
     path: "/reports/:projectId",
     name: "ProjectReports",
     component: ReportsView,

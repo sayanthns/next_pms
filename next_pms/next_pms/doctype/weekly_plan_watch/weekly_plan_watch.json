@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "creation": "2026-06-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item",
+  "raid_type",
+  "level",
+  "mitigation",
+  "owner"
+ ],
+ "fields": [
+  {
+   "fieldname": "item",
+   "fieldtype": "Small Text",
+   "label": "Watch Item",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "raid_type",
+   "fieldtype": "Select",
+   "label": "RAID",
+   "options": "Risk\nAssumption\nIssue\nDependency",
+   "default": "Risk",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "label": "Level",
+   "options": "High\nMed\nLow",
+   "default": "Med",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "mitigation",
+   "fieldtype": "Small Text",
+   "label": "How We Handle It"
+  },
+  {
+   "fieldname": "owner",
+   "fieldtype": "Link",
+   "label": "Owner",
+   "options": "User"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Next PMS",
+ "name": "Weekly Plan Watch",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "creation": "2026-06-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "project",
+  "work",
+  "owner",
+  "status_label"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Data",
+   "label": "Project",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "work",
+   "fieldtype": "Data",
+   "label": "This Week",
+   "default": "Final sign-off + handover"
+  },
+  {
+   "fieldname": "owner",
+   "fieldtype": "Data",
+   "label": "Owner",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status_label",
+   "fieldtype": "Data",
+   "label": "Status",
+   "default": "Closure"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Next PMS",
+ "name": "Weekly Plan Closure",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

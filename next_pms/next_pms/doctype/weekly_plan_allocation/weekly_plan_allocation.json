@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "creation": "2026-06-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "member",
+  "display_name",
+  "role",
+  "planned_hours",
+  "capacity_hours",
+  "tasks"
+ ],
+ "fields": [
+  {
+   "fieldname": "member",
+   "fieldtype": "Link",
+   "label": "Member",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "fetch_from": "member.full_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Data",
+   "label": "Role",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "planned_hours",
+   "fieldtype": "Float",
+   "label": "Planned Hours",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "capacity_hours",
+   "fieldtype": "Float",
+   "label": "Capacity Hours",
+   "default": "40",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "tasks",
+   "fieldtype": "Small Text",
+   "label": "Tasks",
+   "description": "One chip per line. Prefix ** = key, ! = hard deadline, ~ = provisional."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Next PMS",
+ "name": "Weekly Plan Allocation",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

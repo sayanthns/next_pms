@@ -1,0 +1,190 @@
+{
+ "actions": [],
+ "creation": "2026-06-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "week_start",
+  "week_end",
+  "title",
+  "published",
+  "intro",
+  "headline_note",
+  "sec_people",
+  "allocations",
+  "sec_projects",
+  "projects",
+  "closures",
+  "sec_priorities",
+  "priorities",
+  "watch_list",
+  "sec_checklist",
+  "checklist",
+  "sec_narrative",
+  "working_notes",
+  "week_shape",
+  "meetings_note"
+ ],
+ "fields": [
+  {
+   "fieldname": "week_start",
+   "fieldtype": "Date",
+   "label": "Week Start (Monday)",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "week_end",
+   "fieldtype": "Date",
+   "label": "Week End",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "published",
+   "fieldtype": "Check",
+   "label": "Published",
+   "default": "1"
+  },
+  {
+   "fieldname": "intro",
+   "fieldtype": "Small Text",
+   "label": "Intro"
+  },
+  {
+   "fieldname": "headline_note",
+   "fieldtype": "Data",
+   "label": "Headline Note"
+  },
+  {
+   "fieldname": "sec_people",
+   "fieldtype": "Section Break",
+   "label": "People"
+  },
+  {
+   "fieldname": "allocations",
+   "fieldtype": "Table",
+   "label": "Allocations",
+   "options": "Weekly Plan Allocation"
+  },
+  {
+   "fieldname": "sec_projects",
+   "fieldtype": "Section Break",
+   "label": "Projects"
+  },
+  {
+   "fieldname": "projects",
+   "fieldtype": "Table",
+   "label": "Projects",
+   "options": "Weekly Plan Project"
+  },
+  {
+   "fieldname": "closures",
+   "fieldtype": "Table",
+   "label": "Closures",
+   "options": "Weekly Plan Closure"
+  },
+  {
+   "fieldname": "sec_priorities",
+   "fieldtype": "Section Break",
+   "label": "Priorities & Watch"
+  },
+  {
+   "fieldname": "priorities",
+   "fieldtype": "Table",
+   "label": "Priorities",
+   "options": "Weekly Plan Priority"
+  },
+  {
+   "fieldname": "watch_list",
+   "fieldtype": "Table",
+   "label": "Watch List",
+   "options": "Weekly Plan Watch"
+  },
+  {
+   "fieldname": "sec_checklist",
+   "fieldtype": "Section Break",
+   "label": "Checklist"
+  },
+  {
+   "fieldname": "checklist",
+   "fieldtype": "Table",
+   "label": "Checklist",
+   "options": "Weekly Plan Checklist"
+  },
+  {
+   "fieldname": "sec_narrative",
+   "fieldtype": "Section Break",
+   "label": "Narrative"
+  },
+  {
+   "fieldname": "working_notes",
+   "fieldtype": "Text Editor",
+   "label": "How We're Working"
+  },
+  {
+   "fieldname": "week_shape",
+   "fieldtype": "Text Editor",
+   "label": "Week Shape"
+  },
+  {
+   "fieldname": "meetings_note",
+   "fieldtype": "Text Editor",
+   "label": "Meetings & Closures Note"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 0,
+ "links": [],
+ "modified": "2026-06-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Next PMS",
+ "name": "Weekly Plan",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "share": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "PMS Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1,
+   "email": 1
+  },
+  {
+   "role": "PMS Developer",
+   "read": 1,
+   "report": 1,
+   "export": 1,
+   "print": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:week_start"
+}

@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "creation": "2026-06-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "project",
+  "focus",
+  "team_members",
+  "effort",
+  "status_label",
+  "status_color",
+  "health",
+  "health_reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "PMS Project",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "focus",
+   "fieldtype": "Data",
+   "label": "This Week's Focus",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "team_members",
+   "fieldtype": "Table",
+   "label": "Team",
+   "options": "Weekly Plan Project Member"
+  },
+  {
+   "fieldname": "effort",
+   "fieldtype": "Data",
+   "label": "Effort"
+  },
+  {
+   "fieldname": "status_label",
+   "fieldtype": "Data",
+   "label": "Status",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "status_color",
+   "fieldtype": "Select",
+   "label": "Status Color",
+   "options": "red\norange\ngreen\nblue\ngrey",
+   "default": "green"
+  },
+  {
+   "fieldname": "health",
+   "fieldtype": "Select",
+   "label": "Health (RAG)",
+   "options": "\nGreen\nAmber\nRed"
+  },
+  {
+   "fieldname": "health_reason",
+   "fieldtype": "Data",
+   "label": "Health Reason"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Next PMS",
+ "name": "Weekly Plan Project",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
