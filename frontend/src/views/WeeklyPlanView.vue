@@ -140,8 +140,8 @@
         <p class="wp-secsub">Tick as you go (saved in your browser).</p>
         <ul class="wp-cklist">
           <li v-for="(item, i) in plan.checklist" :key="i">
-            <label class="wp-ck" :class="{ done: checks[ckKey(i)] }">
-              <input type="checkbox" v-model="checks[ckKey(i)]" @change="saveChecks" />
+            <label class="wp-ck" :class="{ done: isChecked(i) }">
+              <input type="checkbox" :checked="isChecked(i)" @change="toggleCheck(i, $event)" />
               <span class="wp-ckbox" aria-hidden="true">✓</span>
               <span class="wp-cklbl"><span class="wp-ckwho" v-if="item.who">{{ item.who }}</span>{{ item.item }}</span>
             </label>
@@ -232,6 +232,11 @@ const rankedPriorities = computed(() =>
   [...(plan.value?.priorities || [])].sort((a, b) => num(b.wsjf_score) - num(a.wsjf_score)))
 
 function ckKey(i) { return (selectedWeek.value || 'wk') + ':' + i }
+function isChecked(i) { return !!checks.value[ckKey(i)] }
+function toggleCheck(i, e) {
+  checks.value = { ...checks.value, [ckKey(i)]: !!(e && e.target && e.target.checked) }
+  saveChecks()
+}
 function saveChecks() { try { localStorage.setItem('wp-checks', JSON.stringify(checks.value)) } catch (e) {} }
 function loadChecks() { try { checks.value = JSON.parse(localStorage.getItem('wp-checks') || '{}') } catch (e) { checks.value = {} } }
 
