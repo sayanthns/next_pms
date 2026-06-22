@@ -16,22 +16,44 @@ syncMobileClass();
 window.addEventListener("resize", syncMobileClass);
 window.addEventListener("orientationchange", syncMobileClass);
 
-// Native-only on-screen error catcher: if the app fails to render (blank screen
-// on a phone with no devtools), show the error text in #app so it can be reported.
+// On-screen error catcher (web + native). Vue render/update errors otherwise blank
+// the page with no devtools; show the real stack on a dismissible overlay so it can
+// be read/reported, and act as a graceful error boundary. Built with safe DOM
+// methods (textContent) — no innerHTML.
 function showFatal(msg) {
-  const el = document.getElementById("app");
-  if (el && el.childElementCount === 0) {
-    el.innerHTML =
-      '<pre style="padding:16px;white-space:pre-wrap;font-size:13px;color:#b00020;">' +
-      "Next PMS failed to start:\n\n" + String(msg) + "</pre>";
-  }
+  try {
+    const id = "wp-fatal-overlay";
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement("div");
+      el.id = id;
+      el.style.cssText =
+        "position:fixed;inset:0;z-index:99999;background:#fff;overflow:auto;padding:16px;font-family:monospace";
+      document.body.appendChild(el);
+    }
+    el.textContent = "";
+    const h = document.createElement("h3");
+    h.textContent = "Next PMS error (captured)";
+    h.style.cssText = "color:#b00020;margin:0 0 8px";
+    const pre = document.createElement("pre");
+    pre.textContent = String(msg);
+    pre.style.cssText = "white-space:pre-wrap;font-size:12px;color:#b00020;line-height:1.45";
+    const btn = document.createElement("button");
+    btn.textContent = "Dismiss";
+    btn.style.cssText = "margin-top:10px;padding:6px 14px;cursor:pointer";
+    btn.addEventListener("click", () => el.remove());
+    el.appendChild(h);
+    el.appendChild(pre);
+    el.appendChild(btn);
+  } catch (e) { /* ignore */ }
 }
-if (isNative()) {
-  window.addEventListener("error", (e) => showFatal(e.message || e.error || e));
-  window.addEventListener("unhandledrejection", (e) => showFatal(e.reason || e));
-}
+window.addEventListener("error", (e) => showFatal((e.error && e.error.stack) || e.message || e));
+window.addEventListener("unhandledrejection", (e) => showFatal((e.reason && e.reason.stack) || e.reason));
 
 const app = createApp(App);
+app.config.errorHandler = (err, instance, info) => {
+  showFatal((err && err.stack ? err.stack : err) + "\n\n[vue:" + info + "]");
+};
 app.use(createPinia());
 app.use(router);
 initNativeAuth()
