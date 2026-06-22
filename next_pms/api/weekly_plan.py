@@ -223,6 +223,15 @@ def save_week(payload):
 
 
 @frappe.whitelist()
+def log_client_error(message=None, url=None):
+    """Capture a frontend JS error server-side (Error Log) so blank-screen crashes are
+    diagnosable without the browser console. Logged-in users only."""
+    frappe.log_error(message=(str(message) or "")[:5000],
+                     title="PMS Client Error " + (str(url or "")[:80]))
+    return {"ok": True}
+
+
+@frappe.whitelist()
 def get_form_options():
     """Manager-only. Dropdown options for the editor: PMS users + active projects."""
     _require_manager()

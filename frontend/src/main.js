@@ -21,6 +21,17 @@ window.addEventListener("orientationchange", syncMobileClass);
 // be read/reported, and act as a graceful error boundary. Built with safe DOM
 // methods (textContent) — no innerHTML.
 function showFatal(msg) {
+  // Report server-side (deduped) so crashes are diagnosable from the Error Log.
+  try {
+    if (!window.__reported) window.__reported = {};
+    const key = String(msg).slice(0, 200);
+    if (!window.__reported[key]) {
+      window.__reported[key] = 1;
+      import("@/utils/frappe")
+        .then((m) => m.call("next_pms.api.weekly_plan.log_client_error", { message: String(msg).slice(0, 4000), url: location.href }))
+        .catch(() => {});
+    }
+  } catch (e) { /* ignore */ }
   try {
     const id = "wp-fatal-overlay";
     let el = document.getElementById(id);
