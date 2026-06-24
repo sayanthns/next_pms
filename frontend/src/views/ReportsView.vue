@@ -504,7 +504,7 @@ const hlTaskType = ref('')
 const hlReport = ref(null)
 const hlLoading = ref(false)
 const hlUserOptions = ref([])
-const taskTypeOptions = ['Feature', 'Bug', 'Improvement', 'Research', 'Documentation', 'Meeting', 'Bench Task', 'R&D Task', 'Support']
+const taskTypeOptions = ['Feature', 'Bug', 'Improvement', 'Research', 'Documentation', 'Meeting', 'Bench Task', 'R&D Task', 'Support', 'Print Format', 'Internal Meeting']
 
 const taskTypeColorMap = {
   'Feature': '#2563EB',
@@ -516,6 +516,8 @@ const taskTypeColorMap = {
   'Bench Task': '#14b8a6',
   'R&D Task': '#ec4899',
   'Support': '#f97316',
+  'Print Format': '#0891b2',
+  'Internal Meeting': '#b45309',
   'Uncategorized': '#9ca3af',
 }
 

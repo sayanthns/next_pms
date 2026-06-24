@@ -101,7 +101,7 @@
             "fieldname": "task_type",
             "fieldtype": "Select",
             "label": "Task Type",
-            "options": "Feature\nBug\nImprovement\nResearch\nDocumentation\nMeeting\nBench Task\nR&D Task\nSupport\nSupport Ticket",
+            "options": "Feature\nBug\nImprovement\nResearch\nDocumentation\nMeeting\nBench Task\nR&D Task\nSupport\nSupport Ticket\nPrint Format\nInternal Meeting",
             "default": "Feature"
         },
         {

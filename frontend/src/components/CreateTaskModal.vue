@@ -133,6 +133,8 @@
           <option value="R&D Task">R&amp;D Task</option>
           <option value="Support">Support</option>
           <option value="Support Ticket">Support Ticket</option>
+          <option value="Print Format">Print Format</option>
+          <option value="Internal Meeting">Internal Meeting</option>
         </select>
       </div>
 

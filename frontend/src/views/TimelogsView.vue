@@ -60,6 +60,8 @@
           <option value="Bench Task">Bench Task</option>
           <option value="R&D Task">R&amp;D Task</option>
           <option value="Support">Support</option>
+          <option value="Print Format">Print Format</option>
+          <option value="Internal Meeting">Internal Meeting</option>
         </select>
         <input v-model="filters.from_date" type="date" class="filter-input" @change="fetchLogs" placeholder="From" />
         <input v-model="filters.to_date" type="date" class="filter-input" @change="fetchLogs" placeholder="To" />
