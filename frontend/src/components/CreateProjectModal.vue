@@ -21,8 +21,15 @@
       </div>
 
       <div class="form-group">
+        <label class="form-checkbox">
+          <input type="checkbox" v-model="form.is_internal" />
+          <span>Internal project (no client / sales order)</span>
+        </label>
+      </div>
+
+      <div class="form-group" v-if="!form.is_internal">
         <label class="form-label">Client <span class="required">*</span></label>
-        <select v-model="form.client" class="form-input" required>
+        <select v-model="form.client" class="form-input" :required="!form.is_internal">
           <option value="" disabled>Select a client</option>
           <option
             v-for="c in customers"
@@ -34,9 +41,9 @@
         </select>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" v-if="!form.is_internal">
         <label class="form-label">Sales Order <span class="required">*</span></label>
-        <select v-model="form.sales_order" class="form-input" required>
+        <select v-model="form.sales_order" class="form-input" :required="!form.is_internal">
           <option value="" disabled>Select a sales order</option>
           <option v-for="so in salesOrders" :key="so.name" :value="so.name">
             {{ so.name }} — {{ so.customer }} ({{ so.grand_total }})
@@ -76,15 +83,15 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Total Budget <span class="required">*</span></label>
+        <label class="form-label">Total Budget <span class="required" v-if="!form.is_internal">*</span></label>
         <input
           v-model.number="form.total_budget"
           type="number"
           class="form-input"
           placeholder="0.00"
-          min="0.01"
+          min="0"
           step="0.01"
-          required
+          :required="!form.is_internal"
         />
       </div>
 
@@ -122,6 +129,7 @@ const form = ref(getDefaultForm())
 function getDefaultForm() {
   return {
     project_name: '',
+    is_internal: false,
     client: '',
     sales_order: '',
     department: '',
@@ -184,27 +192,30 @@ watch(() => props.show, (val) => {
 
 async function handleSubmit() {
   if (!form.value.project_name.trim()) return
-  if (!form.value.client) return
-  if (!form.value.total_budget || form.value.total_budget <= 0) {
-    alert('Total Budget is required and must be greater than 0')
-    return
-  }
-  if (!form.value.sales_order) {
-    alert('Sales Order is required')
-    return
+  if (!form.value.is_internal) {
+    if (!form.value.client) return
+    if (!form.value.total_budget || form.value.total_budget <= 0) {
+      alert('Total Budget is required and must be greater than 0')
+      return
+    }
+    if (!form.value.sales_order) {
+      alert('Sales Order is required')
+      return
+    }
   }
   saving.value = true
   try {
     const result = await call('next_pms.api.crud.create_project', {
       project_name: form.value.project_name.trim(),
-      client: form.value.client,
+      is_internal: form.value.is_internal ? 1 : 0,
+      client: form.value.is_internal ? null : form.value.client,
       status: form.value.status,
       start_date: form.value.start_date || null,
       end_date: form.value.end_date || null,
       total_budget: form.value.total_budget || 0,
       description: form.value.description || null,
       department: form.value.department || null,
-      sales_order: form.value.sales_order,
+      sales_order: form.value.is_internal ? null : form.value.sales_order,
     })
     emit('created', result)
   } catch (e) {
@@ -236,6 +247,21 @@ async function handleSubmit() {
 
 .required {
   color: var(--color-danger);
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.form-checkbox input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 .form-input {

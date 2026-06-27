@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "project_name",
+  "is_internal",
   "client",
   "department",
   "project_manager",
@@ -38,12 +39,19 @@
    "reqd": 1
   },
   {
+   "fieldname": "is_internal",
+   "fieldtype": "Check",
+   "label": "Internal Project",
+   "description": "Internal/R&D project with no client or sales order. Client, Sales Order and Budget become optional.",
+   "default": "0"
+  },
+  {
    "fieldname": "client",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Client",
    "options": "Customer",
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.is_internal"
   },
   {
    "fieldname": "department",
@@ -106,7 +114,8 @@
    "fieldname": "sales_order",
    "fieldtype": "Link",
    "options": "Sales Order",
-   "label": "Sales Order"
+   "label": "Sales Order",
+   "mandatory_depends_on": "eval:!doc.is_internal"
   },
   {
    "fieldname": "total_budget",

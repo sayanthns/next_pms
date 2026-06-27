@@ -9,19 +9,25 @@ from frappe.utils import flt
 
 class PMSProject(Document):
 	def validate(self):
+		self.validate_client()
 		self.validate_budget()
 		self.validate_sales_order()
 		self.calculate_project_cost()
 		self.validate_dates()
 
+	def validate_client(self):
+		# Client is mandatory for client projects; internal projects have no client.
+		if not self.is_internal and not self.client:
+			frappe.throw(_("Client is required"))
+
 	def validate_budget(self):
-		# Mandatory only on new projects; existing budget-less projects are grandfathered.
-		if self.is_new() and flt(self.total_budget) <= 0:
+		# Mandatory only on new client projects; internal + existing projects grandfathered.
+		if self.is_new() and not self.is_internal and flt(self.total_budget) <= 0:
 			frappe.throw(_("Total Budget is required and must be greater than 0"))
 
 	def validate_sales_order(self):
-		# Mandatory only on new projects; existing projects grandfathered.
-		if self.is_new() and not self.sales_order:
+		# Mandatory only on new client projects; internal + existing projects grandfathered.
+		if self.is_new() and not self.is_internal and not self.sales_order:
 			frappe.throw(_("Sales Order is required"))
 
 	def validate_dates(self):

@@ -1,7 +1,7 @@
 import frappe
 import json
 import random
-from frappe.utils import today, now_datetime, add_to_date, flt
+from frappe.utils import today, now_datetime, add_to_date, flt, cint
 
 from next_pms.api.permissions import is_admin_user, get_current_user_feature_permissions
 
@@ -481,7 +481,7 @@ def update_project_member(project, user, role=None, hourly_rate=None):
 @frappe.whitelist()
 def create_project(
     project_name,
-    client,
+    client=None,
     status="Planning",
     start_date=None,
     end_date=None,
@@ -490,8 +490,10 @@ def create_project(
     project_manager=None,
     department=None,
     sales_order=None,
+    is_internal=0,
 ):
-    """Create a new PMS Project and return its name."""
+    """Create a new PMS Project and return its name.
+    Internal projects (is_internal) skip client/sales-order/budget requirements."""
     feature_perms = get_current_user_feature_permissions()
     if feature_perms.get("create_project") is False:
         frappe.throw("You do not have permission to create projects.", frappe.PermissionError)
@@ -500,7 +502,8 @@ def create_project(
         {
             "doctype": "PMS Project",
             "project_name": project_name,
-            "client": client,
+            "is_internal": cint(is_internal),
+            "client": client or None,
             "status": status,
             "start_date": start_date or today(),
             "end_date": end_date,
@@ -508,7 +511,7 @@ def create_project(
             "total_budget": total_budget or 0,
             "project_manager": project_manager or frappe.session.user,
             "department": department,
-            "sales_order": sales_order,
+            "sales_order": sales_order or None,
         }
     )
     doc.insert()
