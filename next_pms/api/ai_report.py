@@ -2,7 +2,7 @@ import frappe
 import json
 import requests
 from frappe import _
-from frappe.utils import today, now_datetime, getdate, format_date, add_days
+from frappe.utils import today, now_datetime, getdate, format_date, add_days, flt
 from next_pms.utils import get_pms_url
 from next_pms.api._hours import compute_target_hours, compute_utilization
 from collections import defaultdict
