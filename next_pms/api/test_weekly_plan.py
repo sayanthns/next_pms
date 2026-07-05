@@ -87,7 +87,7 @@ class TestPrefillRollForward(FrappeTestCase):
             if doctype == "PMS Project Member":
                 return ["dev@x.com"]            # pluck=user
             if doctype == "PMS Task":
-                return [{"assigned_to": "dev@x.com", "task_title": "T1", "estimated_hours": 8}]
+                return [{"assigned_to": "dev@x.com", "project": "Alpha", "estimated_hours": 8}]
             return []
         with patch.object(W, "_user_context", return_value=_ctx(is_manager=True)), \
              patch.object(frappe, "get_all", side_effect=ga), \
@@ -98,9 +98,9 @@ class TestPrefillRollForward(FrappeTestCase):
         self.assertEqual(out["projects"][0]["effort"], "8h")
         self.assertEqual(out["projects"][0]["team"], "dev@x.com")
         self.assertEqual(out["allocations"][0]["member"], "dev@x.com")
+        self.assertEqual(out["allocations"][0]["project"], "Alpha")
         self.assertEqual(out["allocations"][0]["planned_hours"], 8.0)
         self.assertEqual(out["allocations"][0]["capacity_hours"], 40)
-        self.assertIn("T1 8h", out["allocations"][0]["tasks"])
 
     def test_roll_forward_drops_closed_and_strips_ids(self):
         src = {
@@ -143,6 +143,21 @@ class TestSaveWeek(FrappeTestCase):
         self.assertEqual(out["intro"], "round-trip")
         self.assertEqual(out["allocations"][0]["member"], "Administrator")
         self.assertEqual(out["priorities"][0]["wsjf_score"], 7.0)  # (8+4+2)/2 recomputed on save
+
+    def test_save_persists_zero_hour_roster_and_capacity(self):
+        # matrix builder emits a 0h, project-less roster marker so a benched person's
+        # capacity/name survives save->reload (regression: was silently dropped)
+        import json as _json
+        payload = {
+            "week_start": "2026-07-20", "published": 1,
+            "allocations": [{"member": "Administrator", "planned_hours": 0, "capacity_hours": 25}],
+        }
+        W.save_week(_json.dumps(payload))
+        out = W.get_week("2026-07-20")
+        self.assertEqual(len(out["allocations"]), 1)
+        self.assertEqual(out["allocations"][0]["member"], "Administrator")
+        self.assertEqual(out["allocations"][0]["capacity_hours"], 25)
+        self.assertEqual(out["allocations"][0]["planned_hours"], 0)
 
 
 class TestFormOptions(FrappeTestCase):

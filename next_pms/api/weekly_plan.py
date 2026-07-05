@@ -153,20 +153,18 @@ def prefill_week(week_start=None):
             "team": ",".join([u for u in members if u]),
         })
 
+    # one row per (project, assignee) — matches the matrix builder's per-cell model
     tasks = frappe.get_all("PMS Task", filters={"status": ["!=", "Done"], "assigned_to": ["is", "set"]},
-                           fields=["assigned_to", "task_title", "estimated_hours"],
+                           fields=["assigned_to", "project", "estimated_hours"],
                            ignore_permissions=True)
-    by_user = {}
+    by_cell = {}
     for t in tasks:
-        u = t["assigned_to"]
-        d = by_user.setdefault(u, {"member": u, "planned_hours": 0.0, "lines": []})
-        d["planned_hours"] += flt(t["estimated_hours"])
-        if len(d["lines"]) < 12:
-            hr = _h(t["estimated_hours"])
-            d["lines"].append((t["task_title"] or "Task") + (" " + hr if hr else ""))
-    allocations = [{"member": d["member"], "planned_hours": round(d["planned_hours"], 2),
-                    "capacity_hours": 40, "tasks": "\n".join(d["lines"])}
-                   for d in by_user.values()]
+        if not t.get("project"):
+            continue
+        k = (t["project"], t["assigned_to"])
+        by_cell[k] = by_cell.get(k, 0.0) + flt(t["estimated_hours"])
+    allocations = [{"project": p, "member": m, "planned_hours": round(h, 2), "capacity_hours": 40}
+                   for (p, m), h in by_cell.items()]
 
     return {"week_start": week_start, "allocations": allocations, "projects": projects}
 
