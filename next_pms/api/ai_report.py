@@ -86,6 +86,7 @@ def get_daily_report_data(report_date=None):
         "process_mining": r["process_mining"],
         "time_patterns": r["time_patterns"],
         "project_summary": r["project_summary"],
+        "meetings": r["meetings"],
     }
 
 
@@ -150,6 +151,37 @@ def _get_recipients(settings):
     return recipients
 
 
+def _get_meeting_summary(report_date):
+    """Client-meeting analysis for the day + weekly compliance.
+    today: counts by status for meetings on report_date.
+    no_meeting_this_week: active projects with a planned cadence but no Held meeting
+    Mon..report_date."""
+    rd = getdate(report_date)
+    week_start = str(add_days(rd, -rd.weekday()))
+    today = frappe.get_all("PMS Meeting", filters={"meeting_date": str(rd)},
+                           fields=["project", "meeting_type", "status", "coordinator"],
+                           ignore_permissions=True)
+    counts = {"planned": 0, "held": 0, "missed": 0, "rescheduled": 0, "cancelled": 0}
+    for m in today:
+        k = (m.status or "").lower()
+        if k in counts:
+            counts[k] += 1
+
+    no_meeting = []
+    projects = frappe.get_all("PMS Project", filters={"status": ["in", ("Planning", "Active", "On Hold")]},
+                              fields=["name", "project_name"], ignore_permissions=True)
+    for p in projects:
+        if not frappe.db.exists("PMS Project Meeting Day",
+                                {"parent": p["name"], "parenttype": "PMS Project"}):
+            continue
+        held = frappe.db.count("PMS Meeting", {"project": p["name"], "status": "Held",
+                               "meeting_date": ["between", [week_start, str(rd)]]})
+        if not held:
+            no_meeting.append(p.get("project_name") or p["name"])
+    return {"date": str(rd), "today_counts": counts, "today": today,
+            "no_meeting_this_week": no_meeting}
+
+
 def _build_report(report_date, settings, detail_level=None):
     """Gather all metrics for report_date and run the LLM analysis.
     No email, no permission check. Reused by the email job and the view endpoint.
@@ -162,6 +194,7 @@ def _build_report(report_date, settings, detail_level=None):
     process_mining = _get_process_mining_data(report_date)
     time_patterns = _get_time_patterns(report_date)
     project_summary = _get_project_summary(report_date)
+    meetings = _get_meeting_summary(report_date)
 
     full_data = {
         "date": report_date,
@@ -170,6 +203,7 @@ def _build_report(report_date, settings, detail_level=None):
         "process_mining": process_mining,
         "time_patterns": time_patterns,
         "project_summary": project_summary,
+        "meetings": meetings,
     }
 
     ai_parsed = None
@@ -192,6 +226,7 @@ def _build_report(report_date, settings, detail_level=None):
         "process_mining": process_mining,
         "time_patterns": time_patterns,
         "project_summary": project_summary,
+        "meetings": meetings,
     }
 
 
@@ -764,6 +799,7 @@ def _send_report_email(recipients, full_data, ai_parsed, ai_raw, user_metrics,
             "process_mining": process_mining,
             "time_patterns": time_patterns,
             "project_summary": project_summary,
+            "meetings": full_data.get("meetings"),
         },
     )
 

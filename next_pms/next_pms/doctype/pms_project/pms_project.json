@@ -28,7 +28,10 @@
   "client_portal_password",
   "report_section",
   "auto_send_report",
-  "report_recipients"
+  "report_recipients",
+  "meetings_section",
+  "meeting_days",
+  "meeting_coordinator"
  ],
  "fields": [
   {
@@ -176,6 +179,24 @@
    "fieldname": "report_recipients",
    "fieldtype": "Small Text",
    "label": "Report Recipients"
+  },
+  {
+   "fieldname": "meetings_section",
+   "fieldtype": "Section Break",
+   "label": "Meetings"
+  },
+  {
+   "fieldname": "meeting_days",
+   "fieldtype": "Table MultiSelect",
+   "label": "Weekly Meeting Day(s)",
+   "options": "PMS Project Meeting Day",
+   "description": "Pre-scheduled client meeting cadence (e.g. Daily, or Tue + Thu)."
+  },
+  {
+   "fieldname": "meeting_coordinator",
+   "fieldtype": "Link",
+   "label": "Meeting Coordinator",
+   "options": "User"
   }
  ],
  "index_web_pages_for_search": 1,

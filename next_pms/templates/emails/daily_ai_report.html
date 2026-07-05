@@ -282,6 +282,24 @@
   </div>
   {% endif %}
 
+  <!-- ─── Client Meetings ─── -->
+  {% if meetings %}
+  <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
+    <div style="font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 12px;">Client Meetings</div>
+    <div style="font-size: 13px; color: #374151; margin-bottom: 10px;">
+      Today —
+      <b>{{ meetings.today_counts.held }}</b> held ·
+      <b>{{ meetings.today_counts.planned }}</b> planned ·
+      <b style="color:#b91c1c;">{{ meetings.today_counts.missed }}</b> missed
+    </div>
+    {% if meetings.no_meeting_this_week %}
+    <div style="font-size: 12.5px; color: #9a3412; background:#fff7ed; border:1px solid #fcd9b6; border-radius:8px; padding:8px 12px;">
+      No client meeting held this week: {{ meetings.no_meeting_this_week | join(", ") }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <!-- ─── Project Summary ─── -->
   {% if project_summary %}
   <div style="border: 1px solid #e5e7eb; border-top: none; padding: 24px 32px;">
