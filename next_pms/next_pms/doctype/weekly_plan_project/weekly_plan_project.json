@@ -8,6 +8,7 @@
   "project",
   "project_name",
   "focus",
+  "target_hours",
   "team",
   "effort",
   "status_label",
@@ -36,6 +37,12 @@
    "fieldname": "focus",
    "fieldtype": "Data",
    "label": "This Week's Focus",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "target_hours",
+   "fieldtype": "Float",
+   "label": "Target Hours",
    "in_list_view": 1
   },
   {

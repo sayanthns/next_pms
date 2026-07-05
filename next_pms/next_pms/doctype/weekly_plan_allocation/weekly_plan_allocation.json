@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "project",
   "member",
   "display_name",
   "role",
@@ -13,6 +14,13 @@
   "tasks"
  ],
  "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "PMS Project",
+   "in_list_view": 1
+  },
   {
    "fieldname": "member",
    "fieldtype": "Link",

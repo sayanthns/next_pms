@@ -2,7 +2,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import flt, cint
+from frappe.utils import flt, cint, getdate, nowdate
 
 ACTIVE_PROJECT_STATUS = ("Planning", "Active", "On Hold")
 CLOSED_PROJECT_STATUS = ("Completed", "Cancelled")
@@ -33,6 +33,17 @@ def _user_context():
     return {"is_admin": is_admin, "is_manager": is_manager,
             "is_developer": is_developer, "is_customer": is_customer,
             "user": frappe.session.user}
+
+
+def get_plan_for_date(date=None):
+    """Return the Weekly Plan name whose week contains `date` (else latest <= date)."""
+    d = getdate(date or nowdate())
+    name = frappe.db.get_value("Weekly Plan",
+        {"week_start": ["<=", str(d)], "week_end": [">=", str(d)]}, "name")
+    if not name:
+        name = frappe.db.get_value("Weekly Plan", {"week_start": ["<=", str(d)]},
+            "name", order_by="week_start desc")
+    return name
 
 
 def _resolve_name(week_start=None):

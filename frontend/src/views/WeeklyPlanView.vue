@@ -14,10 +14,9 @@
             <option v-for="w in weeks" :key="w.name" :value="w.week_start">{{ w.title || w.week_start }}</option>
           </select>
         </template>
-        <template v-if="canEdit && !editing">
-          <button class="wp-editbtn" v-if="plan" @click="startEdit">Edit</button>
-          <button class="wp-editbtn primary" @click="startNew">New week</button>
-        </template>
+        <!-- Read-only viewer: the Weekly Plan is now managed in the Frappe desk
+             (PMS Project + Weekly Plan doctype). Editing removed from the SPA. -->
+        <span v-if="plan" class="wp-readonly">Read-only · edit in desk</span>
       </div>
     </header>
 
@@ -272,6 +271,7 @@ onMounted(async () => { loadChecks(); await loadWeeks(); await loadWeek() })
 .wp-editbtn:hover { background: #f5f7fa; }
 .wp-editbtn.primary { background: #3A9E7E; color: #fff; border-color: #2c7d63; }
 .wp-editbtn:focus-visible { outline: 2px solid #3A9E7E; outline-offset: 1px; }
+.wp-readonly { font-size: 12px; color: #94a3b8; font-weight: 600; padding: 8px 4px; }
 
 .wp-error { background: #fef2f2; border: 1px solid #fda29b; color: #912018; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; }
 .wp-link { background: none; border: none; color: #b42318; font-weight: 700; cursor: pointer; text-decoration: underline; }

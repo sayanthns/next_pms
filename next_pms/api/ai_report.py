@@ -87,6 +87,7 @@ def get_daily_report_data(report_date=None):
         "time_patterns": r["time_patterns"],
         "project_summary": r["project_summary"],
         "meetings": r["meetings"],
+        "plan_vs_actual": r["plan_vs_actual"],
     }
 
 
@@ -182,6 +183,43 @@ def _get_meeting_summary(report_date):
             "no_meeting_this_week": no_meeting}
 
 
+def _get_plan_vs_actual(report_date):
+    """Plan (Weekly Plan allocations) vs actual logged hours (week_start..report_date)
+    per project+person; plus projects at risk by target_close_date."""
+    from next_pms.api.weekly_plan import get_plan_for_date
+    rd = getdate(report_date)
+    plan_name = get_plan_for_date(rd)
+    deviations = []
+    if plan_name:
+        wp = frappe.get_doc("Weekly Plan", plan_name)
+        planned = {}
+        for a in wp.allocations:
+            if a.get("project"):
+                planned[(a.project, a.member)] = planned.get((a.project, a.member), 0) + flt(a.planned_hours)
+        rows = frappe.db.sql("""select t.project pj, tl.user u, round(sum(tl.duration_hours),2) h
+            from `tabPMS Time Log` tl join `tabPMS Task` t on t.name=tl.task
+            where tl.is_running=0 and DATE(tl.start_time) between %s and %s and t.project is not null
+            group by t.project, tl.user""", (str(wp.week_start), str(rd)), as_dict=True)
+        actual = {(r.pj, r.u): flt(r.h) for r in rows}
+        for k in set(planned) | set(actual):
+            p = planned.get(k, 0)
+            a = actual.get(k, 0)
+            if abs(a - p) >= 4:
+                pn = frappe.db.get_value("PMS Project", k[0], "project_name") or k[0]
+                un = frappe.db.get_value("User", k[1], "full_name") or k[1]
+                deviations.append({"project": pn, "person": un, "planned": p, "actual": a,
+                                   "deviation": round(a - p, 2)})
+        deviations.sort(key=lambda x: abs(x["deviation"]), reverse=True)
+    at_risk = []
+    for p in frappe.get_all("PMS Project",
+            filters={"status": ["in", ("Planning", "Active", "On Hold")], "target_close_date": ["is", "set"]},
+            fields=["name", "project_name", "target_close_date"], ignore_permissions=True):
+        dd = (getdate(p.target_close_date) - rd).days
+        if dd < 0 or dd <= 3:
+            at_risk.append({"project": p.project_name or p.name, "close_date": str(p.target_close_date), "days": dd})
+    return {"deviations": deviations[:10], "at_risk": at_risk}
+
+
 def _build_report(report_date, settings, detail_level=None):
     """Gather all metrics for report_date and run the LLM analysis.
     No email, no permission check. Reused by the email job and the view endpoint.
@@ -195,6 +233,7 @@ def _build_report(report_date, settings, detail_level=None):
     time_patterns = _get_time_patterns(report_date)
     project_summary = _get_project_summary(report_date)
     meetings = _get_meeting_summary(report_date)
+    plan_vs_actual = _get_plan_vs_actual(report_date)
 
     full_data = {
         "date": report_date,
@@ -204,6 +243,7 @@ def _build_report(report_date, settings, detail_level=None):
         "time_patterns": time_patterns,
         "project_summary": project_summary,
         "meetings": meetings,
+        "plan_vs_actual": plan_vs_actual,
     }
 
     ai_parsed = None
@@ -227,6 +267,7 @@ def _build_report(report_date, settings, detail_level=None):
         "time_patterns": time_patterns,
         "project_summary": project_summary,
         "meetings": meetings,
+        "plan_vs_actual": plan_vs_actual,
     }
 
 
@@ -800,6 +841,7 @@ def _send_report_email(recipients, full_data, ai_parsed, ai_raw, user_metrics,
             "time_patterns": time_patterns,
             "project_summary": project_summary,
             "meetings": full_data.get("meetings"),
+            "plan_vs_actual": full_data.get("plan_vs_actual"),
         },
     )
 
