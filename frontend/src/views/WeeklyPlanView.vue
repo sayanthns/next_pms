@@ -14,14 +14,16 @@
             <option v-for="w in weeks" :key="w.name" :value="w.week_start">{{ w.title || w.week_start }}</option>
           </select>
         </template>
-        <!-- Read-only viewer: the Weekly Plan is now managed in the Frappe desk
-             (PMS Project + Weekly Plan doctype). Editing removed from the SPA. -->
-        <span v-if="plan" class="wp-readonly">Read-only · edit in desk</span>
+        <template v-if="canEdit && !editing">
+          <button class="wp-editbtn" @click="startEdit" v-if="plan" title="Edit this week in the matrix builder">Edit plan</button>
+          <button class="wp-editbtn primary" @click="startNew" title="Build a new week's plan">+ New week</button>
+        </template>
+        <span v-else-if="plan && !editing" class="wp-readonly">Read-only</span>
       </div>
     </header>
 
-    <WeeklyPlanEditor v-if="editing" :initial="editInitial" :weeks="weeks"
-                      @saved="onSaved" @cancel="editing = false" />
+    <WeeklyPlanBuilder v-if="editing" :initial="editInitial" :weeks="weeks"
+                       @saved="onSaved" @cancel="editing = false" />
 
     <template v-if="!editing">
     <div v-if="errorMsg" class="wp-error" role="alert">{{ errorMsg }} <button class="wp-link" @click="loadWeek(true)">Retry</button></div>
@@ -38,26 +40,62 @@
       </div>
       <p v-if="plan.intro" class="wp-intro">{{ plan.intro }}</p>
 
-      <!-- People -->
-      <section class="wp-sec" v-if="(plan.allocations || []).length" aria-labelledby="wp-people">
-        <h2 id="wp-people" class="wp-h">Who's on what</h2>
-        <p class="wp-secsub">Planned hours vs capacity. Utilisation flags overload — not a scorecard.</p>
+      <!-- Person load — grouped across projects -->
+      <section class="wp-sec" v-if="peopleSummary.length" aria-labelledby="wp-people">
+        <h2 id="wp-people" class="wp-h">Person load</h2>
+        <p class="wp-secsub">Total planned hours vs capacity, across all projects. Flags over-allocation &amp; under-utilisation.</p>
         <div class="wp-people">
-          <article class="wp-pcard" v-for="a in plan.allocations" :key="a.name || a.member">
+          <article class="wp-pcard" v-for="a in peopleSummary" :key="a.member">
             <div class="wp-phead">
-              <span class="wp-av" :style="{ background: avatarColor(a.display_name || a.member) }">{{ initials(a.display_name || a.member) }}</span>
+              <span class="wp-av" :style="{ background: avatarColor(a.name) }">{{ initials(a.name) }}</span>
               <div class="wp-pwho">
-                <div class="wp-pname">{{ a.display_name || a.member }}</div>
-                <div class="wp-prole">{{ a.role }}</div>
+                <div class="wp-pname">{{ a.name }}</div>
+                <div class="wp-prole">{{ a.rows.length }} project{{ a.rows.length === 1 ? '' : 's' }}</div>
               </div>
-              <span class="wp-util" :class="utilClass(a)" :title="utilTitle(a)">
-                {{ num(a.planned_hours) }}h<span class="wp-utilpct" v-if="cap(a)"> · {{ utilPct(a) }}%</span>
+              <span class="wp-util" :class="loadClass(a)" :title="loadTitle(a)">
+                {{ num(a.planned) }}h<span class="wp-utilpct" v-if="a.capacity > 0"> · {{ loadPct(a) }}%</span>
               </span>
             </div>
-            <div class="wp-tasks" v-if="taskList(a).length">
-              <span v-for="(t, i) in taskList(a)" :key="i" class="wp-t" :class="t.cls">{{ t.text }}</span>
+            <div class="wp-tasks" v-if="a.rows.length">
+              <span v-for="(r, i) in a.rows" :key="i" class="wp-t">{{ r.label }} · {{ num(r.hours) }}h</span>
             </div>
           </article>
+        </div>
+      </section>
+
+      <!-- Allocation matrix — Excel-style pivot -->
+      <section class="wp-sec" v-if="matrix.rows.length && matrix.members.length" aria-labelledby="wp-mx">
+        <h2 id="wp-mx" class="wp-h">Allocation matrix</h2>
+        <p class="wp-secsub">Hours per person × project. Column totals show load vs capacity.</p>
+        <div class="wp-tablewrap">
+          <table class="wp-table wp-mxtable">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th v-for="m in matrix.members" :key="m.member" class="c" :title="m.name">{{ initials(m.name) }}</th>
+                <th class="r">Plan</th><th class="r">Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in matrix.rows" :key="r.project">
+                <td class="wp-strong">{{ r.label }}</td>
+                <td v-for="m in matrix.members" :key="m.member" class="c" :class="{ z: !matrix.cell(r.project, m.member) }">
+                  {{ matrix.cell(r.project, m.member) || '·' }}
+                </td>
+                <td class="r wp-strong">{{ num(rowPlan(r.project)) }}</td>
+                <td class="r" :class="targetClass(r)">{{ r.target ? num(r.target) : '—' }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th>Total / cap</th>
+                <th v-for="m in matrix.members" :key="m.member" class="c" :class="'mc-' + loadClass(colSummary(m.member))">
+                  {{ num(colSummary(m.member).planned) }}<small v-if="m.capacity">/{{ num(m.capacity) }}</small>
+                </th>
+                <th class="r">{{ num(grandPlan) }}</th><th class="r">{{ num(grandTarget) }}</th>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </section>
 
@@ -163,7 +201,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { call } from '@/utils/frappe'
 import { useSettingsStore } from '@/store/settings'
-import WeeklyPlanEditor from '@/components/WeeklyPlanEditor.vue'
+import WeeklyPlanBuilder from '@/components/WeeklyPlanBuilder.vue'
 
 const settingsStore = useSettingsStore()
 const weeks = ref([])
@@ -186,6 +224,65 @@ async function onSaved(weekStart) {
 }
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0 }
+
+// ── person load: allocations are per project×person, so group by member ──
+const projName = computed(() => {
+  const m = {}
+  for (const p of (plan.value?.projects || [])) m[p.project] = p.project_name || p.project
+  return m
+})
+const peopleSummary = computed(() => {
+  const m = {}
+  for (const a of (plan.value?.allocations || [])) {
+    if (!a.member) continue
+    if (!m[a.member]) m[a.member] = { member: a.member, name: a.display_name || a.member, planned: 0, capacity: 0, rows: [] }
+    m[a.member].planned += num(a.planned_hours)
+    m[a.member].capacity = Math.max(m[a.member].capacity, num(a.capacity_hours))
+    if (a.project) m[a.member].rows.push({ label: projName.value[a.project] || a.project, hours: num(a.planned_hours) })
+  }
+  return Object.values(m).sort((x, y) => y.planned - x.planned)
+})
+function loadPct(a) { return a.capacity > 0 ? Math.round(a.planned / a.capacity * 100) : 0 }
+function loadClass(a) {
+  if (!a.capacity) return a.planned > 0 ? 'u-ok' : ''
+  const p = loadPct(a)
+  if (p > 100) return 'u-over'
+  if (p >= 90) return 'u-hot'
+  if (p < 60) return 'u-low'
+  return 'u-ok'
+}
+function loadTitle(a) {
+  if (!a.capacity) return num(a.planned) + 'h planned'
+  const p = loadPct(a)
+  const tag = p > 100 ? 'over-allocated' : p >= 90 ? 'near capacity' : p < 60 ? 'under-utilised' : 'healthy'
+  return num(a.planned) + 'h of ' + num(a.capacity) + 'h — ' + tag
+}
+
+// ── allocation matrix (pivot) ──
+const matrix = computed(() => {
+  const allocs = plan.value?.allocations || []
+  const members = peopleSummary.value.map(p => ({ member: p.member, name: p.name, capacity: p.capacity }))
+  const rowMap = {}
+  for (const p of (plan.value?.projects || [])) {
+    if (p.project && !rowMap[p.project]) rowMap[p.project] = { project: p.project, label: p.project_name || p.project, target: num(p.target_hours) }
+  }
+  for (const a of allocs) if (a.project && !rowMap[a.project]) rowMap[a.project] = { project: a.project, label: projName.value[a.project] || a.project, target: 0 }
+  const cellMap = {}
+  for (const a of allocs) if (a.project && a.member) cellMap[a.project + ' ' + a.member] = num(a.planned_hours)
+  return { members, rows: Object.values(rowMap), cell: (pr, mem) => num(cellMap[pr + ' ' + mem]) }
+})
+function rowPlan(project) { let t = 0; for (const m of matrix.value.members) t += matrix.value.cell(project, m.member); return t }
+function colSummary(member) { return peopleSummary.value.find(x => x.member === member) || { planned: 0, capacity: 0 } }
+const grandPlan = computed(() => (plan.value?.allocations || []).reduce((s, a) => s + num(a.planned_hours), 0))
+const grandTarget = computed(() => (plan.value?.projects || []).reduce((s, p) => s + num(p.target_hours), 0))
+function targetClass(r) {
+  if (!r.target) return ''
+  const planned = rowPlan(r.project)
+  if (planned > r.target) return 'wp-over'
+  if (planned < r.target * 0.8) return 'wp-under'
+  return ''
+}
+
 function cap(a) { return Number(a.capacity_hours) > 0 }
 function utilPct(a) { return cap(a) ? Math.round(num(a.planned_hours) / num(a.capacity_hours) * 100) : 0 }
 function utilClass(a) {
@@ -312,7 +409,19 @@ onMounted(async () => { loadChecks(); await loadWeeks(); await loadWeek() })
 .wp-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; background: #fff; border: 1px solid #e3e9e6; border-radius: 12px; overflow: hidden; }
 .wp-table thead th { background: #f4f8f6; color: #1A2E3A; text-align: left; padding: 10px 14px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; }
 .wp-table th.r, .wp-table td.r { text-align: right; }
+.wp-table th.c, .wp-table td.c { text-align: center; }
 .wp-table td { padding: 10px 14px; border-top: 1px solid #eef2f0; vertical-align: top; color: #41514c; }
+.wp-mxtable { font-size: 12.5px; }
+.wp-mxtable td, .wp-mxtable th { padding: 8px 10px; }
+.wp-mxtable td.z { color: #cbd5d0; }
+.wp-mxtable td.wp-over { color: #b91c1c; font-weight: 700; }
+.wp-mxtable td.wp-under { color: #9a3412; font-weight: 700; }
+.wp-mxtable tfoot th { background: #f4f8f6; color: #1A2E3A; font-weight: 800; border-top: 2px solid #d7e3de; }
+.wp-mxtable tfoot small { color: #94a3b8; font-weight: 600; }
+.wp-mxtable th.mc-u-over { background: #fef2f2 !important; color: #b91c1c; }
+.wp-mxtable th.mc-u-hot { background: #fff7ed !important; color: #9a3412; }
+.wp-mxtable th.mc-u-low { background: #f1f5f9 !important; color: #64748b; }
+.wp-mxtable th.mc-u-ok { background: #eef6f3 !important; color: #2c7d63; }
 .wp-strong { font-weight: 700; color: #1A2E3A; }
 .wp-muted { color: #94a3b8; }
 .wp-chip { display: inline-block; font-size: 11px; font-weight: 700; background: #eef2f0; color: #41514c; border: 1px solid #dde5e1; padding: 1px 7px; border-radius: 6px; margin: 1px 3px 1px 0; }
