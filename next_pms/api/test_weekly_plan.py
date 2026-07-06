@@ -199,12 +199,13 @@ class TestProjectSyncFromAllocations(FrappeTestCase):
     def test_missing_project_row_appended(self):
         doc = self._doc()
         doc.append("allocations", {"project": "PROJ-B", "member": "a@x.com", "planned_hours": 3})
-        with patch.object(frappe.db, "get_value", return_value="Beta Name"):
+        with patch.object(frappe, "get_all", return_value=[("PROJ-B", "Beta Name")]):
             doc.sync_projects_from_allocations()
         self.assertEqual(len(doc.projects), 1)
         self.assertEqual(doc.projects[0].project, "PROJ-B")
         self.assertEqual(doc.projects[0].project_name, "Beta Name")
         self.assertEqual(doc.projects[0].target_hours, 3)
+        self.assertEqual(doc.allocations[0].project_name, "Beta Name")  # backfilled on alloc row too
 
     def test_project_without_allocations_untouched(self):
         doc = self._doc()

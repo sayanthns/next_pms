@@ -29,6 +29,15 @@ class WeeklyPlan(Document):
             if a.member:
                 teams.setdefault(a.project, set()).add(a.member)
 
+        names = {}
+        if sums:
+            names = dict(frappe.get_all(
+                "PMS Project", filters={"name": ["in", list(sums)]},
+                fields=["name", "project_name"], as_list=True, ignore_permissions=True))
+        for a in (self.allocations or []):
+            if a.project:
+                a.project_name = names.get(a.project) or a.project_name
+
         existing = set()
         for p in (self.projects or []):
             if not p.project:
@@ -45,7 +54,7 @@ class WeeklyPlan(Document):
                 continue
             self.append("projects", {
                 "project": project,
-                "project_name": frappe.db.get_value("PMS Project", project, "project_name"),
+                "project_name": names.get(project),
                 "target_hours": round(sums[project], 2),
                 "team": ",".join(sorted(teams.get(project, set()))),
                 "status_color": "grey",

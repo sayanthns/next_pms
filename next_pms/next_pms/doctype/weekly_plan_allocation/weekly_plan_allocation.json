@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "project",
+  "project_name",
   "member",
   "display_name",
   "role",
@@ -19,6 +20,14 @@
    "fieldtype": "Link",
    "label": "Project",
    "options": "PMS Project",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "label": "Project Name",
+   "fetch_from": "project.project_name",
+   "read_only": 1,
    "in_list_view": 1
   },
   {
@@ -40,8 +49,7 @@
   {
    "fieldname": "role",
    "fieldtype": "Data",
-   "label": "Role",
-   "in_list_view": 1
+   "label": "Role"
   },
   {
    "fieldname": "planned_hours",
@@ -66,7 +74,7 @@
  "index_web_pages_for_search": 0,
  "istable": 1,
  "links": [],
- "modified": "2026-06-21 00:00:00.000000",
+ "modified": "2026-07-06 12:30:00.000000",
  "modified_by": "Administrator",
  "module": "Next PMS",
  "name": "Weekly Plan Allocation",
