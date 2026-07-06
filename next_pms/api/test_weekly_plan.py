@@ -172,3 +172,49 @@ class TestFormOptions(FrappeTestCase):
         self.assertIn("projects", out)
         self.assertIsInstance(out["users"], list)
         self.assertIsInstance(out["projects"], list)
+
+
+class TestProjectSyncFromAllocations(FrappeTestCase):
+    """validate() derives Projects target_hours/team from Allocations (allocations
+    are the source of truth for hours; judgment fields stay manual)."""
+
+    def _doc(self):
+        doc = frappe.new_doc("Weekly Plan")
+        doc.week_start = "2026-07-13"
+        return doc
+
+    def test_existing_project_row_gets_summed_hours_and_team(self):
+        doc = self._doc()
+        doc.append("allocations", {"project": "PROJ-A", "member": "b@x.com", "planned_hours": 6})
+        doc.append("allocations", {"project": "PROJ-A", "member": "a@x.com", "planned_hours": 4})
+        doc.append("projects", {"project": "PROJ-A", "target_hours": 99, "focus": "keep me",
+                                "health": "Amber"})
+        doc.sync_projects_from_allocations()
+        row = doc.projects[0]
+        self.assertEqual(row.target_hours, 10)
+        self.assertEqual(row.team, "a@x.com,b@x.com")
+        self.assertEqual(row.focus, "keep me")   # judgment untouched
+        self.assertEqual(row.health, "Amber")
+
+    def test_missing_project_row_appended(self):
+        doc = self._doc()
+        doc.append("allocations", {"project": "PROJ-B", "member": "a@x.com", "planned_hours": 3})
+        with patch.object(frappe.db, "get_value", return_value="Beta Name"):
+            doc.sync_projects_from_allocations()
+        self.assertEqual(len(doc.projects), 1)
+        self.assertEqual(doc.projects[0].project, "PROJ-B")
+        self.assertEqual(doc.projects[0].project_name, "Beta Name")
+        self.assertEqual(doc.projects[0].target_hours, 3)
+
+    def test_project_without_allocations_untouched(self):
+        doc = self._doc()
+        doc.append("projects", {"project": "PROJ-C", "target_hours": 12})
+        doc.sync_projects_from_allocations()
+        self.assertEqual(doc.projects[0].target_hours, 12)
+
+    def test_zero_hour_roster_marker_ignored(self):
+        # project-less 0h roster rows must not create project rows
+        doc = self._doc()
+        doc.append("allocations", {"member": "a@x.com", "planned_hours": 0, "capacity_hours": 25})
+        doc.sync_projects_from_allocations()
+        self.assertEqual(len(doc.projects), 0)
