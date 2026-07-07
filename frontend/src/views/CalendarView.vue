@@ -46,7 +46,8 @@
           <div class="cal-meta">
             <span v-if="m.project_name" class="cal-chip proj">{{ m.project_name }}</span>
             <span class="cal-chip type">{{ m.meeting_type }}</span>
-            <span v-if="m.status === 'Held'" class="cal-mom ok" title="Minutes recorded">MoM ✓</span>
+            <a v-if="m.mom_pdf" :href="m.mom_pdf" target="_blank" rel="noopener" class="cal-mom ok link" title="Open the MoM PDF">MoM ↗</a>
+            <span v-else-if="m.status === 'Held'" class="cal-mom ok" title="Marked held">Held</span>
             <span v-else-if="isPast(m) && m.status === 'Planned'" class="cal-mom due" title="This meeting is past and not marked Held">Needs update</span>
           </div>
           <div class="cal-people" v-if="m.participants && m.participants.length">
@@ -428,6 +429,8 @@ onMounted(async () => { await Promise.all([loadOptions(), load()]) })
 .cal-chip.type { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 .cal-mom { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 7px; }
 .cal-mom.ok { background: #f0fdf4; color: #15803d; }
+.cal-mom.link { text-decoration: none; cursor: pointer; }
+.cal-mom.link:hover { background: #dcfce7; text-decoration: underline; }
 .cal-mom.due { background: #fff7ed; color: #9a3412; }
 .cal-people { display: flex; align-items: center; gap: 4px; margin-top: 9px; flex-wrap: wrap; }
 .cal-av { width: 24px; height: 24px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; }
