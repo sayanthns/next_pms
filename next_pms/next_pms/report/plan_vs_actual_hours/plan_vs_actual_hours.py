@@ -16,6 +16,7 @@ def execute(filters=None):
     columns = [
         {"label": _("Project"), "fieldname": "project", "fieldtype": "Data", "width": 180},
         {"label": _("Person"), "fieldname": "person", "fieldtype": "Data", "width": 150},
+        {"label": _("Est. Hrs"), "fieldname": "estimated", "fieldtype": "Float", "width": 90},
         {"label": _("Planned"), "fieldname": "planned", "fieldtype": "Float", "width": 90},
         {"label": _("Actual"), "fieldname": "actual", "fieldtype": "Float", "width": 90},
         {"label": _("On-Plan Hrs"), "fieldname": "on_plan", "fieldtype": "Float", "width": 100},
@@ -63,6 +64,15 @@ def execute(filters=None):
     actual = {(r.project, r.person): flt(r.h) for r in rows
               if flt(r.h) and (allowed is None or r.project in allowed)}
 
+    # estimated: total task estimate per (project, assignee) — scope context, not time-windowed
+    est_rows = frappe.db.sql("""
+        select project, assigned_to as person, round(sum(estimated_hours), 2) h
+        from `tabPMS Task`
+        where assigned_to is not null and project is not null
+        group by project, assigned_to""", as_dict=True)
+    estimated = {(r.project, r.person): flt(r.h) for r in est_rows
+                 if flt(r.h) and (allowed is None or r.project in allowed)}
+
     keys = set(planned) | set(actual)
     pids = {k[0] for k in keys if k[0]}
     uids = {k[1] for k in keys if k[1]}
@@ -89,6 +99,7 @@ def execute(filters=None):
             status = STATUS_UNPLANNED
         data.append({
             "project": names.get(pid) or pid, "person": names.get(uid) or uid,
+            "estimated": estimated.get((pid, uid), 0),
             "planned": p, "actual": a,
             "on_plan": a if p else 0,
             "unplanned": a if not p else 0,
@@ -97,12 +108,14 @@ def execute(filters=None):
             "status": status,
         })
 
+    total_estimated = sum(r["estimated"] for r in data)
     total_planned = sum(r["planned"] for r in data)
     total_actual = sum(r["actual"] for r in data)
     total_unplanned = sum(r["unplanned"] for r in data)
     unplanned_pct = (total_unplanned / total_actual * 100) if total_actual else 0
 
     report_summary = [
+        {"label": _("Estimated"), "value": round(total_estimated, 2), "datatype": "Float"},
         {"label": _("Planned"), "value": round(total_planned, 2), "datatype": "Float"},
         {"label": _("Actual"), "value": round(total_actual, 2), "datatype": "Float"},
         {"label": _("On-Plan"), "value": round(total_actual - total_unplanned, 2),
@@ -135,5 +148,5 @@ def execute(filters=None):
         "barOptions": {"spaceRatio": 0.5},
     }
 
-    message = _("Unplanned = time logged with no planned hours for that project+person in the weekly plan.")
+    message = _("Est. Hrs = total estimated hours of tasks assigned to that person on the project (full scope, not time-windowed). Unplanned = time logged with no planned hours for that project+person in the weekly plan.")
     return columns, data, message, chart, report_summary
