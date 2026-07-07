@@ -1,10 +1,12 @@
 import json
 
 import frappe
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from frappe.tests.utils import FrappeTestCase
 
 from next_pms.api import calendar as C
+
+PDF = "/private/files/mom.pdf"
 
 
 def _ctx(is_admin=False, is_manager=False, is_developer=False, is_customer=False, user="dev@x.com"):
@@ -25,27 +27,81 @@ class TestMeetingController(FrappeTestCase):
         self.assertEqual(str(doc.meeting_date), "2026-07-08")
         self.assertEqual(doc.day_of_week, "Wednesday")
 
-    def test_held_requires_minutes(self):
+    def test_held_requires_pdf(self):
         doc = self._new(start_time="2026-07-08 10:30:00", status="Held")
         with self.assertRaises(frappe.ValidationError):
             doc.insert(ignore_permissions=True)
 
-    def test_held_with_minutes_saves(self):
+    def test_held_with_rich_text_only_still_blocked(self):
+        # rich-text notes no longer satisfy Held — a PDF is required
         doc = self._new(start_time="2026-07-08 10:30:00", status="Held",
                         minutes="<p>Discussed rollout.</p>")
+        with self.assertRaises(frappe.ValidationError):
+            doc.insert(ignore_permissions=True)
+
+    def test_held_non_pdf_attachment_blocked(self):
+        doc = self._new(start_time="2026-07-08 10:30:00", status="Held",
+                        mom_pdf="/private/files/notes.docx")
+        with self.assertRaises(frappe.ValidationError):
+            doc.insert(ignore_permissions=True)
+
+    def test_held_with_pdf_saves(self):
+        doc = self._new(start_time="2026-07-08 10:30:00", status="Held", mom_pdf=PDF)
         doc.insert(ignore_permissions=True)
         self.assertEqual(doc.status, "Held")
 
-    def test_planned_needs_no_minutes(self):
+    def test_planned_needs_no_pdf(self):
         doc = self._new(start_time="2026-07-08 10:30:00", status="Planned")
         doc.insert(ignore_permissions=True)  # must not raise
         self.assertTrue(doc.name)
+
+    def test_client_weekly_requires_project(self):
+        doc = self._new(meeting_type="Client Weekly", start_time="2026-07-08 10:30:00")
+        with self.assertRaises(frappe.ValidationError):
+            doc.insert(ignore_permissions=True)
 
     def test_subject_fallback(self):
         doc = frappe.new_doc("PMS Meeting")
         doc.update({"meeting_type": "Ad-hoc", "status": "Planned", "start_time": "2026-07-09 09:00:00"})
         doc.insert(ignore_permissions=True)
         self.assertTrue(doc.subject)
+
+
+class TestMeetingAutoTasks(FrappeTestCase):
+    """after_insert seeds one PMS Task per participant on the project. Task creation is
+    mocked so the logic is exercised without PMS Project/Task fixtures."""
+
+    def _meeting(self, project=None, participants=()):
+        m = frappe.new_doc("PMS Meeting")
+        m.subject = "Weekly sync"
+        m.meeting_type = "Internal"
+        m.project = project
+        m.meeting_date = "2026-07-08"
+        m.name = "MTG-TEST"
+        for u in participants:
+            m.append("participants", {"user": u})
+        return m
+
+    def test_one_task_per_participant(self):
+        m = self._meeting(project="PROJ-X", participants=["a@x.com", "b@x.com"])
+        created = []
+        with patch.object(frappe, "new_doc", side_effect=lambda dt: created.append(MagicMock(_dt=dt)) or created[-1]):
+            m.after_insert()
+        self.assertEqual(len(created), 2)
+        self.assertEqual({t.assigned_to for t in created}, {"a@x.com", "b@x.com"})
+        self.assertTrue(all(t.insert.called for t in created))
+
+    def test_no_project_creates_no_tasks(self):
+        m = self._meeting(project=None, participants=["a@x.com"])
+        with patch.object(frappe, "new_doc", side_effect=AssertionError("should not create tasks")):
+            m.after_insert()  # must not raise → new_doc never called
+
+    def test_duplicate_participant_deduped(self):
+        m = self._meeting(project="PROJ-X", participants=["a@x.com", "a@x.com"])
+        created = []
+        with patch.object(frappe, "new_doc", side_effect=lambda dt: created.append(MagicMock(_dt=dt)) or created[-1]):
+            m.after_insert()
+        self.assertEqual(len(created), 1)
 
 
 class TestCalendarApi(FrappeTestCase):
@@ -68,11 +124,20 @@ class TestCalendarApi(FrappeTestCase):
         self.assertEqual([p["user"] for p in got["participants"]], ["Administrator"])
         self.assertFalse(got["has_mom"])
 
-    def test_save_held_without_minutes_blocked(self):
+    def test_save_held_without_pdf_blocked(self):
         payload = {"subject": "Retro", "meeting_type": "Internal",
                    "start_time": "2026-07-08 15:00:00", "status": "Held", "participants": []}
         with self.assertRaises(frappe.ValidationError):
             C.save_meeting(json.dumps(payload))
+
+    def test_save_held_with_pdf_ok(self):
+        payload = {"subject": "Retro", "meeting_type": "Internal",
+                   "start_time": "2026-07-08 15:00:00", "status": "Held",
+                   "mom_pdf": PDF, "participants": []}
+        res = C.save_meeting(json.dumps(payload))
+        got = C.get_meeting(res["name"])
+        self.assertEqual(got["status"], "Held")
+        self.assertTrue(got["has_mom"])
 
     def test_mine_scope_excludes_others(self):
         # a meeting coordinated by someone else with no matching participant is hidden in 'mine'

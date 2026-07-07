@@ -75,7 +75,7 @@
           </div>
           <div class="cal-frow">
             <div class="cal-f">
-              <label>Project</label>
+              <label>Project <span v-if="projectRequired" class="cal-req">*</span></label>
               <select v-model="form.project">
                 <option value="">— none —</option>
                 <option v-for="p in options.projects" :key="p.name" :value="p.name">{{ p.project_name || p.name }}</option>
@@ -125,7 +125,18 @@
             <div class="cal-selcount" v-if="form.participants.length">{{ form.participants.length }} selected</div>
           </div>
           <div class="cal-f">
-            <label>Minutes of Meeting <span v-if="momRequired" class="cal-req">— required to mark Held</span></label>
+            <label>MoM (PDF) <span v-if="momRequired" class="cal-req">— required to mark Held</span></label>
+            <div v-if="form.mom_pdf" class="cal-file">
+              <a :href="form.mom_pdf" target="_blank" rel="noopener">{{ momFileName }}</a>
+              <button type="button" class="cal-filex" @click="form.mom_pdf = ''" aria-label="Remove">✕</button>
+            </div>
+            <div v-else>
+              <input ref="pdfInput" type="file" accept="application/pdf,.pdf" @change="onPdfPick" :disabled="uploading" />
+              <span v-if="uploading" class="cal-uploading">Uploading…</span>
+            </div>
+          </div>
+          <div class="cal-f">
+            <label>Notes <span class="cal-optional">(optional)</span></label>
             <RichTextEditor v-model="form.minutes" />
           </div>
           <div class="cal-f">
@@ -159,15 +170,17 @@ const modalError = ref('')
 const options = reactive({ users: [], projects: [] })
 const userFilter = ref('')
 const windowStart = ref(mondayOf(new Date()))
+const uploading = ref(false)
+const pdfInput = ref(null)
 
 const modal = reactive({ open: false, name: null, markHeld: false })
 const form = reactive(blankForm())
 
 function blankForm() {
   return {
-    subject: '', project: '', meeting_type: 'Internal', start_local: '',
+    subject: '', project: '', meeting_type: 'Client Weekly', start_local: '',
     duration_mins: 30, coordinator: '', status: 'Planned',
-    participants: [], minutes: '', next_actions: '', can_delete: false,
+    participants: [], mom_pdf: '', minutes: '', next_actions: '', can_delete: false,
   }
 }
 
@@ -205,6 +218,44 @@ const filteredUsers = computed(() => {
   return options.users.filter(u => (u.full_name || u.name).toLowerCase().includes(q))
 })
 const momRequired = computed(() => form.status === 'Held')
+const projectRequired = computed(() => form.meeting_type === 'Client Weekly')
+const momFileName = computed(() => (form.mom_pdf || '').split('/').pop() || 'MoM.pdf')
+
+function csrfToken() {
+  return document.cookie.split('; ').find(c => c.startsWith('csrf_token='))?.split('=')[1]
+    || (window.frappe && window.frappe.csrf_token) || ''
+}
+async function onPdfPick(e) {
+  const file = e.target.files && e.target.files[0]
+  if (!file) return
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    modalError.value = 'The MoM must be a PDF file.'
+    if (pdfInput.value) pdfInput.value.value = ''
+    return
+  }
+  uploading.value = true; modalError.value = ''
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('is_private', '1')
+    fd.append('folder', 'Home/Attachments')
+    const res = await fetch('/api/method/upload_file', {
+      method: 'POST',
+      headers: csrfToken() ? { 'X-Frappe-CSRF-Token': csrfToken() } : {},
+      credentials: 'include',
+      body: fd,
+    })
+    const data = await res.json()
+    const url = data && data.message && data.message.file_url
+    if (!url) throw new Error('Upload failed')
+    form.mom_pdf = url
+  } catch (err) {
+    modalError.value = 'Failed to upload the PDF. Try again.'
+  } finally {
+    uploading.value = false
+    if (pdfInput.value) pdfInput.value.value = ''
+  }
+}
 
 // ── grouping ──
 const groups = computed(() => {
@@ -259,12 +310,12 @@ async function openEdit(m, markHeld = false) {
   try {
     const d = await call('next_pms.api.calendar.get_meeting', { name: m.name })
     Object.assign(form, blankForm(), {
-      subject: d.subject || '', project: d.project || '', meeting_type: d.meeting_type || 'Internal',
+      subject: d.subject || '', project: d.project || '', meeting_type: d.meeting_type || 'Client Weekly',
       start_local: d.start_time ? String(d.start_time).replace(' ', 'T').slice(0, 16) : '',
       duration_mins: d.duration_mins || 30, coordinator: d.coordinator || '',
       status: markHeld ? 'Held' : (d.status || 'Planned'),
       participants: (d.participants || []).map(p => p.user),
-      minutes: d.minutes || '', next_actions: d.next_actions || '',
+      mom_pdf: d.mom_pdf || '', minutes: d.minutes || '', next_actions: d.next_actions || '',
       can_delete: !!d.can_edit,
     })
     modal.name = m.name; modal.markHeld = markHeld; modal.open = true
@@ -280,9 +331,11 @@ function toServerDt(local) { return local ? local.replace('T', ' ') + ':00' : nu
 async function save() {
   modalError.value = ''
   if (!form.subject.trim()) { modalError.value = 'Subject is required.'; return }
-  if (form.status === 'Held') {
-    const plain = (form.minutes || '').replace(/<[^>]+>/g, '').trim()
-    if (!plain) { modalError.value = 'Minutes of Meeting are required to mark a meeting as Held.'; return }
+  if (form.meeting_type === 'Client Weekly' && !form.project) {
+    modalError.value = 'A Client Weekly meeting must have a Project.'; return
+  }
+  if (form.status === 'Held' && !form.mom_pdf) {
+    modalError.value = 'Attach the MoM (PDF) before marking a meeting as Held.'; return
   }
   saving.value = true
   try {
@@ -291,7 +344,8 @@ async function save() {
       subject: form.subject.trim(), project: form.project || null,
       start_time: toServerDt(form.start_local), meeting_type: form.meeting_type,
       duration_mins: form.duration_mins, coordinator: form.coordinator || null,
-      status: form.status, minutes: form.minutes, next_actions: form.next_actions,
+      status: form.status, mom_pdf: form.mom_pdf || null,
+      minutes: form.minutes, next_actions: form.next_actions,
       participants: form.participants.map(u => ({ user: u })),
     }
     await call('next_pms.api.calendar.save_meeting', { payload: JSON.stringify(payload) })
@@ -387,6 +441,12 @@ onMounted(async () => { await Promise.all([loadOptions(), load()]) })
 .cal-f { margin-bottom: 13px; }
 .cal-f > label { display: block; font-size: 12px; font-weight: 700; color: #41514c; margin-bottom: 5px; }
 .cal-req { color: #9a3412; font-weight: 600; }
+.cal-optional { color: #94a3b8; font-weight: 500; }
+.cal-file { display: flex; align-items: center; gap: 8px; background: #f4f8f6; border: 1px solid #cfe7dd; border-radius: 8px; padding: 8px 11px; font-size: 13px; }
+.cal-file a { color: #2c7d63; font-weight: 600; text-decoration: none; word-break: break-all; }
+.cal-file a:hover { text-decoration: underline; }
+.cal-filex { margin-left: auto; border: none; background: none; color: #94a3b8; cursor: pointer; font-size: 14px; flex-shrink: 0; }
+.cal-uploading { font-size: 12px; color: #64748b; margin-left: 8px; }
 .cal-f input[type=text], .cal-f input[type=number], .cal-f input[type=datetime-local], .cal-f select, .cal-f textarea { width: 100%; padding: 8px 11px; border: 1px solid #d0d5dd; border-radius: 8px; font-size: 13.5px; color: inherit; background: #fff; box-sizing: border-box; }
 .cal-frow { display: flex; gap: 12px; } .cal-frow .cal-f { flex: 1; }
 .cal-search { margin-bottom: 6px; }

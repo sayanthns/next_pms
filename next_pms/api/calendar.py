@@ -11,12 +11,12 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import getdate, get_datetime, nowdate, add_days, cint, strip_html_tags
+from frappe.utils import getdate, get_datetime, nowdate, add_days, cint
 
 from next_pms.api.weekly_plan import _user_context
 
 LIST_FIELDS = ["name", "subject", "project", "start_time", "meeting_date", "day_of_week",
-               "meeting_type", "coordinator", "status", "duration_mins", "minutes", "next_actions"]
+               "meeting_type", "coordinator", "status", "duration_mins", "mom_pdf", "next_actions"]
 
 
 def _guard_view():
@@ -77,10 +77,9 @@ def list_meetings(start=None, end=None, scope="mine"):
             continue
         m["project_name"] = pnames.get(m.project) or m.project
         m["participants"] = ps
-        m["has_mom"] = bool(strip_html_tags(m.get("minutes") or "").strip())
+        m["has_mom"] = bool(m.get("mom_pdf"))
         m["can_edit"] = _can_edit(ctx, m.coordinator)
         m["is_mine"] = mine
-        m.pop("minutes", None)  # keep the list light; full MoM comes from get_meeting
         out.append(m)
     return out
 
@@ -93,7 +92,7 @@ def get_meeting(name):
     d["project_name"] = _project_names({doc.project}).get(doc.project) or doc.project
     d["participants"] = [{"user": p.user, "full_name": p.full_name or p.user, "response": p.response}
                          for p in (doc.participants or [])]
-    d["has_mom"] = bool(strip_html_tags(doc.minutes or "").strip())
+    d["has_mom"] = bool(doc.mom_pdf)
     d["can_edit"] = _can_edit(ctx, doc.coordinator)
     return d
 
@@ -125,9 +124,10 @@ def save_meeting(payload):
     doc.subject = payload.get("subject")
     doc.project = payload.get("project") or None
     doc.start_time = payload.get("start_time") or None
-    doc.meeting_type = payload.get("meeting_type") or "Internal"
+    doc.meeting_type = payload.get("meeting_type") or "Client Weekly"
     doc.status = payload.get("status") or "Planned"
     doc.duration_mins = cint(payload.get("duration_mins")) or 30
+    doc.mom_pdf = payload.get("mom_pdf") or None
     doc.minutes = payload.get("minutes")
     doc.next_actions = payload.get("next_actions")
 

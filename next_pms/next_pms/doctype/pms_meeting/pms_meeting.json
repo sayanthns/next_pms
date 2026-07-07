@@ -19,6 +19,7 @@
   "participants",
   "attendees",
   "sec_notes",
+  "mom_pdf",
   "minutes",
   "next_actions",
   "sec_sync",
@@ -114,10 +115,16 @@
    "label": "Minutes of Meeting"
   },
   {
+   "fieldname": "mom_pdf",
+   "fieldtype": "Attach",
+   "label": "MoM (PDF)",
+   "description": "PDF minutes of meeting. Required before a meeting can be marked Held."
+  },
+  {
    "fieldname": "minutes",
    "fieldtype": "Text Editor",
-   "label": "Minutes",
-   "description": "Required before a meeting can be marked Held."
+   "label": "Notes",
+   "description": "Optional quick notes / agenda. The formal MoM is the PDF above."
   },
   {
    "fieldname": "next_actions",
