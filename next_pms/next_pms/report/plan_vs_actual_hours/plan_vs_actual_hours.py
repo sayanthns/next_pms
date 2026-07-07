@@ -54,24 +54,35 @@ def execute(filters=None):
         k = (a.project, a.member)
         planned[k] = planned.get(k, 0) + flt(a.planned_hours)
 
-    # actual per (project, person); project-less time logs land in "No Project"
+    # actual per (project, person, task); project-less time logs land in "No Project".
+    # Keep the task id so estimated hours can be scoped to exactly the tasks worked this week.
     rows = frappe.db.sql("""
-        select coalesce(t.project, '') as project, tl.user as person,
+        select tl.task as task, coalesce(t.project, '') as project, tl.user as person,
                round(sum(tl.duration_hours), 2) h
         from `tabPMS Time Log` tl left join `tabPMS Task` t on t.name = tl.task
         where tl.is_running = 0 and DATE(tl.start_time) between %s and %s
-        group by coalesce(t.project, ''), tl.user""", (ws, we), as_dict=True)
-    actual = {(r.project, r.person): flt(r.h) for r in rows
-              if flt(r.h) and (allowed is None or r.project in allowed)}
+        group by tl.task, coalesce(t.project, ''), tl.user""", (ws, we), as_dict=True)
 
-    # estimated: total task estimate per (project, assignee) — scope context, not time-windowed
-    est_rows = frappe.db.sql("""
-        select project, assigned_to as person, round(sum(estimated_hours), 2) h
-        from `tabPMS Task`
-        where assigned_to is not null and project is not null
-        group by project, assigned_to""", as_dict=True)
-    estimated = {(r.project, r.person): flt(r.h) for r in est_rows
-                 if flt(r.h) and (allowed is None or r.project in allowed)}
+    actual = {}
+    cell_tasks = {}   # (project, person) -> set of task ids worked this week
+    for r in rows:
+        if not flt(r.h) or (allowed is not None and r.project not in allowed):
+            continue
+        k = (r.project, r.person)
+        actual[k] = actual.get(k, 0) + flt(r.h)
+        if r.task:
+            cell_tasks.setdefault(k, set()).add(r.task)
+
+    # estimated = sum of estimated_hours of the tasks that received time this week (Est aligns
+    # with Actual on the same tasks — not a lifetime total across all the person's tasks)
+    all_task_ids = {t for ts in cell_tasks.values() for t in ts}
+    est_by_task = {}
+    if all_task_ids:
+        for t in frappe.get_all("PMS Task", filters={"name": ["in", list(all_task_ids)]},
+                                fields=["name", "estimated_hours"], ignore_permissions=True):
+            est_by_task[t.name] = flt(t.estimated_hours)
+    estimated = {k: round(sum(est_by_task.get(t, 0) for t in ts), 2)
+                 for k, ts in cell_tasks.items()}
 
     keys = set(planned) | set(actual)
     pids = {k[0] for k in keys if k[0]}
@@ -148,5 +159,5 @@ def execute(filters=None):
         "barOptions": {"spaceRatio": 0.5},
     }
 
-    message = _("Est. Hrs = total estimated hours of tasks assigned to that person on the project (full scope, not time-windowed). Unplanned = time logged with no planned hours for that project+person in the weekly plan.")
+    message = _("Est. Hrs = estimated hours of the tasks this person logged time on this week for the project (scoped to the tasks worked, so it lines up with Actual). Unplanned = time logged with no planned hours for that project+person in the weekly plan.")
     return columns, data, message, chart, report_summary
