@@ -5,7 +5,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "subject",
   "project",
+  "start_time",
   "meeting_date",
   "day_of_week",
   "meeting_type",
@@ -13,26 +15,42 @@
   "status",
   "col_break_1",
   "duration_mins",
+  "sec_participants",
+  "participants",
   "attendees",
   "sec_notes",
   "minutes",
-  "next_actions"
+  "next_actions",
+  "sec_sync",
+  "sync_with_teams",
+  "teams_event_id"
  ],
  "fields": [
+  {
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "label": "Subject",
+   "reqd": 1,
+   "in_list_view": 1
+  },
   {
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project",
    "options": "PMS Project",
-   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "start_time",
+   "fieldtype": "Datetime",
+   "label": "Start Time",
    "in_list_view": 1
   },
   {
    "fieldname": "meeting_date",
    "fieldtype": "Date",
    "label": "Meeting Date",
-   "reqd": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "fieldname": "day_of_week",
@@ -74,24 +92,56 @@
    "label": "Duration (mins)"
   },
   {
+   "fieldname": "sec_participants",
+   "fieldtype": "Section Break",
+   "label": "Participants"
+  },
+  {
+   "fieldname": "participants",
+   "fieldtype": "Table",
+   "label": "Participants",
+   "options": "PMS Meeting Attendee"
+  },
+  {
    "fieldname": "attendees",
    "fieldtype": "Small Text",
-   "label": "Attendees"
+   "label": "Attendees (free text)",
+   "description": "Legacy free-text attendees. Prefer the Participants table above."
   },
   {
    "fieldname": "sec_notes",
    "fieldtype": "Section Break",
-   "label": "Notes"
+   "label": "Minutes of Meeting"
   },
   {
    "fieldname": "minutes",
    "fieldtype": "Text Editor",
-   "label": "Minutes"
+   "label": "Minutes",
+   "description": "Required before a meeting can be marked Held."
   },
   {
    "fieldname": "next_actions",
    "fieldtype": "Small Text",
    "label": "Next Actions"
+  },
+  {
+   "fieldname": "sec_sync",
+   "fieldtype": "Section Break",
+   "label": "Calendar Sync",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "sync_with_teams",
+   "fieldtype": "Check",
+   "label": "Sync with Microsoft Teams",
+   "description": "Reserved for Teams/Outlook calendar sync (integration pending)."
+  },
+  {
+   "fieldname": "teams_event_id",
+   "fieldtype": "Data",
+   "label": "Teams Event ID",
+   "read_only": 1,
+   "hidden": 1
   }
  ],
  "index_web_pages_for_search": 0,
@@ -139,5 +189,6 @@
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1,
- "autoname": "format:MTG-{project}-{meeting_date}"
+ "naming_rule": "Random",
+ "autoname": "hash"
 }

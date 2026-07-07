@@ -93,6 +93,11 @@ const routes = [
     component: () => import("@/views/WeeklyPlanView.vue"),
   },
   {
+    path: "/calendar",
+    name: "Calendar",
+    component: () => import("@/views/CalendarView.vue"),
+  },
+  {
     path: "/reports/:projectId",
     name: "ProjectReports",
     component: ReportsView,
