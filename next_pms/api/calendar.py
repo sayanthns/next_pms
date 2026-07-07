@@ -156,13 +156,13 @@ def delete_meeting(name):
 
 @frappe.whitelist()
 def calendar_options():
-    """Users (for the attendee picker) and active projects (for the project picker)."""
+    """Users (for the attendee/coordinator pickers) and active projects (for the
+    project picker). Users = internal PMS staff only (the 'Next PMS' role), which
+    excludes portal customers and System Users with no PMS access — same list the
+    Task Report and task modal use."""
     _guard_view()
-    users = frappe.get_all("User",
-                           filters={"enabled": 1, "user_type": "System User",
-                                    "name": ["not in", ("Administrator", "Guest")]},
-                           fields=["name", "full_name"], order_by="full_name asc",
-                           ignore_permissions=True)
+    from next_pms.api.crud import get_all_users
+    users = get_all_users()
     projects = frappe.get_all("PMS Project",
                               filters={"status": ["in", ("Planning", "Active", "On Hold")]},
                               fields=["name", "project_name"], order_by="project_name asc",
