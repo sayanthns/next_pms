@@ -69,6 +69,13 @@
           <button class="cal-x" @click="closeModal" aria-label="Close">✕</button>
         </div>
         <div class="cal-modal-body">
+          <!-- Mark-held mode: skip the scheduling fields, just capture the MoM -->
+          <div v-if="modal.markHeld" class="cal-heldctx">
+            <div class="cal-heldsubj">{{ form.subject }}</div>
+            <div class="cal-heldmeta">Attach the minutes (PDF) to mark this meeting as held.</div>
+          </div>
+
+          <template v-if="!modal.markHeld">
           <div class="cal-f">
             <label>Subject *</label>
             <input v-model="form.subject" type="text" placeholder="e.g. Weekly sync — Steel Force" />
@@ -124,6 +131,8 @@
             </div>
             <div class="cal-selcount" v-if="form.participants.length">{{ form.participants.length }} selected</div>
           </div>
+          </template>
+
           <div class="cal-f">
             <label>MoM (PDF) <span v-if="momRequired" class="cal-req">— required to mark Held</span></label>
             <div v-if="form.mom_pdf" class="cal-file">
@@ -135,11 +144,11 @@
               <span v-if="uploading" class="cal-uploading">Uploading…</span>
             </div>
           </div>
-          <div class="cal-f">
+          <div class="cal-f" v-if="!modal.markHeld">
             <label>Notes <span class="cal-optional">(optional)</span></label>
             <RichTextEditor v-model="form.minutes" />
           </div>
-          <div class="cal-f">
+          <div class="cal-f" v-if="!modal.markHeld">
             <label>Next actions</label>
             <textarea v-model="form.next_actions" rows="2" placeholder="One per line"></textarea>
           </div>
@@ -442,6 +451,9 @@ onMounted(async () => { await Promise.all([loadOptions(), load()]) })
 .cal-f > label { display: block; font-size: 12px; font-weight: 700; color: #41514c; margin-bottom: 5px; }
 .cal-req { color: #9a3412; font-weight: 600; }
 .cal-optional { color: #94a3b8; font-weight: 500; }
+.cal-heldctx { background: #f4f8f6; border: 1px solid #cfe7dd; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+.cal-heldsubj { font-size: 15px; font-weight: 700; color: #1A2E3A; }
+.cal-heldmeta { font-size: 12.5px; color: #64748b; margin-top: 3px; }
 .cal-file { display: flex; align-items: center; gap: 8px; background: #f4f8f6; border: 1px solid #cfe7dd; border-radius: 8px; padding: 8px 11px; font-size: 13px; }
 .cal-file a { color: #2c7d63; font-weight: 600; text-decoration: none; word-break: break-all; }
 .cal-file a:hover { text-decoration: underline; }
