@@ -141,6 +141,14 @@ def save_meeting(payload):
         doc.append("participants", {"user": u, "response": (row.get("response") if isinstance(row, dict) else None) or "Invited"})
 
     doc.save(ignore_permissions=True)
+
+    # Link the uploaded (private) MoM PDF to this meeting so every user who can read the
+    # meeting can open the file — an unattached private file is only visible to its uploader.
+    if doc.mom_pdf:
+        for fname in frappe.get_all("File", filters={"file_url": doc.mom_pdf}, pluck="name"):
+            frappe.db.set_value("File", fname, {
+                "attached_to_doctype": "PMS Meeting", "attached_to_name": doc.name})
+
     return {"name": doc.name, "status": doc.status}
 
 
