@@ -189,18 +189,26 @@ def _get_plan_vs_actual(report_date):
     from next_pms.api.weekly_plan import get_plan_for_date
     rd = getdate(report_date)
     plan_name = get_plan_for_date(rd)
+
+    # Limit the plan-evaluation section to one department's projects (blank = all).
+    dept = frappe.db.get_single_value("PMS AI Settings", "plan_department")
+    allowed = None
+    if dept:
+        allowed = set(frappe.get_all("PMS Project", filters={"department": dept},
+                                     pluck="name", ignore_permissions=True))
+
     deviations = []
     if plan_name:
         wp = frappe.get_doc("Weekly Plan", plan_name)
         planned = {}
         for a in wp.allocations:
-            if a.get("project"):
+            if a.get("project") and (allowed is None or a.project in allowed):
                 planned[(a.project, a.member)] = planned.get((a.project, a.member), 0) + flt(a.planned_hours)
         rows = frappe.db.sql("""select t.project pj, tl.user u, round(sum(tl.duration_hours),2) h
             from `tabPMS Time Log` tl join `tabPMS Task` t on t.name=tl.task
             where tl.is_running=0 and DATE(tl.start_time) between %s and %s and t.project is not null
             group by t.project, tl.user""", (str(wp.week_start), str(rd)), as_dict=True)
-        actual = {(r.pj, r.u): flt(r.h) for r in rows}
+        actual = {(r.pj, r.u): flt(r.h) for r in rows if allowed is None or r.pj in allowed}
         for k in set(planned) | set(actual):
             p = planned.get(k, 0)
             a = actual.get(k, 0)
@@ -211,8 +219,10 @@ def _get_plan_vs_actual(report_date):
                                    "deviation": round(a - p, 2)})
         deviations.sort(key=lambda x: abs(x["deviation"]), reverse=True)
     at_risk = []
-    for p in frappe.get_all("PMS Project",
-            filters={"status": ["in", ("Planning", "Active", "On Hold")], "target_close_date": ["is", "set"]},
+    risk_filters = {"status": ["in", ("Planning", "Active", "On Hold")], "target_close_date": ["is", "set"]}
+    if dept:
+        risk_filters["department"] = dept
+    for p in frappe.get_all("PMS Project", filters=risk_filters,
             fields=["name", "project_name", "target_close_date"], ignore_permissions=True):
         dd = (getdate(p.target_close_date) - rd).days
         if dd < 0 or dd <= 3:

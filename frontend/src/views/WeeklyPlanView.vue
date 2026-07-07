@@ -8,12 +8,6 @@
         <p class="wp-sub" v-else>Team plan for the week</p>
       </div>
       <div class="wp-controls">
-        <template v-if="weeks.length">
-          <label for="wp-week" class="wp-sr">Week</label>
-          <select id="wp-week" v-model="selectedWeek" class="wp-select">
-            <option v-for="w in weeks" :key="w.name" :value="w.week_start">{{ w.title || w.week_start }}</option>
-          </select>
-        </template>
         <template v-if="canEdit && !editing">
           <button class="wp-editbtn" @click="startEdit" v-if="plan" title="Edit this week in the matrix builder">Edit plan</button>
           <button class="wp-editbtn primary" @click="startNew" title="Build a new week's plan">+ New week</button>

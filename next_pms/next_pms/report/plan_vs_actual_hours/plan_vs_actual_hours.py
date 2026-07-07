@@ -29,6 +29,15 @@ def execute(filters=None):
     if not plan_name:
         return columns, []
 
+    # Restrict to a department's projects (default from PMS AI Settings). Blank = all.
+    dept = filters.get("department")
+    if dept is None:
+        dept = frappe.db.get_single_value("PMS AI Settings", "plan_department")
+    allowed = None
+    if dept:
+        allowed = set(frappe.get_all("PMS Project", filters={"department": dept},
+                                     pluck="name", ignore_permissions=True))
+
     wp = frappe.get_doc("Weekly Plan", plan_name)
     ws = str(wp.week_start)
     we = str(getdate(nowdate()))
@@ -38,6 +47,8 @@ def execute(filters=None):
     planned = {}
     for a in wp.allocations:
         if not a.get("project") or not flt(a.planned_hours):
+            continue
+        if allowed is not None and a.project not in allowed:
             continue
         k = (a.project, a.member)
         planned[k] = planned.get(k, 0) + flt(a.planned_hours)
@@ -49,7 +60,8 @@ def execute(filters=None):
         from `tabPMS Time Log` tl left join `tabPMS Task` t on t.name = tl.task
         where tl.is_running = 0 and DATE(tl.start_time) between %s and %s
         group by coalesce(t.project, ''), tl.user""", (ws, we), as_dict=True)
-    actual = {(r.project, r.person): flt(r.h) for r in rows if flt(r.h)}
+    actual = {(r.project, r.person): flt(r.h) for r in rows
+              if flt(r.h) and (allowed is None or r.project in allowed)}
 
     keys = set(planned) | set(actual)
     pids = {k[0] for k in keys if k[0]}
