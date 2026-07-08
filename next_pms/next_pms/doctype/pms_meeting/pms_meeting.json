@@ -15,6 +15,7 @@
   "status",
   "col_break_1",
   "duration_mins",
+  "meeting_url",
   "sec_participants",
   "participants",
   "attendees",
@@ -22,6 +23,9 @@
   "mom_pdf",
   "minutes",
   "next_actions",
+  "sec_bot",
+  "ai_meeting",
+  "bot_status",
   "sec_sync",
   "sync_with_teams",
   "teams_event_id"
@@ -130,6 +134,32 @@
    "fieldname": "next_actions",
    "fieldtype": "Small Text",
    "label": "Next Actions"
+  },
+  {
+   "fieldname": "meeting_url",
+   "fieldtype": "Small Text",
+   "label": "Meeting Link",
+   "description": "Video-call link (Teams / Meet / Zoom). Required to invite the transcription bot."
+  },
+  {
+   "fieldname": "sec_bot",
+   "fieldtype": "Section Break",
+   "label": "Transcription Bot",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "ai_meeting",
+   "fieldtype": "Data",
+   "label": "AI Meeting",
+   "read_only": 1,
+   "description": "Linked Meeting AI record (set when the bot is invited). Data, not Link, to avoid a hard dependency on the meeting_ai app."
+  },
+  {
+   "fieldname": "bot_status",
+   "fieldtype": "Data",
+   "label": "Bot Status",
+   "read_only": 1,
+   "description": "Mirror of the AI Meeting status (Bot Scheduled / Recording / MoM Draft / …), updated by meeting_ai."
   },
   {
    "fieldname": "sec_sync",

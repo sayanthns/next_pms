@@ -51,6 +51,7 @@
           <div class="cal-meta">
             <span v-if="m.project_name" class="cal-chip proj">{{ m.project_name }}</span>
             <span class="cal-chip type">{{ m.meeting_type }}</span>
+            <span v-if="m.bot_status" class="cal-chip bot" title="Transcription bot">🤖 {{ m.bot_status }}</span>
             <a v-if="m.mom_pdf" :href="m.mom_pdf" target="_blank" rel="noopener" class="cal-mom ok link" title="Open the MoM PDF">MoM ↗</a>
             <span v-else-if="m.status === 'Held'" class="cal-mom ok" title="Marked held">Held</span>
             <span v-else-if="isPast(m) && m.status === 'Planned'" class="cal-mom due" title="This meeting is past and not marked Held">Needs update</span>
@@ -128,6 +129,15 @@
             </div>
           </div>
           <div class="cal-f">
+            <label>Meeting Link</label>
+            <input v-model="form.meeting_url" type="url" placeholder="https:// Teams / Meet / Zoom link" />
+            <div class="cal-bot" v-if="modal.name">
+              <button type="button" class="cal-mini go" @click="inviteBot" :disabled="botBusy || !form.meeting_url">{{ botBusy ? 'Inviting…' : (form.ai_meeting ? 'Re-invite bot' : 'Invite bot') }}</button>
+              <span v-if="form.bot_status" class="cal-botstat">🤖 {{ form.bot_status }}</span>
+            </div>
+            <div class="cal-hint" v-else>Save the meeting first, then invite the transcription bot.</div>
+          </div>
+          <div class="cal-f">
             <label>Participants</label>
             <input v-model="userFilter" type="text" class="cal-search" placeholder="Filter people…" />
             <div class="cal-picker">
@@ -187,6 +197,7 @@ const options = reactive({ users: [], projects: [] })
 const userFilter = ref('')
 const windowStart = ref(mondayOf(new Date()))
 const uploading = ref(false)
+const botBusy = ref(false)
 const pdfInput = ref(null)
 
 const modal = reactive({ open: false, name: null, markHeld: false })
@@ -196,7 +207,8 @@ function blankForm() {
   return {
     subject: '', project: '', meeting_type: 'Client Weekly', start_local: '',
     duration_mins: 30, coordinator: '', status: 'Planned',
-    participants: [], mom_pdf: '', minutes: '', next_actions: '', can_delete: false,
+    participants: [], mom_pdf: '', minutes: '', next_actions: '',
+    meeting_url: '', ai_meeting: '', bot_status: '', can_delete: false,
   }
 }
 
@@ -345,6 +357,7 @@ async function openEdit(m, markHeld = false) {
       status: markHeld ? 'Held' : (d.status || 'Planned'),
       participants: (d.participants || []).map(p => p.user),
       mom_pdf: d.mom_pdf || '', minutes: d.minutes || '', next_actions: d.next_actions || '',
+      meeting_url: d.meeting_url || '', ai_meeting: d.ai_meeting || '', bot_status: d.bot_status || '',
       can_delete: !!d.can_edit,
     })
     modal.name = m.name; modal.markHeld = markHeld; modal.open = true
@@ -354,6 +367,19 @@ async function openEdit(m, markHeld = false) {
 }
 function openComplete(m) { openEdit(m, true) }
 function closeModal() { modal.open = false }
+
+async function inviteBot() {
+  if (!modal.name || !form.meeting_url) return
+  botBusy.value = true; modalError.value = ''
+  try {
+    const r = await call('next_pms.api.calendar.invite_bot', { name: modal.name })
+    form.bot_status = r.bot_status || 'Bot Scheduled'
+    form.ai_meeting = r.ai_meeting || ''
+    await load()
+  } catch (e) {
+    modalError.value = (e && e.message) || 'Failed to invite the bot.'
+  } finally { botBusy.value = false }
+}
 
 function toServerDt(local) { return local ? local.replace('T', ' ') + ':00' : null }
 
@@ -375,6 +401,7 @@ async function save() {
       duration_mins: form.duration_mins, coordinator: form.coordinator || null,
       status: form.status, mom_pdf: form.mom_pdf || null,
       minutes: form.minutes, next_actions: form.next_actions,
+      meeting_url: form.meeting_url || null,
       participants: form.participants.map(u => ({ user: u })),
     }
     await call('next_pms.api.calendar.save_meeting', { payload: JSON.stringify(payload) })
@@ -450,6 +477,10 @@ onMounted(async () => { await Promise.all([loadOptions(), load()]) })
 .cal-chip { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 7px; }
 .cal-chip.proj { background: #eef6f3; color: #2c7d63; border: 1px solid #cfe7dd; }
 .cal-chip.type { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.cal-chip.bot { background: #eff6ff; color: #1d4ed8; border: 1px solid #c7d7fe; }
+.cal-bot { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.cal-botstat { font-size: 12px; color: #1d4ed8; font-weight: 600; }
+.cal-hint { font-size: 11.5px; color: #94a3b8; margin-top: 6px; }
 .cal-mom { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 7px; }
 .cal-mom.ok { background: #f0fdf4; color: #15803d; }
 .cal-mom.link { text-decoration: none; cursor: pointer; }

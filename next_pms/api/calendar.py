@@ -16,7 +16,13 @@ from frappe.utils import getdate, get_datetime, nowdate, add_days, cint, flt
 from next_pms.api.weekly_plan import _user_context
 
 LIST_FIELDS = ["name", "subject", "project", "start_time", "meeting_date", "day_of_week",
-               "meeting_type", "coordinator", "status", "duration_mins", "mom_pdf", "next_actions"]
+               "meeting_type", "coordinator", "status", "duration_mins", "mom_pdf", "next_actions",
+               "meeting_url", "ai_meeting", "bot_status"]
+
+# Bridge into the meeting_ai app. next_pms calls this in-process when a user invites the
+# transcription bot; meeting_ai must expose it (see the KT doc). Kept as a string so there
+# is no import-time dependency on meeting_ai being installed.
+MEETING_AI_BRIDGE = "meeting_ai.api.bridge.create_and_invite"
 
 
 def _guard_view():
@@ -127,6 +133,7 @@ def save_meeting(payload):
     doc.meeting_type = payload.get("meeting_type") or "Client Weekly"
     doc.status = payload.get("status") or "Planned"
     doc.duration_mins = cint(payload.get("duration_mins")) or 30
+    doc.meeting_url = payload.get("meeting_url") or None
     doc.mom_pdf = payload.get("mom_pdf") or None
     doc.minutes = payload.get("minutes")
     doc.next_actions = payload.get("next_actions")
@@ -175,6 +182,42 @@ def delete_meeting(name):
 
     frappe.delete_doc("PMS Meeting", name, ignore_permissions=True)
     return {"ok": True, "tasks_deleted": deleted, "tasks_kept": kept}
+
+
+@frappe.whitelist()
+def invite_bot(name):
+    """Dispatch the meeting_ai transcription bot to this meeting's link. Delegates the
+    actual Vexa work to the meeting_ai app (single source) via MEETING_AI_BRIDGE, then
+    stores the returned AI Meeting id + status on this PMS Meeting. meeting_ai writes the
+    generated MoM back to this meeting's mom_pdf when its pipeline finishes."""
+    ctx = _guard_view()
+    doc = frappe.get_doc("PMS Meeting", name)
+    if not _can_edit(ctx, doc.coordinator):
+        frappe.throw(_("You can only invite the bot for meetings you coordinate."), frappe.PermissionError)
+    if not doc.meeting_url:
+        frappe.throw(_("Add the Meeting Link first."))
+    if "meeting_ai" not in frappe.get_installed_apps():
+        frappe.throw(_("The Meeting AI app is not installed on this site — bot invite is unavailable."))
+    try:
+        bridge = frappe.get_attr(MEETING_AI_BRIDGE)
+    except Exception:
+        frappe.throw(_("The Meeting AI bot bridge is not deployed yet: ") + MEETING_AI_BRIDGE)
+
+    project_name = frappe.db.get_value("PMS Project", doc.project, "project_name") if doc.project else None
+    attendees = [{"user": p.user, "full_name": p.full_name or p.user} for p in (doc.participants or [])]
+    res = bridge(
+        source_pms_meeting=doc.name,
+        title=doc.subject,
+        meeting_url=doc.meeting_url,
+        project=doc.project,
+        project_name=project_name,
+        meeting_date=str(doc.meeting_date or ""),
+        attendees=attendees,
+    ) or {}
+
+    doc.db_set("ai_meeting", res.get("ai_meeting"), update_modified=False)
+    doc.db_set("bot_status", res.get("status") or "Bot Scheduled", update_modified=False)
+    return {"ai_meeting": res.get("ai_meeting"), "bot_status": doc.bot_status}
 
 
 @frappe.whitelist()
