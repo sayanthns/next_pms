@@ -110,6 +110,32 @@ class TestCalendarApi(FrappeTestCase):
             with self.assertRaises(frappe.PermissionError):
                 C.list_meetings()
 
+    def test_delete_cascades_untouched_tasks(self):
+        # 2 linked tasks, neither with logged time → both deleted, then the meeting.
+        with patch.object(C, "_user_context", return_value=_ctx(is_admin=True, user="Administrator")), \
+             patch.object(frappe.db, "get_value", return_value="Administrator"), \
+             patch.object(frappe, "get_all", return_value=["TASK-1", "TASK-2"]), \
+             patch.object(frappe.db, "exists", return_value=False), \
+             patch.object(frappe, "delete_doc") as dd:
+            res = C.delete_meeting("MTG-1")
+        self.assertEqual(res["tasks_deleted"], 2)
+        self.assertEqual(res["tasks_kept"], 0)
+        self.assertEqual(dd.call_count, 3)  # 2 tasks + the meeting
+
+    def test_delete_keeps_task_with_logged_time(self):
+        # a linked task that has a time log is unlinked + kept, not deleted
+        with patch.object(C, "_user_context", return_value=_ctx(is_admin=True, user="Administrator")), \
+             patch.object(frappe.db, "get_value", return_value="Administrator"), \
+             patch.object(frappe, "get_all", return_value=["TASK-1"]), \
+             patch.object(frappe.db, "exists", return_value=True), \
+             patch.object(frappe.db, "set_value") as sv, \
+             patch.object(frappe, "delete_doc") as dd:
+            res = C.delete_meeting("MTG-1")
+        self.assertEqual(res["tasks_deleted"], 0)
+        self.assertEqual(res["tasks_kept"], 1)
+        sv.assert_called_once()          # task unlinked
+        self.assertEqual(dd.call_count, 1)  # only the meeting deleted
+
     def test_save_and_list_roundtrip(self):
         # run-tests session = Administrator -> is_admin true
         payload = {

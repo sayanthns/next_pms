@@ -386,7 +386,7 @@ async function save() {
 }
 async function removeMeeting() {
   if (!modal.name) return
-  if (!window.confirm('Delete this meeting?')) return
+  if (!window.confirm('Delete this meeting? Its auto-created follow-up tasks will also be removed (tasks with logged time are kept).')) return
   saving.value = true
   try {
     await call('next_pms.api.calendar.delete_meeting', { name: modal.name })

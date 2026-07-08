@@ -11,7 +11,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import getdate, get_datetime, nowdate, add_days, cint
+from frappe.utils import getdate, get_datetime, nowdate, add_days, cint, flt
 
 from next_pms.api.weekly_plan import _user_context
 
@@ -158,8 +158,23 @@ def delete_meeting(name):
     coord = frappe.db.get_value("PMS Meeting", name, "coordinator")
     if not _can_edit(ctx, coord):
         frappe.throw(_("You can only delete meetings you coordinate."), frappe.PermissionError)
+
+    # Clean up the follow-up tasks this meeting auto-created. Keep (and unlink) any task
+    # that already has logged time so real work is never lost; delete the untouched ones.
+    deleted = kept = 0
+    for t in frappe.get_all("PMS Task", filters={"source_meeting": name},
+                            pluck="name", ignore_permissions=True):
+        has_time = frappe.db.exists("PMS Time Log", {"task": t}) or \
+            flt(frappe.db.get_value("PMS Task", t, "actual_hours"))
+        if has_time:
+            frappe.db.set_value("PMS Task", t, "source_meeting", None)  # unlink so meeting can delete
+            kept += 1
+        else:
+            frappe.delete_doc("PMS Task", t, ignore_permissions=True, force=True)
+            deleted += 1
+
     frappe.delete_doc("PMS Meeting", name, ignore_permissions=True)
-    return {"ok": True}
+    return {"ok": True, "tasks_deleted": deleted, "tasks_kept": kept}
 
 
 @frappe.whitelist()

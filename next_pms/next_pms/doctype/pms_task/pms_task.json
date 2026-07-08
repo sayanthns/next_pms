@@ -32,7 +32,8 @@
         "section_break_hierarchy",
         "parent_task",
         "attachments",
-        "created_by_customer"
+        "created_by_customer",
+        "source_meeting"
     ],
     "fields": [
         {
@@ -205,6 +206,15 @@
             "read_only": 1,
             "hidden": 1,
             "description": "Flag for tasks created via the client portal"
+        },
+        {
+            "fieldname": "source_meeting",
+            "fieldtype": "Link",
+            "label": "Source Meeting",
+            "options": "PMS Meeting",
+            "read_only": 1,
+            "hidden": 1,
+            "description": "Set when this task was auto-created from a PMS Meeting; used to clean up on meeting deletion."
         }
     ],
     "allow_import": 1,

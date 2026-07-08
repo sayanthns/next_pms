@@ -50,6 +50,7 @@ class PMSMeeting(Document):
             task.assigned_to = row.user
             task.task_type = "Meeting"
             task.status = "To Do"
+            task.source_meeting = self.name
             if self.meeting_date:
                 task.due_date = self.meeting_date
             task.description = note
