@@ -35,13 +35,18 @@
       </div>
       <article v-for="m in g.items" :key="m.name" class="cal-card" :class="{ held: m.status === 'Held', cancelled: m.status === 'Cancelled' }">
         <div class="cal-time">
-          <template v-if="m.start_time"><b>{{ timeOf(m.start_time) }}</b><span v-if="m.duration_mins">{{ m.duration_mins }}m</span></template>
+          <template v-if="m.start_time"><b>{{ zoneTimes(m.start_time).ist }}</b><span class="cal-tz">IST</span><span v-if="m.duration_mins">{{ m.duration_mins }}m</span></template>
           <template v-else><b>—</b></template>
         </div>
         <div class="cal-body">
           <div class="cal-crow">
             <h3 class="cal-subj">{{ m.subject }}</h3>
             <span class="cal-badge" :class="'st-' + (m.status || 'Planned').toLowerCase()">{{ m.status }}</span>
+          </div>
+          <div class="cal-zones" v-if="m.start_time">
+            <span>KSA {{ zoneTimes(m.start_time).ksa }}</span>
+            <span>UAE {{ zoneTimes(m.start_time).uae }}</span>
+            <span>IST {{ zoneTimes(m.start_time).ist }}</span>
           </div>
           <div class="cal-meta">
             <span v-if="m.project_name" class="cal-chip proj">{{ m.project_name }}</span>
@@ -98,8 +103,9 @@
           </div>
           <div class="cal-frow">
             <div class="cal-f">
-              <label>Start</label>
+              <label>Start <span class="cal-optional">(IST)</span></label>
               <input v-model="form.start_local" type="datetime-local" />
+              <div class="cal-zonehint" v-if="startZones">KSA {{ startZones.ksa }} · UAE {{ startZones.uae }}</div>
             </div>
             <div class="cal-f">
               <label>Duration (mins)</label>
@@ -201,8 +207,21 @@ function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); retu
 const windowEnd = computed(() => addDays(windowStart.value, 27))
 const rangeLabel = computed(() => fmt(windowStart.value) + ' – ' + fmt(windowEnd.value))
 function fmt(d) { return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) }
-function timeOf(dt) { if (!dt) return ''; const t = String(dt).replace(' ', 'T'); const d = new Date(t); return isNaN(d) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 function isPast(m) { if (!m.start_time && !m.meeting_date) return false; const d = new Date(String(m.start_time || m.meeting_date).replace(' ', 'T')); return d < new Date() }
+
+// Stored start_time is the IST wall-clock (system tz = Asia/Kolkata). KSA = IST-2:30,
+// UAE = IST-1:30 (all three observe no DST, so fixed offsets are exact). Math is done in
+// UTC to stay independent of the viewer's browser timezone.
+function zoneTimes(dt) {
+  if (!dt) return { ist: '', ksa: '', uae: '' }
+  const s = String(dt).replace('T', ' ')
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ ]+(\d{2}):(\d{2})/)
+  if (!m) return { ist: '', ksa: '', uae: '' }
+  const base = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5])
+  const hhmm = (ms) => { const x = new Date(ms); return String(x.getUTCHours()).padStart(2, '0') + ':' + String(x.getUTCMinutes()).padStart(2, '0') }
+  return { ist: hhmm(base), ksa: hhmm(base - 150 * 60000), uae: hhmm(base - 90 * 60000) }
+}
+const startZones = computed(() => form.start_local ? zoneTimes(form.start_local) : null)
 
 function initials(name) {
   if (!name) return '?'
@@ -419,7 +438,11 @@ onMounted(async () => { await Promise.all([loadOptions(), load()]) })
 .cal-card.cancelled { opacity: .6; }
 .cal-time { min-width: 58px; text-align: center; padding-top: 2px; }
 .cal-time b { display: block; font-size: 14px; color: #1A2E3A; font-weight: 800; }
-.cal-time span { font-size: 11px; color: #94a3b8; }
+.cal-time span { font-size: 11px; color: #94a3b8; display: block; }
+.cal-time .cal-tz { font-size: 9px; font-weight: 700; letter-spacing: .5px; color: #b8c0cc; }
+.cal-zones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; font-size: 11.5px; color: #64748b; font-weight: 600; }
+.cal-zones span:first-child { color: #2c7d63; }
+.cal-zonehint { font-size: 11.5px; color: #2c7d63; font-weight: 600; margin-top: 4px; }
 .cal-body { flex: 1; min-width: 0; }
 .cal-crow { display: flex; align-items: center; gap: 10px; }
 .cal-subj { font-size: 15px; font-weight: 700; color: #1A2E3A; margin: 0; }

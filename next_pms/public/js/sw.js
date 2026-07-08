@@ -9,8 +9,8 @@
 
 // Bump these on every frontend deploy to purge stale caches (old activate deletes
 // any cache whose name isn't in this list). v2: fixes stale-bundle blank screen.
-const CACHE_NAME = 'next-pms-shell-B3_ixGh1';
-const ASSETS_CACHE = 'next-pms-assets-B3_ixGh1';
+const CACHE_NAME = 'next-pms-shell-BZQqKZlI';
+const ASSETS_CACHE = 'next-pms-assets-BZQqKZlI';
 
 // Pre-cache the app shell on install
 self.addEventListener('install', (event) => {
