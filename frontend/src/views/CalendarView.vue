@@ -88,12 +88,21 @@
             <input v-model="form.subject" type="text" placeholder="e.g. Weekly sync — Steel Force" />
           </div>
           <div class="cal-frow">
-            <div class="cal-f">
+            <div class="cal-f cal-combo">
               <label>Project <span v-if="projectRequired" class="cal-req">*</span></label>
-              <select v-model="form.project">
-                <option value="">— none —</option>
-                <option v-for="p in options.projects" :key="p.name" :value="p.name">{{ p.project_name || p.name }}</option>
-              </select>
+              <input type="text" v-model="projectSearch" @focus="projectOpen = true" @blur="projectOpen = false"
+                     :placeholder="form.project ? projectLabel : 'Search project…'" class="cal-search" />
+              <div class="cal-picker cal-combolist" v-if="projectOpen">
+                <div class="cal-pick" @mousedown.prevent="selectProject(null)"><span class="cal-muted2">— none —</span></div>
+                <div class="cal-pick" v-for="p in filteredProjects" :key="p.name" @mousedown.prevent="selectProject(p)">
+                  <span>{{ p.project_name || p.name }}</span>
+                  <span class="cal-pstatus" :class="'ps-' + (p.status || '').toLowerCase().replace(/ /g, '-')">{{ p.status }}</span>
+                </div>
+                <div v-if="!filteredProjects.length" class="cal-selcount">No match</div>
+              </div>
+              <div class="cal-selproj" v-if="form.project && !projectOpen">
+                {{ projectLabel }}<button type="button" class="cal-filex" @click="selectProject(null)" aria-label="Clear">✕</button>
+              </div>
             </div>
             <div class="cal-f">
               <label>Type</label>
@@ -195,6 +204,8 @@ const errorMsg = ref('')
 const modalError = ref('')
 const options = reactive({ users: [], projects: [] })
 const userFilter = ref('')
+const projectSearch = ref('')
+const projectOpen = ref(false)
 const windowStart = ref(mondayOf(new Date()))
 const uploading = ref(false)
 const botBusy = ref(false)
@@ -278,6 +289,21 @@ const momRequired = computed(() => form.status === 'Held')
 const projectRequired = computed(() => form.meeting_type === 'Client Weekly')
 const momFileName = computed(() => (form.mom_pdf || '').split('/').pop() || 'MoM.pdf')
 
+// ── searchable project picker ──
+function projName(id) { const p = options.projects.find(x => x.name === id); return p ? (p.project_name || p.name) : id }
+const projectLabel = computed(() => form.project ? projName(form.project) : '')
+const filteredProjects = computed(() => {
+  const q = projectSearch.value.trim().toLowerCase()
+  if (!q || q === (projectLabel.value || '').toLowerCase()) return options.projects
+  return options.projects.filter(p => (p.project_name || p.name).toLowerCase().includes(q) ||
+                                      (p.name || '').toLowerCase().includes(q))
+})
+function selectProject(p) {
+  form.project = p ? p.name : ''
+  projectSearch.value = p ? (p.project_name || p.name) : ''
+  projectOpen.value = false
+}
+
 function csrfToken() {
   return document.cookie.split('; ').find(c => c.startsWith('csrf_token='))?.split('=')[1]
     || (window.frappe && window.frappe.csrf_token) || ''
@@ -360,6 +386,7 @@ function openCreate() {
   Object.assign(form, blankForm())
   // coordinator left blank → backend defaults it to the current user on create
   modal.name = null; modal.markHeld = false; modalError.value = ''; userFilter.value = ''
+  projectSearch.value = ''; projectOpen.value = false
   modal.open = true
 }
 async function openEdit(m, markHeld = false) {
@@ -376,6 +403,7 @@ async function openEdit(m, markHeld = false) {
       meeting_url: d.meeting_url || '', ai_meeting: d.ai_meeting || '', bot_status: d.bot_status || '',
       can_delete: !!d.can_edit,
     })
+    projectSearch.value = form.project ? projName(form.project) : ''; projectOpen.value = false
     modal.name = m.name; modal.markHeld = markHeld; modal.open = true
   } catch (e) {
     errorMsg.value = (e && e.message) || 'Failed to open meeting.'
@@ -541,6 +569,16 @@ onMounted(async () => { await Promise.all([loadOptions(), load()]) })
 .cal-pick { display: flex; align-items: center; gap: 8px; padding: 4px 2px; font-size: 13px; color: #374151; cursor: pointer; }
 .cal-pick input { width: auto; }
 .cal-selcount { font-size: 11.5px; color: #64748b; margin-top: 4px; }
+.cal-combo { position: relative; }
+.cal-combolist { position: absolute; left: 0; right: 0; top: 100%; z-index: 20; background: #fff; box-shadow: 0 8px 24px rgba(15,23,42,.14); max-height: 220px; margin-top: 2px; }
+.cal-combo .cal-pick { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
+.cal-combo .cal-pick:hover { background: #f4f8f6; }
+.cal-muted2 { color: #94a3b8; }
+.cal-pstatus { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; background: #f1f5f9; color: #64748b; white-space: nowrap; }
+.ps-active { background: #f0fdf4; color: #15803d; } .ps-planning { background: #eff6ff; color: #1d4ed8; }
+.ps-on-hold { background: #fff7ed; color: #9a3412; } .ps-completed { background: #f1f5f9; color: #64748b; }
+.ps-cancelled { background: #fef2f2; color: #b91c1c; }
+.cal-selproj { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; font-weight: 600; color: #1A2E3A; }
 .cal-modal-foot { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-top: 1px solid #e3e9e6; }
 .cal-spacer { flex: 1; }
 @media (max-width: 620px) { .cal-frow { flex-direction: column; gap: 0; } }

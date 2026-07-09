@@ -229,8 +229,10 @@ def calendar_options():
     _guard_view()
     from next_pms.api.crud import get_all_users
     users = get_all_users()
+    # All statuses — the picker is searchable, so the full list is fine (a client meeting
+    # may reference a project that is On Hold / Completed).
     projects = frappe.get_all("PMS Project",
-                              filters={"status": ["in", ("Planning", "Active", "On Hold")]},
-                              fields=["name", "project_name"], order_by="project_name asc",
+                              fields=["name", "project_name", "status"],
+                              order_by="project_name asc",
                               ignore_permissions=True)
     return {"users": users, "projects": projects}
