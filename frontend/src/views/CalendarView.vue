@@ -33,7 +33,7 @@
         <span class="cal-dow">{{ g.dow }}</span>
         <span class="cal-date" :class="{ today: g.isToday }">{{ g.label }}</span>
       </div>
-      <article v-for="m in g.items" :key="m.name" class="cal-card" :class="{ held: m.status === 'Held', cancelled: m.status === 'Cancelled' }">
+      <article v-for="m in g.items" :key="m.name" class="cal-card" :class="cardState(m)">
         <div class="cal-time">
           <template v-if="m.start_time"><b>{{ zoneTimes(m.start_time).ist }}</b><span class="cal-tz">IST</span><span v-if="m.duration_mins">{{ m.duration_mins }}m</span></template>
           <template v-else><b>—</b></template>
@@ -219,7 +219,23 @@ function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); retu
 const windowEnd = computed(() => addDays(windowStart.value, 27))
 const rangeLabel = computed(() => fmt(windowStart.value) + ' – ' + fmt(windowEnd.value))
 function fmt(d) { return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) }
-function isPast(m) { if (!m.start_time && !m.meeting_date) return false; const d = new Date(String(m.start_time || m.meeting_date).replace(' ', 'T')); return d < new Date() }
+// Compare against "now in IST": stored times are IST wall-clock, so parse them as UTC
+// (basis-free) and shift real now by +5:30 to the same basis. Browser tz is irrelevant.
+function _startMsIST(dt) {
+  const mt = String(dt || '').replace(' ', 'T').match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/)
+  return mt ? Date.UTC(+mt[1], +mt[2] - 1, +mt[3], +(mt[4] || 0), +(mt[5] || 0)) : null
+}
+function _nowMsIST() { return Date.now() + 5.5 * 3600000 }
+function isPast(m) { const s = _startMsIST(m.start_time || m.meeting_date); return s != null && s < _nowMsIST() }
+// Left-bar colour: Held → green (done), Cancelled → grey, else red if the start time is
+// past (overdue), yellow if upcoming. Timeless meetings (no start_time) stay neutral.
+function cardState(m) {
+  if (m.status === 'Cancelled') return 'cancelled'
+  if (m.status === 'Held') return 'held'
+  const s = _startMsIST(m.start_time)
+  if (s == null) return ''
+  return s < _nowMsIST() ? 'past' : 'future'
+}
 
 // Stored start_time is the IST wall-clock (system tz = Asia/Kolkata). KSA = IST-2:30,
 // UAE = IST-1:30 (all three observe no DST, so fixed offsets are exact). Math is done in
@@ -461,8 +477,10 @@ onMounted(async () => { await Promise.all([loadOptions(), load()]) })
 .cal-date.today { color: #2c7d63; }
 
 .cal-card { display: flex; gap: 14px; background: #fff; border: 1px solid #e3e9e6; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; align-items: flex-start; }
-.cal-card.held { border-left: 3px solid #3A9E7E; }
-.cal-card.cancelled { opacity: .6; }
+.cal-card.held { border-left: 3px solid #3A9E7E; background: #f6fbf9; }
+.cal-card.past { border-left: 3px solid #dc3545; background: #fef5f5; }
+.cal-card.future { border-left: 3px solid #e0a419; background: #fffdf3; }
+.cal-card.cancelled { opacity: .55; border-left: 3px solid #cbd5d0; }
 .cal-time { min-width: 58px; text-align: center; padding-top: 2px; }
 .cal-time b { display: block; font-size: 14px; color: #1A2E3A; font-weight: 800; }
 .cal-time span { font-size: 11px; color: #94a3b8; display: block; }
