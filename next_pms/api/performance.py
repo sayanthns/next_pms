@@ -18,7 +18,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate
+from frappe.utils import cstr, flt, getdate, now_datetime
 
 from next_pms.api._hours import (
     compute_target_hours,
@@ -380,6 +380,10 @@ def compute_team_performance(from_date, to_date):
             "total_logged_hours": s["total_logged_hours"],
             "completed_count": s["completed_count"],
             "dimensions": {d["key"]: d["score"] for d in s["dimensions"] if d["included"]},
+            # full detail rows ({key, weight, included, score, raw, weighted})
+            # — consumed by the monthly snapshot freeze; the score-dict above
+            # stays for leaderboard UI / email back-compat.
+            "dimension_rows": s["dimensions"],
         })
     scored = sorted(
         (r for r in rows if r["included_weight"] > 0),
@@ -405,3 +409,65 @@ def get_team_performance(period_days=30, from_date=None, to_date=None):
         "to_date": str(td),
         "rows": compute_team_performance(fd, td),
     }
+
+
+# ═══════════════════ Frozen monthly snapshots ═══════════════════
+
+_SNAPSHOT_ROW_FIELDS = [
+    "name", "month_key", "month_label", "from_date", "to_date",
+    "composite_score", "band", "adjustment", "adjustment_reason",
+    "adjusted_by", "adjusted_on", "final_score", "final_band",
+    "rank", "total_ranked",
+]
+
+
+def _snapshot_row(name):
+    """One snapshot reshaped as the flat dict the frontend consumes."""
+    return frappe.get_all(
+        "PMS Performance Score",
+        filters={"name": name},
+        fields=_SNAPSHOT_ROW_FIELDS,
+        limit=1,
+        ignore_permissions=True,
+    )[0]
+
+
+@frappe.whitelist()
+def get_score_history(user):
+    """Submitted (frozen) monthly snapshots for one member, newest first.
+    Management-only."""
+    if not (is_admin_user() or is_manager_user()):
+        frappe.throw(_("Performance scores are visible to management only."))
+    return frappe.get_all(
+        "PMS Performance Score",
+        filters={"user": user, "docstatus": 1},
+        fields=_SNAPSHOT_ROW_FIELDS,
+        order_by="from_date desc",
+        limit=0,
+        ignore_permissions=True,
+    )
+
+
+@frappe.whitelist()
+def apply_adjustment(name, adjustment, reason=None):
+    """Bounded (±10), reasoned post-submit adjustment on a frozen snapshot.
+    Management-only; gate runs BEFORE any doc access. Single save() on a
+    fresh doc — the controller re-validates and recomputes final_score/
+    final_band, and track_changes writes the Version audit row."""
+    if not (is_admin_user() or is_manager_user()):
+        frappe.throw(_("Performance adjustments are visible to management only."))
+
+    doc = frappe.get_doc("PMS Performance Score", name)
+    if doc.docstatus != 1:
+        frappe.throw(_("Adjustments only apply to submitted snapshots."))
+
+    doc.adjustment = flt(adjustment)
+    doc.adjustment_reason = cstr(reason)
+    doc.adjusted_by = frappe.session.user
+    doc.adjusted_on = now_datetime()
+    # update-after-submit path; no db_set, no manual commit.
+    # ignore_version=False: the Version row IS the audit trail — never
+    # skip it (save() would default it off under frappe.flags.in_test).
+    doc.save(ignore_version=False)
+
+    return _snapshot_row(name)

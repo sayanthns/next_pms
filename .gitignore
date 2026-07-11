@@ -42,3 +42,6 @@ android-capacitor/keystore/*.keystore
 android-capacitor/keystore/SECRET-DO-NOT-COMMIT.env
 
 dist-apk/
+.pipeline/
+graphify-out/
+.graphifyignore

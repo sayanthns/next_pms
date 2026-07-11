@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, add_days, getdate, get_datetime
+from frappe.utils import now_datetime, add_days, getdate, get_datetime, flt
 from next_pms.utils import get_pms_url
 
 
@@ -656,11 +656,137 @@ def _build_checkin_reminder_html(full_name, reason, date_str):
 
 # ═══════════════════ Monthly Performance Report ═══════════════════
 
+def _upsert_month_snapshots(ranked_rows, month_start, month_end, month_label):
+    """Freeze one submitted PMS Performance Score per ranked member for the
+    month. Idempotent via the deterministic name PERF-{YYYY-MM}-{user}:
+    a submitted snapshot always wins (skipped), a draft leftover from a
+    crashed run is replaced from the current rows and submitted, anything
+    else is created fresh. Per-user try/except so one failure doesn't kill
+    the batch (mirrors compute_team_performance). Returns
+    (created_names, skipped_names)."""
+    month_key = getdate(month_start).strftime("%Y-%m")
+    total_ranked = len(ranked_rows)
+    created, skipped = [], []
+    for r in ranked_rows:
+        name = f"PERF-{month_key}-{r['user']}"
+        try:
+            docstatus = frappe.db.get_value("PMS Performance Score", name, "docstatus")
+            if docstatus == 1:
+                skipped.append(name)  # frozen snapshot wins over recomputed rows
+                continue
+            if docstatus is not None:
+                # crash leftover draft — replace with the current rows
+                frappe.delete_doc(
+                    "PMS Performance Score", name,
+                    force=1, ignore_permissions=True, delete_permanently=True,
+                )
+            doc = frappe.get_doc({
+                "doctype": "PMS Performance Score",
+                "user": r["user"],
+                "month_key": month_key,
+                "month_label": month_label,
+                "from_date": month_start,
+                "to_date": month_end,
+                "composite_score": r["composite_score"],
+                "band": r["band"],
+                "included_weight": r["included_weight"],
+                "rank": r["rank"],
+                "total_ranked": total_ranked,
+                "target_hours": r["target_hours"],
+                "logged_hours": r["total_logged_hours"],
+                "completed_count": r["completed_count"],
+                "dimensions": [
+                    {
+                        "dim_key": d["key"],
+                        "weight": d["weight"],
+                        "included": 1 if d["included"] else 0,
+                        "score": d["score"],
+                        "raw_basis": d["raw"],
+                    }
+                    for d in (r.get("dimension_rows") or [])
+                ],
+            })
+            doc.insert(ignore_permissions=True)
+            doc.submit()
+            created.append(name)
+        except frappe.DuplicateEntryError:
+            # concurrent worker inserted the same name first — treat as skip
+            frappe.log_error(
+                title=f"Duplicate performance snapshot {name}",
+                message=frappe.get_traceback(),
+            )
+            skipped.append(name)
+        except Exception:
+            frappe.log_error(
+                title=f"Performance snapshot failed for {r.get('user')}",
+                message=frappe.get_traceback(),
+            )
+    return created, skipped
+
+
+def _month_snapshot_rows(month_key):
+    """Submitted snapshots for a month, reshaped into the dicts the email
+    builders expect (dimensions dict rebuilt from included child rows).
+    One batch query each for parents, children and full names — no N+1."""
+    snaps = frappe.get_all(
+        "PMS Performance Score",
+        filters={"month_key": month_key, "docstatus": 1},
+        fields=[
+            "name", "user", "composite_score", "band", "rank", "total_ranked",
+            "target_hours", "logged_hours", "completed_count",
+        ],
+        limit=0,
+        ignore_permissions=True,
+    )
+    if not snaps:
+        return []
+    dims_by_parent = {}
+    for d in frappe.get_all(
+        "PMS Performance Dimension",
+        filters={
+            "parent": ["in", [s.name for s in snaps]],
+            "parenttype": "PMS Performance Score",
+        },
+        fields=["parent", "dim_key", "score", "included"],
+        limit=0,
+        ignore_permissions=True,
+    ):
+        if d.included:
+            dims_by_parent.setdefault(d.parent, {})[d.dim_key] = flt(d.score)
+    full_names = dict(frappe.get_all(
+        "User",
+        filters={"name": ["in", [s.user for s in snaps]]},
+        fields=["name", "full_name"],
+        as_list=True,
+        ignore_permissions=True,
+    ))
+    return [
+        {
+            "user": s.user,
+            "full_name": full_names.get(s.user) or s.user,
+            "composite_score": flt(s.composite_score),
+            "band": s.band,
+            "rank": s.rank,
+            "total_ranked": s.total_ranked,
+            "total_logged_hours": flt(s.logged_hours),
+            "target_hours": flt(s.target_hours),
+            "completed_count": s.completed_count,
+            "dimensions": dims_by_parent.get(s.name, {}),
+        }
+        for s in sorted(snaps, key=lambda x: x.rank or 0)
+    ]
+
+
 def send_monthly_performance_report():
     """1st of month 08:00 cron — previous calendar month's Performance
-    Scores. Each member gets their own score/band/rank; the management
-    recipient gets the full ranked leaderboard with the top performer
-    highlighted. Disable via PMS AI Settings.monthly_performance_enabled
+    Scores, snapshot-first:
+      1. score the month once,
+      2. freeze one submitted PMS Performance Score per ranked member
+         (committed before any email so snapshots survive a mail failure),
+      3. email members + the management leaderboard FROM the snapshots,
+         so emails and history always match the immutable record.
+    A pure re-run (nothing new created) sends NOTHING — no duplicate
+    emails, ever. Disable via PMS AI Settings.monthly_performance_enabled
     (defaults ON when the field doesn't exist yet)."""
     if not getattr(frappe.get_cached_doc("PMS AI Settings"), "monthly_performance_enabled", 1):
         return
@@ -672,21 +798,35 @@ def send_monthly_performance_report():
     month_end = get_last_day(prev)
     from_str, to_str = str(month_start), str(month_end)
     month_label = month_start.strftime("%B %Y")
+    month_key = month_start.strftime("%Y-%m")
 
     from next_pms.api.performance import compute_team_performance
 
+    # Phase 1 — compute once
     rows = compute_team_performance(month_start, month_end)
     ranked = [r for r in rows if r["rank"]]
     if not ranked:
         return
 
+    # Phase 2 — freeze snapshots; commit so they survive any email failure
+    created, _skipped = _upsert_month_snapshots(ranked, month_start, month_end, month_label)
+    frappe.db.commit()
+    if not created:
+        # pure re-run of an already-snapshotted month → send nothing
+        return
+
+    # Phase 3 — emails built from the frozen snapshots, not the live rows
+    snap_rows = _month_snapshot_rows(month_key)
+
     # Individual emails — own score, band, rank. No peer names exposed.
-    for r in ranked:
+    for r in snap_rows:
         try:
             frappe.sendmail(
                 recipients=[r["user"]],
                 subject=_("Your {0} Performance Score").format(month_label),
-                message=_build_member_monthly_html(r, len(ranked), month_label, from_str, to_str),
+                message=_build_member_monthly_html(
+                    r, r["total_ranked"], month_label, from_str, to_str
+                ),
                 now=True,
             )
         except Exception:
@@ -704,7 +844,7 @@ def send_monthly_performance_report():
         frappe.sendmail(
             recipients=[recipient],
             subject=_("Team Performance Leaderboard — {0}").format(month_label),
-            message=_build_leaderboard_html(rows, month_label, from_str, to_str),
+            message=_build_leaderboard_html(snap_rows, month_label, from_str, to_str),
             now=True,
         )
     except Exception:

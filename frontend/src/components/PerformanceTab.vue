@@ -130,6 +130,53 @@
         </table>
       </div>
 
+      <!-- ══════════════ Score History (frozen monthly snapshots) ══════════════ -->
+      <div class="dim-card">
+        <h3 class="dim-title">Score History</h3>
+        <div v-if="!history.length" class="hist-empty">No frozen snapshots yet — created on the 1st of each month.</div>
+        <table v-else class="dim-table">
+          <thead>
+            <tr>
+              <th>Month</th><th>Final Score</th><th></th><th>Band</th><th>Rank</th><th>Adjustment</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="h in history" :key="h.name">
+              <tr>
+                <td class="dim-name">{{ h.month_label || h.month_key }}</td>
+                <td class="dim-score">{{ fmt1(h.final_score) }}</td>
+                <td class="dim-bar-cell">
+                  <div class="dim-bar-track">
+                    <div class="dim-bar-fill" :style="{ width: (h.final_score || 0) + '%', background: barColor(h.final_score) }"></div>
+                  </div>
+                </td>
+                <td><span class="band-chip" :style="{ color: barColor(h.final_score) }">{{ h.final_band }}</span></td>
+                <td>#{{ h.rank }} of {{ h.total_ranked }}</td>
+                <td>
+                  <span v-if="Number(h.adjustment)" class="adj-badge" :title="adjTitle(h)">adj {{ Number(h.adjustment) > 0 ? '+' : '' }}{{ fmt1(h.adjustment) }}</span>
+                  <span v-else>—</span>
+                </td>
+                <td><button class="adjust-btn" @click="toggleAdjust(h)">Adjust</button></td>
+              </tr>
+              <tr v-if="adjusting === h.name">
+                <td colspan="7">
+                  <div class="adjust-editor">
+                    <label class="ctrl-label">Adjustment</label>
+                    <input type="number" v-model.number="adjValue" min="-10" max="10" step="0.5" class="adj-input" />
+                    <label class="ctrl-label">Reason</label>
+                    <input type="text" v-model="adjReason" class="adj-reason" placeholder="Required for non-zero adjustment" />
+                    <button class="period-btn active" :disabled="adjSaving" @click="saveAdjust(h)">Save</button>
+                    <button class="period-btn" @click="adjusting = null">Cancel</button>
+                    <span v-if="adjError" class="adj-error">{{ adjError }}</span>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <p class="board-note">Frozen on the 1st of each month before the performance emails go out; the adjustment (±10, reasoned) is the only change allowed afterwards and is fully audited.</p>
+      </div>
+
       <!-- ══════════════ Methodology documentation ══════════════ -->
       <div class="doc-card">
         <h3 class="doc-title">📖 Methodology — how this score is calculated</h3>
@@ -212,6 +259,12 @@ const loading = ref(false)
 const view = ref('individual')
 const fromDate = ref('')
 const toDate = ref('')
+const history = ref([])
+const adjusting = ref(null)
+const adjValue = ref(0)
+const adjReason = ref('')
+const adjError = ref('')
+const adjSaving = ref(false)
 
 const customRange = computed(() => !!(fromDate.value && toDate.value))
 const topPerformer = computed(() => {
@@ -274,6 +327,8 @@ function clearRange() {
 async function load() {
   if (!selectedUser.value) return
   loading.value = true
+  adjusting.value = null
+  loadHistory()
   try {
     data.value = await call('next_pms.api.performance.get_performance_score', {
       user: selectedUser.value,
@@ -284,6 +339,74 @@ async function load() {
     data.value = null
   } finally {
     loading.value = false
+  }
+}
+
+async function loadHistory() {
+  if (!selectedUser.value) {
+    history.value = []
+    return
+  }
+  try {
+    history.value = await call('next_pms.api.performance.get_score_history', {
+      user: selectedUser.value,
+    })
+  } catch (e) {
+    console.error('Failed to load score history:', e)
+    history.value = []
+  }
+}
+
+function fmt1(v) {
+  return v == null ? '—' : Number(v).toFixed(1)
+}
+
+function adjTitle(h) {
+  const parts = []
+  if (h.adjustment_reason) parts.push(h.adjustment_reason)
+  if (h.adjusted_by) parts.push('by ' + h.adjusted_by)
+  return parts.join(' — ')
+}
+
+function toggleAdjust(h) {
+  if (adjusting.value === h.name) {
+    adjusting.value = null
+    return
+  }
+  adjusting.value = h.name
+  adjValue.value = Number(h.adjustment) || 0
+  adjReason.value = h.adjustment_reason || ''
+  adjError.value = ''
+}
+
+async function saveAdjust(h) {
+  const adj = Number(adjValue.value) || 0
+  // client-side mirror of the server rules for fast feedback — the
+  // server (controller) stays authoritative
+  if (adj < -10 || adj > 10) {
+    adjError.value = 'Adjustment must be between −10 and +10.'
+    return
+  }
+  if (adj !== 0 && !adjReason.value.trim()) {
+    adjError.value = 'A reason is required for a non-zero adjustment.'
+    return
+  }
+  adjSaving.value = true
+  adjError.value = ''
+  try {
+    const row = await call('next_pms.api.performance.apply_adjustment', {
+      name: h.name,
+      adjustment: adj,
+      reason: adjReason.value,
+    })
+    const i = history.value.findIndex(r => r.name === h.name)
+    if (i !== -1) history.value[i] = row
+    adjusting.value = null
+  } catch (e) {
+    console.error('Failed to apply adjustment:', e)
+    adjError.value = 'Could not save adjustment — check the value and reason.'
+  } finally {
+    adjSaving.value = false
   }
 }
 
@@ -380,6 +503,15 @@ function barColor(score) {
 .dim-bar-track { height: 8px; background: var(--bg-surface-hover); border-radius: 4px; overflow: hidden; }
 .dim-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
 .dim-raw { font-size: 12px; color: var(--text-secondary); }
+
+.hist-empty { font-size: 13px; color: var(--text-secondary); padding: 8px 2px; }
+.adj-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: #fef3c7; border: 1px solid #fde68a; color: #92400e; cursor: help; }
+.adjust-btn { border: 1px solid var(--border-default); background: var(--bg-body); color: var(--text-secondary); border-radius: 8px; padding: 5px 10px; font-size: 11.5px; cursor: pointer; }
+.adjust-btn:hover { color: var(--color-primary, #2563eb); border-color: var(--color-primary, #2563eb); }
+.adjust-editor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 2px; }
+.adj-input { width: 80px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-body); color: var(--text-primary); font-size: 12.5px; }
+.adj-reason { flex: 1; min-width: 220px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-body); color: var(--text-primary); font-size: 12.5px; }
+.adj-error { font-size: 12px; color: #ef4444; }
 
 .doc-p { font-size: 13px; line-height: 1.65; color: var(--text-primary); margin: 8px 0; }
 .doc-h4 { font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 18px 0 6px; }

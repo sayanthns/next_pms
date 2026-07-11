@@ -1,0 +1,254 @@
+{
+ "actions": [],
+ "autoname": "format:PERF-{month_key}-{user}",
+ "creation": "2026-07-11 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "month_key",
+  "column_break_head",
+  "month_label",
+  "from_date",
+  "to_date",
+  "section_score",
+  "composite_score",
+  "band",
+  "included_weight",
+  "column_break_score",
+  "rank",
+  "total_ranked",
+  "target_hours",
+  "logged_hours",
+  "completed_count",
+  "section_dimensions",
+  "dimensions",
+  "section_override",
+  "adjustment",
+  "adjustment_reason",
+  "column_break_override",
+  "adjusted_by",
+  "adjusted_on",
+  "final_score",
+  "final_band",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "month_key",
+   "fieldtype": "Data",
+   "label": "Month Key",
+   "description": "YYYY-MM — embedded in the document name",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "month_label",
+   "fieldtype": "Data",
+   "label": "Month",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_score",
+   "fieldtype": "Section Break",
+   "label": "Frozen Score"
+  },
+  {
+   "fieldname": "composite_score",
+   "fieldtype": "Float",
+   "label": "Composite Score",
+   "precision": "1",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "band",
+   "fieldtype": "Select",
+   "label": "Band",
+   "options": "A\nB\nC\nD",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "included_weight",
+   "fieldtype": "Int",
+   "label": "Included Weight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_score",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rank",
+   "fieldtype": "Int",
+   "label": "Rank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_ranked",
+   "fieldtype": "Int",
+   "label": "Total Ranked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "target_hours",
+   "fieldtype": "Float",
+   "label": "Target Hours",
+   "read_only": 1
+  },
+  {
+   "fieldname": "logged_hours",
+   "fieldtype": "Float",
+   "label": "Logged Hours",
+   "read_only": 1
+  },
+  {
+   "fieldname": "completed_count",
+   "fieldtype": "Int",
+   "label": "Tasks Completed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_dimensions",
+   "fieldtype": "Section Break",
+   "label": "Dimensions"
+  },
+  {
+   "fieldname": "dimensions",
+   "fieldtype": "Table",
+   "label": "Dimensions",
+   "options": "PMS Performance Dimension",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_override",
+   "fieldtype": "Section Break",
+   "label": "Management Adjustment"
+  },
+  {
+   "fieldname": "adjustment",
+   "fieldtype": "Float",
+   "label": "Adjustment",
+   "default": "0",
+   "allow_on_submit": 1,
+   "description": "Bounded ±10 post-submit override; requires a reason when non-zero"
+  },
+  {
+   "fieldname": "adjustment_reason",
+   "fieldtype": "Small Text",
+   "label": "Adjustment Reason",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "column_break_override",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "adjusted_by",
+   "fieldtype": "Link",
+   "label": "Adjusted By",
+   "options": "User",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "adjusted_on",
+   "fieldtype": "Datetime",
+   "label": "Adjusted On",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "final_score",
+   "fieldtype": "Float",
+   "label": "Final Score",
+   "precision": "1",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "final_band",
+   "fieldtype": "Select",
+   "label": "Final Band",
+   "options": "A\nB\nC\nD",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "PMS Performance Score",
+   "read_only": 1,
+   "print_hide": 1,
+   "no_copy": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-07-11 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Next PMS",
+ "name": "PMS Performance Score",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "export": 1,
+   "email": 1,
+   "print": 1,
+   "permlevel": 0
+  },
+  {
+   "role": "PMS Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "report": 1,
+   "export": 1,
+   "email": 1,
+   "print": 1,
+   "permlevel": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
