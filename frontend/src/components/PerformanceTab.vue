@@ -1,0 +1,261 @@
+<template>
+  <div class="perf-tab">
+    <!-- Controls -->
+    <div class="perf-controls">
+      <div class="control-group">
+        <label class="ctrl-label">Employee</label>
+        <select v-model="selectedUser" class="ctrl-select" @change="load">
+          <option value="">Select employee...</option>
+          <option v-for="u in users" :key="u.name" :value="u.name">{{ u.full_name || u.name }}</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label class="ctrl-label">Period</label>
+        <div class="period-btns">
+          <button
+            v-for="p in periods"
+            :key="p.value"
+            class="period-btn"
+            :class="{ active: period === p.value }"
+            @click="period = p.value; load()"
+          >{{ p.label }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="loading" class="perf-loading">
+      <div class="spinner"></div>
+      <span>Computing performance score...</span>
+    </div>
+    <div v-else-if="!selectedUser" class="perf-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+      <p>Select an employee to view their performance score</p>
+    </div>
+
+    <template v-else-if="data">
+      <!-- Score hero -->
+      <div class="score-hero">
+        <div class="score-ring" :class="'band-' + data.band.toLowerCase()">
+          <span class="score-num">{{ data.composite_score }}</span>
+          <span class="score-band">Band {{ data.band }}</span>
+        </div>
+        <div class="score-meta">
+          <div class="score-name">{{ data.user_full_name }}</div>
+          <div class="score-period">{{ data.from_date }} → {{ data.to_date }}</div>
+          <div class="score-pills">
+            <span class="pill">{{ data.working_days_count }} working days</span>
+            <span class="pill">{{ data.total_logged_hours }}h logged / {{ data.target_hours }}h target</span>
+            <span class="pill">{{ data.completed_count }} tasks completed</span>
+            <span class="pill" v-if="data.included_weight < 100">scored on {{ data.included_weight }}/100 weight (missing data renormalised)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dimension breakdown -->
+      <div class="dim-card">
+        <h3 class="dim-title">Dimension Breakdown</h3>
+        <table class="dim-table">
+          <thead>
+            <tr>
+              <th>Dimension</th><th>Weight</th><th>Score</th><th></th><th>Contribution</th><th>Basis</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="d in data.dimensions" :key="d.key" :class="{ excluded: !d.included }">
+              <td class="dim-name">{{ labels[d.key] }}</td>
+              <td>{{ d.weight }}%</td>
+              <td class="dim-score">{{ d.included ? d.score : '—' }}</td>
+              <td class="dim-bar-cell">
+                <div class="dim-bar-track">
+                  <div class="dim-bar-fill" :style="{ width: (d.score || 0) + '%', background: barColor(d.score) }"></div>
+                </div>
+              </td>
+              <td>{{ d.included ? '+' + d.weighted : '—' }}</td>
+              <td class="dim-raw">{{ d.raw }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ══════════════ Methodology documentation ══════════════ -->
+      <div class="doc-card">
+        <h3 class="doc-title">📖 Methodology — how this score is calculated</h3>
+
+        <p class="doc-p">
+          The Performance Score is a weighted composite of 8 independent dimensions, each scored 0–100.
+          <strong>Composite = Σ (weight × dimension score) ÷ Σ included weights.</strong>
+          A dimension with no underlying data in the period (e.g. no completed tasks → no Timeliness data)
+          is <em>excluded</em> and the remaining weights are renormalised — nobody scores zero for missing data.
+          Bands: <strong>A ≥ 85 · B ≥ 70 · C ≥ 50 · D &lt; 50</strong>.
+        </p>
+
+        <table class="doc-table">
+          <thead><tr><th>Dimension</th><th>Weight</th><th>Formula</th><th>What it measures</th></tr></thead>
+          <tbody>
+            <tr><td>Delivery</td><td>25%</td><td>Σ estimated hours of tasks completed ÷ target hours (cap 100%)</td><td>Real output volume. Uses PM-approved estimates, not raw task count — 28 tiny tasks ≠ 3 large ones.</td></tr>
+            <tr><td>Timeliness</td><td>15%</td><td>on-time completions ÷ completions with a due date</td><td>Deadline reliability.</td></tr>
+            <tr><td>Utilization</td><td>15%</td><td>logged timer hours ÷ target hours (cap 100%)</td><td>Timer discipline / engagement vs the leave-adjusted bar.</td></tr>
+            <tr><td>Plan Adherence</td><td>15%</td><td>hours logged on Weekly-Plan projects ÷ planned hours (cap 100%)</td><td>Did the week's committed plan actually get worked?</td></tr>
+            <tr><td>Efficiency</td><td>10%</td><td>estimated ÷ actual hours, capped at 120%</td><td>Estimate accuracy. Cap stops rewarding inflated estimates.</td></tr>
+            <tr><td>Quality</td><td>10%</td><td>1 − (reopened tasks ÷ completed tasks)</td><td>Rework rate, via task status history (Done → reopened).</td></tr>
+            <tr><td>Consistency</td><td>5%</td><td>days with ≥ 50% of daily target logged ÷ working days</td><td>Steady daily work vs end-of-week binge logging.</td></tr>
+            <tr><td>Attendance</td><td>5%</td><td>checked-in days ÷ effective working days</td><td>Presence, on days that count.</td></tr>
+          </tbody>
+        </table>
+
+        <h4 class="doc-h4">Fairness rules</h4>
+        <ul class="doc-ul">
+          <li><strong>Leave &amp; holiday adjusted everywhere.</strong> Target hours = 8h × effective working days. Sundays, public holidays (per the employee's holiday list) and approved leave are removed <em>before</em> any percentage is computed. Half-day leave deducts 0.5 day. An employee on approved leave is never penalised for it.</li>
+          <li><strong>Estimates are PM-controlled</strong> (~90% set by project managers), so the Delivery and Efficiency dimensions can't be gamed by self-inflating estimates.</li>
+          <li><strong>Caps prevent gaming.</strong> Efficiency capped at 120%; Delivery and Utilization at 100%. Anomalies like "100% utilization with 0 tasks done" surface as a high Utilization but zero Delivery — the composite exposes it.</li>
+          <li><strong>Evaluate trends, not snapshots.</strong> Use 30/60/90-day periods for appraisal decisions; a single week is noise (one sick day on a 5-day week moves every % by 20 points).</li>
+          <li><strong>Management-only.</strong> This tab and its API are restricted to System Manager / PMS Manager roles.</li>
+          <li><strong>Metrics inform, humans decide.</strong> The score is an input to promotion/increment discussions, not a verdict.</li>
+        </ul>
+
+        <h4 class="doc-h4">⚠️ Utilization vs Efficiency — two different questions</h4>
+        <p class="doc-p">These two percentages appear across NextPMS reports and are <strong>not comparable to each other</strong>:</p>
+        <table class="doc-table">
+          <thead><tr><th></th><th>Utilization</th><th>Efficiency</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Formula</strong></td><td>logged hours ÷ target hours × 100</td><td>estimated hours ÷ actual hours × 100</td></tr>
+            <tr><td><strong>Question answered</strong></td><td>"Did they log enough hours against the 8h/day bar?"</td><td>"Were the task time-estimates accurate?" (&gt;100% = finished faster than estimated)</td></tr>
+            <tr><td><strong>High value means</strong></td><td>Fully engaged / good timer discipline</td><td>Fast against estimates (or estimates were generous)</td></tr>
+            <tr><td><strong>Low value means</strong></td><td>Under-logged: either low activity or timers not run</td><td>Slower than estimated (or estimates were tight)</td></tr>
+          </tbody>
+        </table>
+        <p class="doc-p">
+          <strong>Why the weekly email and this report can show different numbers for the same person:</strong>
+        </p>
+        <ul class="doc-ul">
+          <li><strong>Different date windows.</strong> The weekly email always covers the fixed calendar week <em>Monday–Friday</em>. The Task Report periods (5d/10d/30d…) are <em>rolling windows ending today</em> — a "5d" view opened on Saturday covers Tue–Sat, dropping Monday's hours and adding a Saturday with zero hours. Same person, different days summed.</li>
+          <li><strong>Different metrics.</strong> The email headline is <em>Utilization</em>; the Task Report headline is <em>Efficiency</em>. Example: 49% utilization (15.7h logged of a 32h leave-adjusted target) and 79% efficiency (9.5h estimated ÷ 12.03h actual) can both be true simultaneously — one measures volume, the other estimate accuracy.</li>
+          <li><strong>Same engine underneath.</strong> Both reports use identical leave/holiday/target logic (<code>next_pms.api._hours</code>); only the window and the question differ. Both figures are now labelled with their formula wherever they appear.</li>
+        </ul>
+
+        <h4 class="doc-h4">Data sources</h4>
+        <ul class="doc-ul">
+          <li><strong>Hours:</strong> PMS Time Log (timer) — the only "actual hours" source. Check-in/out is informational and only feeds Attendance.</li>
+          <li><strong>Tasks:</strong> PMS Task (status, estimates, due dates). "Completed in period" = status Done with last modification inside the window.</li>
+          <li><strong>Plan:</strong> published Weekly Plan allocations (planned hours per project per member).</li>
+          <li><strong>Absence:</strong> approved Leave Applications + the employee's Holiday List.</li>
+          <li><strong>Rework:</strong> Frappe Version history of task status changes.</li>
+        </ul>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { call } from '@/utils/frappe'
+
+const users = ref([])
+const selectedUser = ref('')
+const period = ref(30)
+const data = ref(null)
+const loading = ref(false)
+
+const periods = [
+  { label: '5d', value: 5 },
+  { label: '10d', value: 10 },
+  { label: '30d', value: 30 },
+  { label: '45d', value: 45 },
+  { label: '60d', value: 60 },
+  { label: '90d', value: 90 },
+  { label: 'All', value: 0 },
+]
+
+const labels = {
+  delivery: 'Delivery',
+  timeliness: 'Timeliness',
+  utilization: 'Utilization',
+  plan_adherence: 'Plan Adherence',
+  efficiency: 'Efficiency',
+  quality: 'Quality',
+  consistency: 'Consistency',
+  attendance: 'Attendance',
+}
+
+onMounted(async () => {
+  try {
+    users.value = await call('next_pms.api.productivity.get_productivity_users')
+  } catch (e) {
+    console.error('Failed to load users:', e)
+  }
+})
+
+async function load() {
+  if (!selectedUser.value) return
+  loading.value = true
+  try {
+    data.value = await call('next_pms.api.performance.get_performance_score', {
+      user: selectedUser.value,
+      period_days: period.value,
+    })
+  } catch (e) {
+    console.error('Failed to load performance score:', e)
+    data.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+function barColor(score) {
+  if (score == null) return 'var(--border-default)'
+  if (score >= 85) return '#10B981'
+  if (score >= 70) return '#2563eb'
+  if (score >= 50) return '#F59E0B'
+  return '#EF4444'
+}
+</script>
+
+<style scoped>
+.perf-tab { display: flex; flex-direction: column; gap: 20px; }
+.perf-controls { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-end; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 12px; padding: 16px 20px; }
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+.ctrl-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+.ctrl-select { padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-body); color: var(--text-primary); font-size: 13px; min-width: 220px; }
+.period-btns { display: flex; gap: 4px; }
+.period-btn { padding: 7px 14px; border: 1px solid var(--border-default); background: var(--bg-body); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; border-radius: 8px; transition: all 0.15s; }
+.period-btn.active { background: var(--color-primary, #2563eb); color: #fff; border-color: var(--color-primary, #2563eb); }
+
+.perf-loading, .perf-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 20px; color: var(--text-secondary); font-size: 13px; }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border-default); border-top-color: var(--color-primary, #2563eb); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.score-hero { display: flex; align-items: center; gap: 28px; background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 12px; padding: 24px 28px; }
+.score-ring { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 120px; height: 120px; border-radius: 50%; border: 6px solid; flex-shrink: 0; }
+.score-ring.band-a { border-color: #10B981; }
+.score-ring.band-b { border-color: #2563eb; }
+.score-ring.band-c { border-color: #F59E0B; }
+.score-ring.band-d { border-color: #EF4444; }
+.score-num { font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.score-band { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 4px; }
+.score-name { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.score-period { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.score-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.pill { font-size: 11px; padding: 4px 10px; border-radius: 999px; background: var(--bg-surface-hover); border: 1px solid var(--border-default); color: var(--text-secondary); }
+
+.dim-card, .doc-card { background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: 12px; padding: 20px 24px; }
+.dim-title, .doc-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 14px; }
+.dim-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dim-table th { text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); border-bottom: 2px solid var(--border-default); }
+.dim-table td { padding: 10px; border-bottom: 1px solid var(--border-light); color: var(--text-primary); vertical-align: middle; }
+.dim-table tr.excluded td { opacity: 0.45; }
+.dim-name { font-weight: 600; }
+.dim-score { font-weight: 700; }
+.dim-bar-cell { width: 180px; }
+.dim-bar-track { height: 8px; background: var(--bg-surface-hover); border-radius: 4px; overflow: hidden; }
+.dim-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.dim-raw { font-size: 12px; color: var(--text-secondary); }
+
+.doc-p { font-size: 13px; line-height: 1.65; color: var(--text-primary); margin: 8px 0; }
+.doc-h4 { font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 18px 0 6px; }
+.doc-ul { margin: 6px 0 6px 18px; padding: 0; }
+.doc-ul li { font-size: 13px; line-height: 1.65; color: var(--text-primary); margin-bottom: 6px; }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0; }
+.doc-table th { text-align: left; padding: 8px 10px; background: var(--bg-surface-hover); color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid var(--border-default); }
+.doc-table td { padding: 8px 10px; border: 1px solid var(--border-light); color: var(--text-primary); line-height: 1.5; vertical-align: top; }
+.doc-card code { background: var(--bg-surface-hover); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+</style>

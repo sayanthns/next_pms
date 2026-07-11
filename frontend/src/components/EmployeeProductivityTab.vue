@@ -102,12 +102,25 @@
           </div>
         </div>
         <div class="stat-card">
+          <span class="stat-icon">⚡</span>
+          <div class="stat-body">
+            <span class="stat-val">{{ data.utilization_pct != null ? data.utilization_pct + '%' : 'N/A' }}</span>
+            <span class="stat-lbl">Utilization (Logged÷Target×100)</span>
+          </div>
+        </div>
+        <div class="stat-card">
           <span class="stat-icon">📋</span>
           <div class="stat-body">
             <span class="stat-val">{{ data.total_estimated_hours }}h / {{ data.total_actual_hours }}h</span>
             <span class="stat-lbl">Estimated / Actual Hours</span>
           </div>
         </div>
+      </div>
+
+      <div class="metric-note">
+        <strong>Utilization</strong> = logged ÷ target hours — "did they log enough vs the 8h/day leave-adjusted bar?" &nbsp;·&nbsp;
+        <strong>Efficiency</strong> = estimated ÷ actual hours — "were task estimates accurate?" (&gt;100% = faster than estimated).
+        Different questions — a low utilization with high efficiency is possible and normal. This period is a <em>rolling window ending today</em>; the weekly email covers the fixed Mon–Fri week, so figures can differ.
       </div>
 
       <div class="two-col">
@@ -470,6 +483,7 @@ function gapClass(office, logged) {
   gap: 12px;
   margin-bottom: 20px;
 }
+.metric-note { font-size: 12px; line-height: 1.6; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border-default); border-left: 3px solid var(--color-primary, #2563eb); border-radius: 8px; padding: 10px 14px; margin-top: -6px; }
 .stat-card {
   background: var(--bg-surface);
   border-radius: 10px;

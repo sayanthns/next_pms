@@ -236,12 +236,22 @@ def _member_week_stats(user, week_start, week_end, from_dt, to_dt):
 
     task_names = list({l.task for l in logs if l.task})
     projects_touched = set()
+    estimated_hours = 0.0
     if task_names:
         for row in frappe.get_all(
-            "PMS Task", filters={"name": ["in", task_names]}, fields=["project"]
+            "PMS Task", filters={"name": ["in", task_names]}, fields=["project", "estimated_hours"]
         ):
             if row.project:
                 projects_touched.add(row.project)
+            estimated_hours += row.estimated_hours or 0
+    estimated_hours = round(estimated_hours, 2)
+    # Efficiency = estimated / actual x 100 (>100% = faster than estimated).
+    # Same formula as Task Report > Productivity, so the two reports agree.
+    efficiency = (
+        round(estimated_hours / logged_hours * 100, 1)
+        if logged_hours > 0 and estimated_hours > 0
+        else None
+    )
 
     # Attendance over the week. Denominator = effective working days (excludes
     # Sundays, holidays, full-day approved leave) — same basis as the 8h target.
@@ -260,6 +270,8 @@ def _member_week_stats(user, week_start, week_end, from_dt, to_dt):
         "logged_hours": logged_hours,
         "target_hours": target_hours,
         "utilization": utilization,
+        "estimated_hours": estimated_hours,
+        "efficiency": efficiency,
         "tasks_completed": tasks_completed,
         "tasks_in_progress": tasks_in_progress,
         "project_count": len(projects_touched),
@@ -416,6 +428,11 @@ def _build_member_weekly_html(stats, from_str, to_str):
             {_stat_card("In Progress", stats['tasks_in_progress'])}
             {_stat_card("Projects", stats['project_count'])}
           </tr>
+          <tr>
+            {_stat_card("Efficiency", f"{stats['efficiency']:.0f}%" if stats.get('efficiency') is not None else "N/A", "#7c3aed")}
+            {_stat_card("Estimated", f"{stats.get('estimated_hours', 0):.1f}h")}
+            {_stat_card("Actual", f"{stats['logged_hours']:.1f}h")}
+          </tr>
         </table>
 
         <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#6b7280; margin:14px 6px 6px;">Attendance</div>
@@ -437,8 +454,11 @@ def _build_member_weekly_html(stats, from_str, to_str):
 
       <div style="background:#ffffff; border-radius:0 0 12px 12px; padding:16px 28px; border-top:1px solid #eef0f3; color:#9ca3af; font-size:11px; line-height:1.6;">
         Target = 8h &times; working days (excludes Sundays, holidays, approved leave).
-        Utilization = Hours Logged &divide; Target. Days Checked In counts working days with a check-in;
-        Missed Checkouts = check-ins with no checkout recorded.
+        <br><strong>Utilization</strong> = Hours Logged &divide; Target &mdash; did you log enough hours vs the target?
+        <br><strong>Efficiency</strong> = Estimated &divide; Actual hours of tasks worked &mdash; were estimates accurate? (&gt;100% = faster than estimated).
+        These answer different questions and won't match each other. The Task Report &gt; Productivity page shows the same
+        two metrics over a rolling period ending today (not the fixed Mon&ndash;Fri week), so its numbers can differ from this email.
+        <br>Days Checked In counts working days with a check-in; Missed Checkouts = check-ins with no checkout recorded.
         <br>Automated weekly summary from Next PMS.
       </div>
     </div>
@@ -449,12 +469,15 @@ def _build_team_weekly_html(team_rows, from_str, to_str):
     rows = ""
     for s in sorted(team_rows, key=lambda x: x["utilization"], reverse=True):
         color = _util_color(s["utilization"])
+        eff = s.get("efficiency")
+        eff_str = f"{eff:.0f}%" if eff is not None else "&mdash;"
         rows += f"""
         <tr>
             <td style="padding:10px; border:1px solid #e5e7eb;">{s['full_name']}</td>
             <td style="padding:10px; border:1px solid #e5e7eb; text-align:center;">{s['logged_hours']:.1f}h</td>
             <td style="padding:10px; border:1px solid #e5e7eb; text-align:center;">{s['target_hours']:.1f}h</td>
             <td style="padding:10px; border:1px solid #e5e7eb; text-align:center; color:{color}; font-weight:600;">{s['utilization']:.0f}%</td>
+            <td style="padding:10px; border:1px solid #e5e7eb; text-align:center;">{eff_str}</td>
             <td style="padding:10px; border:1px solid #e5e7eb; text-align:center;">{s['tasks_completed']}</td>
         </tr>
         """
@@ -468,14 +491,20 @@ def _build_team_weekly_html(team_rows, from_str, to_str):
                 <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Logged</th>
                 <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Target</th>
                 <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Utilization</th>
+                <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Efficiency</th>
                 <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Tasks Done</th>
             </tr>
         </thead>
         <tbody>{rows}</tbody>
     </table>
     <p style="margin-top:16px; color:#6b7280; font-size:13px;">
-        Target = 8h x working days (excludes Sundays, holidays, approved leave).
-        Automated weekly summary from Next PMS.
+        Target = 8h x working days (excludes Sundays, holidays, approved leave &mdash; per member).
+        <br><strong>Utilization</strong> = Logged &divide; Target (hours volume vs the bar).
+        <strong>Efficiency</strong> = Estimated &divide; Actual on tasks worked (estimate accuracy; &gt;100% = faster than estimated).
+        Different questions &mdash; low utilization with high efficiency is possible and normal.
+        The Task Report &gt; Productivity page computes the same metrics over a rolling window ending today,
+        so its figures can differ from this fixed Mon&ndash;Fri week.
+        <br>Automated weekly summary from Next PMS.
     </p>
     """
 

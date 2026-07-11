@@ -15,10 +15,17 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         Productivity
       </button>
+      <button v-if="settingsStore.isAdmin || settingsStore.isManager" class="report-tab-btn" :class="{ active: activeTab === 'performance' }" @click="activeTab = 'performance'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+        Performance
+      </button>
     </div>
 
     <!-- Productivity Tab -->
     <EmployeeProductivityTab v-if="activeTab === 'productivity'" />
+
+    <!-- Performance Tab (management only) -->
+    <PerformanceTab v-if="activeTab === 'performance' && (settingsStore.isAdmin || settingsStore.isManager)" />
 
     <!-- Tasks Tab content -->
     <template v-if="activeTab === 'tasks'">
@@ -192,6 +199,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { call, getList } from '@/utils/frappe'
 import { useSettingsStore } from '@/store/settings'
 import EmployeeProductivityTab from '@/components/EmployeeProductivityTab.vue'
+import PerformanceTab from '@/components/PerformanceTab.vue'
 
 const settingsStore = useSettingsStore()
 const activeTab = ref('tasks')
