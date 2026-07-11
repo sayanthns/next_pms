@@ -205,7 +205,8 @@ def _compute_score(user, from_date, to_date):
         delivered_est = round(sum(flt(t.estimated_hours) for t in completed), 2)
         dimensions["delivery"] = {
             "score": round(min(delivered_est / target_hours, 1.0) * 100, 1),
-            "raw": f"{delivered_est}h est. delivered / {target_hours}h target",
+            "raw": f"completed tasks worth {delivered_est}h ÷ {target_hours}h target"
+                   f" = {round(delivered_est / target_hours * 100, 1)}%",
         }
 
     # ── 2. Timeliness: on-time completions ────────────────────────────
@@ -222,7 +223,7 @@ def _compute_score(user, from_date, to_date):
         util = compute_utilization(total_logged, target_hours)
         dimensions["utilization"] = {
             "score": round(min(util, 100.0), 1),
-            "raw": f"{total_logged}h logged / {target_hours}h target ({util}%)",
+            "raw": f"{total_logged}h logged ÷ {target_hours}h target = {util}%",
         }
 
     # ── 4. Plan adherence: hours on committed projects vs planned ─────
@@ -232,7 +233,7 @@ def _compute_score(user, from_date, to_date):
     if plan_pct is not None:
         dimensions["plan_adherence"] = {
             "score": plan_pct,
-            "raw": f"{actual_on_planned}h on planned projects / {planned_h}h planned",
+            "raw": f"{actual_on_planned}h on planned projects ÷ {planned_h}h planned = {plan_pct}%",
         }
 
     # ── 5. Efficiency: est/actual on worked tasks, capped ─────────────
@@ -241,8 +242,8 @@ def _compute_score(user, from_date, to_date):
         eff = min(est_worked / total_logged * 100, EFFICIENCY_CAP)
         dimensions["efficiency"] = {
             "score": round(eff / EFFICIENCY_CAP * 100, 1),
-            "raw": f"{est_worked}h est. / {total_logged}h actual "
-                   f"({round(est_worked / total_logged * 100, 1)}%, capped {EFFICIENCY_CAP:.0f}%)",
+            "raw": f"estimate {est_worked}h ÷ actual {total_logged}h logged "
+                   f"= {round(est_worked / total_logged * 100, 1)}% (capped {EFFICIENCY_CAP:.0f}%)",
         }
 
     # ── 6. Quality: 1 - reopen rate ────────────────────────────────────

@@ -107,6 +107,11 @@
       <!-- Dimension breakdown -->
       <div class="dim-card">
         <h3 class="dim-title">Dimension Breakdown</h3>
+        <p class="dim-note">
+          <strong>Basis</strong> shows the exact inputs behind each score.
+          <strong>Delivery</strong> = value of completed work (sum of done-task estimates) ÷ your hours target — <em>not</em> estimate-vs-actual.
+          <strong>Efficiency</strong> = estimate ÷ actual hours logged. Different questions, so their numbers won't match.
+        </p>
         <table class="dim-table">
           <thead>
             <tr>
@@ -473,6 +478,7 @@ function barColor(score) {
 .rank-cell { font-weight: 700; white-space: nowrap; }
 .band-chip { font-weight: 800; font-size: 13px; }
 .board-note { font-size: 12px; color: var(--text-secondary); margin-top: 12px; line-height: 1.6; }
+.dim-note { font-size: 12px; color: var(--text-secondary); margin: -4px 0 14px; line-height: 1.6; background: var(--bg-surface-hover); border-left: 3px solid var(--color-primary, #2563eb); border-radius: 6px; padding: 8px 12px; }
 
 .perf-loading, .perf-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 20px; color: var(--text-secondary); font-size: 13px; }
 .spinner { width: 28px; height: 28px; border: 3px solid var(--border-default); border-top-color: var(--color-primary, #2563eb); border-radius: 50%; animation: spin 0.8s linear infinite; }
