@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Next PMS — User Guide</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<style>
+  :root {
+    --sidebar-bg: #1a1a2e; --sidebar-w: 260px;
+    --primary: #2563eb; --primary-dark: #4f46e5;
+    --text: #1f2937; --muted: #6b7280; --border: #e5e7eb; --bg: #f8fafc;
+    --green: #10b981; --amber: #f59e0b; --red: #ef4444; --violet: #7c3aed;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--text); background: var(--bg); line-height: 1.65; }
+
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); background: var(--sidebar-bg); color: #cbd5e1; overflow-y: auto; padding: 24px 0; z-index: 10; }
+  .sidebar .brand { padding: 0 20px 18px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 12px; }
+  .sidebar .brand h2 { color: #fff; font-size: 17px; }
+  .sidebar .brand span { font-size: 11px; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; }
+  .sidebar a { display: block; padding: 8px 20px; color: #cbd5e1; text-decoration: none; font-size: 13px; border-left: 3px solid transparent; }
+  .sidebar a:hover { background: rgba(255,255,255,.05); color: #fff; }
+  .sidebar a.active { border-left-color: var(--primary); background: rgba(37,99,235,.15); color: #fff; }
+  .sidebar .group { padding: 14px 20px 4px; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: #64748b; }
+
+  main { margin-left: var(--sidebar-w); padding: 0 0 80px; }
+  .hero { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: #fff; padding: 48px 48px 40px; }
+  .hero h1 { font-size: 30px; font-weight: 800; }
+  .hero p { color: #dbeafe; margin-top: 8px; max-width: 720px; }
+  .hero .meta { margin-top: 14px; font-size: 12px; color: #bfdbfe; }
+
+  section { padding: 36px 48px 4px; max-width: 1000px; }
+  h2 { font-size: 22px; font-weight: 800; margin-bottom: 14px; padding-top: 8px; border-top: 3px solid var(--primary); display: inline-block; }
+  h3 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; }
+  p { margin: 8px 0; font-size: 14px; }
+  ul, ol { margin: 8px 0 8px 22px; font-size: 14px; }
+  li { margin-bottom: 5px; }
+  code { background: #eef2ff; color: #3730a3; padding: 1px 6px; border-radius: 4px; font-size: 12.5px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; background: #fff; }
+  th { background: #f1f5f9; text-align: left; padding: 9px 12px; border: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  td { padding: 9px 12px; border: 1px solid var(--border); vertical-align: top; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 18px 22px; margin: 14px 0; }
+  .steps { counter-reset: step; list-style: none; margin-left: 0; }
+  .steps li { counter-increment: step; position: relative; padding-left: 42px; margin-bottom: 12px; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; font-size: 12.5px; }
+  .flow .st { padding: 5px 12px; border-radius: 999px; font-weight: 600; }
+  .flow .arrow { color: var(--muted); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .b-gray { background: #f1f5f9; color: #475569; }
+  .b-blue { background: #dbeafe; color: #1d4ed8; }
+  .b-amber { background: #fef3c7; color: #b45309; }
+  .b-violet { background: #ede9fe; color: #6d28d9; }
+  .b-green { background: #d1fae5; color: #047857; }
+  .b-red { background: #fee2e2; color: #b91c1c; }
+  .callout { border-left: 4px solid var(--amber); background: #fffbeb; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 13.5px; }
+  .callout.info { border-left-color: var(--primary); background: #eff6ff; }
+  .callout.good { border-left-color: var(--green); background: #ecfdf5; }
+  .kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; font-size: 12px; background: #fff; font-family: monospace; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    main { margin-left: 0; }
+    section, .hero { padding-left: 20px; padding-right: 20px; }
+  }
+  @media print {
+    .sidebar { display: none; }
+    main { margin-left: 0; }
+    .hero { background: #fff; color: #000; }
+    .hero p, .hero .meta { color: #444; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="brand"><h2>Next PMS</h2><span>User Guide</span></div>
+  <div class="group">Basics</div>
+  <a href="#overview">Overview</a>
+  <a href="#getting-started">Getting Started</a>
+  <a href="#roles">Roles &amp; Access</a>
+  <div class="group">Daily Work</div>
+  <a href="#projects">Projects &amp; Sprints</a>
+  <a href="#tasks">Tasks &amp; Kanban</a>
+  <a href="#timer">Time Tracking</a>
+  <a href="#checkin">Check-In / Check-Out</a>
+  <div class="group">Planning</div>
+  <a href="#weekly-plan">Weekly Plan</a>
+  <a href="#calendar">Calendar &amp; Meetings</a>
+  <div class="group">Reports</div>
+  <a href="#task-report">Task Report</a>
+  <a href="#metrics">Metrics Explained</a>
+  <a href="#performance">Performance Score</a>
+  <a href="#emails">Automated Emails</a>
+  <div class="group">More</div>
+  <a href="#portal">Client Portal</a>
+  <a href="#tickets">Support Tickets</a>
+  <a href="#faq">FAQ</a>
+  <a href="#roadmap">Roadmap</a>
+</nav>
+
+<main>
+  <div class="hero">
+    <h1>📘 Next PMS — User Guide</h1>
+    <p>Project management, time tracking, weekly planning and team performance for Enfono. This guide covers everything from your first check-in to how management reads the Performance Score.</p>
+    <div class="meta">App: next_pms &middot; Frappe v15 &middot; Access: <code>/next-pms</code></div>
+  </div>
+
+  <section id="overview">
+    <h2>Overview</h2>
+    <p>Next PMS is Enfono's project management system: sprint-based IT project tracking with a built-in timer, attendance check-in, weekly capacity planning, meeting calendar, client portal and automated reporting.</p>
+    <table>
+      <tr><th>Area</th><th>What you do there</th></tr>
+      <tr><td>Projects</td><td>Sprints, Kanban board, Gantt, budget &amp; team</td></tr>
+      <tr><td>My Tasks</td><td>Your assigned tasks across all projects</td></tr>
+      <tr><td>Time Logs</td><td>Timer history — every logged work session</td></tr>
+      <tr><td>Weekly Plan</td><td>Management's projects × people hour allocations for the week</td></tr>
+      <tr><td>Calendar</td><td>Scheduled meetings with attendees and mandatory minutes</td></tr>
+      <tr><td>Task Report</td><td>Filterable task table + Productivity + Performance (management) tabs</td></tr>
+      <tr><td>Client Portal</td><td>Token-based project view for customers — no login needed</td></tr>
+    </table>
+  </section>
+
+  <section id="getting-started">
+    <h2>Getting Started</h2>
+    <ol class="steps">
+      <li><strong>Log in</strong> at <code>https://office.enfono.com/next-pms</code> with your ERPNext account. No PMS menu? Ask an admin to enable your PMS Access (Settings → Team → User Management).</li>
+      <li><strong>Check in</strong> — click <span class="badge b-red">● Check In</span> at the bottom of the sidebar when you start your day. Check out when you leave. This is your attendance record.</li>
+      <li><strong>Open My Tasks</strong> — everything assigned to you, sorted by priority and due date.</li>
+      <li><strong>Start the timer</strong> on the task you're working on (or press <span class="kbd">T</span>). The timer is the <em>only</em> thing that counts as logged work hours.</li>
+      <li><strong>Stop the timer</strong> when you switch tasks or take a break. Move the task across the Kanban board as it progresses.</li>
+    </ol>
+    <div class="callout">⚠️ <strong>Attendance ≠ work hours.</strong> Check-in proves you were present; the <em>timer</em> proves what you worked on. Being checked in all day with no timer running = 0 logged hours in every report.</div>
+  </section>
+
+  <section id="roles">
+    <h2>Roles &amp; Access</h2>
+    <table>
+      <tr><th>Role</th><th>Access</th></tr>
+      <tr><td><span class="badge b-gray">Next PMS</span></td><td>Base role — required for everyone using the app</td></tr>
+      <tr><td><span class="badge b-blue">PMS Manager</span></td><td>Full control of own/assigned projects, team management, budgets, all reports, Performance tab</td></tr>
+      <tr><td><span class="badge b-violet">PMS Developer</span></td><td>Work on assigned tasks, own time logs; reports/settings hidden by default</td></tr>
+      <tr><td><span class="badge b-amber">PMS Viewer</span></td><td>Read-only on assigned projects</td></tr>
+      <tr><td><span class="badge b-green">PMS Customer</span></td><td>Client portal only</td></tr>
+    </table>
+    <p>System Manager / Administrator see everything. Per-user fine-tuning (sidebar items, project tabs, feature switches) lives in <strong>User Detail → Permissions</strong> (admin only).</p>
+  </section>
+
+  <section id="projects">
+    <h2>Projects &amp; Sprints</h2>
+    <h3>Project lifecycle</h3>
+    <div class="flow">
+      <span class="st b-gray">Draft</span><span class="arrow">→</span>
+      <span class="st b-blue">Active</span><span class="arrow">→</span>
+      <span class="st b-amber">On Hold</span><span class="arrow">→</span>
+      <span class="st b-green">Completed</span>
+    </div>
+    <p>A project holds: budget (mandatory), hourly-rated team members, sprints, tasks, expenses and client-portal settings. Budget utilisation is tracked automatically from timer cost — alerts fire at <strong>80%</strong>.</p>
+    <h3>Sprints</h3>
+    <div class="flow">
+      <span class="st b-gray">Planning</span><span class="arrow">→</span>
+      <span class="st b-blue">Active</span><span class="arrow">→</span>
+      <span class="st b-green">Completed</span>
+    </div>
+    <p>Plan the backlog by dragging tasks into a sprint, activate it, and track burn on the project dashboard and Gantt view.</p>
+  </section>
+
+  <section id="tasks">
+    <h2>Tasks &amp; Kanban</h2>
+    <div class="flow">
+      <span class="st b-gray">Backlog</span><span class="arrow">→</span>
+      <span class="st b-gray">To Do</span><span class="arrow">→</span>
+      <span class="st b-blue">In Progress</span><span class="arrow">→</span>
+      <span class="st b-amber">In Review</span><span class="arrow">→</span>
+      <span class="st b-green">Done</span>
+    </div>
+    <table>
+      <tr><th>Field</th><th>Who sets it</th><th>Why it matters</th></tr>
+      <tr><td>Estimated hours</td><td>PM (≈90% of the time)</td><td>Feeds Efficiency and the Performance Score's Delivery dimension</td></tr>
+      <tr><td>Due date</td><td>PM / assignee</td><td>Feeds Timeliness and overdue counts</td></tr>
+      <tr><td>Actual hours</td><td><em>Automatic</em> from timer</td><td>Never typed by hand</td></tr>
+      <tr><td>Priority / Type / Reviewer</td><td>PM / assignee</td><td>Filtering, review flow</td></tr>
+    </table>
+    <div class="callout info">💡 Estimate honestly and keep due dates real — these two fields drive most of the evaluation metrics. Comment with <code>@mention</code> to notify a teammate.</div>
+  </section>
+
+  <section id="timer">
+    <h2>Time Tracking</h2>
+    <ol class="steps">
+      <li>Open the task → click <strong>Start Timer</strong> (or press <span class="kbd">T</span>).</li>
+      <li>Work. The elapsed time survives page reloads. A reminder fires if a timer runs 4+ hours.</li>
+      <li><strong>Stop</strong> when done or switching. Duration and cost (hours × your hourly rate) save automatically as a PMS Time Log.</li>
+    </ol>
+    <p>Review or fix your entries under <strong>Time Logs</strong>. Every report — daily AI report, weekly email, Productivity, Performance — reads from these entries.</p>
+    <div class="callout">⚠️ Forgot the timer? Log time the same day where possible. Reports window hours by the time-log date; late back-filling distorts your daily consistency metric.</div>
+  </section>
+
+  <section id="checkin">
+    <h2>Check-In / Check-Out</h2>
+    <ul>
+      <li>Check in when you start your day, check out when you finish — sidebar button or the mobile app.</li>
+      <li>Missed check-ins/check-outs appear in your weekly email and trigger reminders.</li>
+      <li>Attendance counts only <em>effective working days</em>: Sundays, public holidays (your holiday list) and approved leave are excluded automatically.</li>
+    </ul>
+  </section>
+
+  <section id="weekly-plan">
+    <h2>Weekly Plan</h2>
+    <p>Management publishes an Excel-style <strong>projects × people</strong> matrix every week: planned hours per (project, member), plus priorities, closures and a watch list.</p>
+    <ul>
+      <li><strong>Team members:</strong> check Monday morning — it is your commitment for the week. Hours you log on planned projects feed the <em>Plan Adherence</em> dimension of the Performance Score.</li>
+      <li><strong>Managers:</strong> allocations automatically sync each project's planned hours and team; publishing makes the plan visible and scoreable.</li>
+    </ul>
+  </section>
+
+  <section id="calendar">
+    <h2>Calendar &amp; Meetings</h2>
+    <ul>
+      <li>Schedule meetings with attendees from the <strong>Calendar</strong> view; cards are colour-coded by timing.</li>
+      <li><strong>Minutes of Meeting (MoM) are mandatory</strong> — a meeting isn't complete until minutes are recorded.</li>
+      <li>Meetings can spawn tasks (source meeting is linked on the task).</li>
+    </ul>
+  </section>
+
+  <section id="task-report">
+    <h2>Task Report</h2>
+    <p>Three tabs under <strong>Task Report</strong>:</p>
+    <table>
+      <tr><th>Tab</th><th>Audience</th><th>Contents</th></tr>
+      <tr><td><strong>Tasks</strong></td><td>All</td><td>Filterable task table (project, user, status, priority, type, date window) with cost summary for finance-enabled users</td></tr>
+      <tr><td><strong>Productivity</strong></td><td>All (own data) / managers (anyone)</td><td>Per-employee: attendance, office hours, logged hours, tasks, on-time %, Efficiency, Utilization, day-wise chart, per-project table, leave &amp; holiday breakdown</td></tr>
+      <tr><td><strong>Performance</strong></td><td>Management only</td><td>Composite Performance Score + full methodology documentation (see below)</td></tr>
+    </table>
+    <div class="callout info">💡 Productivity periods (5d/10d/30d…) are <strong>rolling windows ending today</strong> — not calendar weeks. See "Metrics Explained" for why this matters.</div>
+  </section>
+
+  <section id="metrics">
+    <h2>Metrics Explained — Utilization vs Efficiency</h2>
+    <p>Two percentages appear across Next PMS and are <strong>not comparable to each other</strong>:</p>
+    <table>
+      <tr><th></th><th>Utilization</th><th>Efficiency</th></tr>
+      <tr><td><strong>Formula</strong></td><td>logged hours ÷ target hours × 100</td><td>estimated hours ÷ actual hours × 100</td></tr>
+      <tr><td><strong>Question</strong></td><td>"Did I log enough hours against the 8h/day bar?"</td><td>"Were the task estimates accurate?" (&gt;100% = faster than estimated)</td></tr>
+      <tr><td><strong>Low value means</strong></td><td>Under-logged — low activity <em>or</em> timers not run</td><td>Slower than estimated (or tight estimates)</td></tr>
+    </table>
+    <h3>Target hours — the fair bar</h3>
+    <p><code>Target = 8h × effective working days</code>. Sundays, public holidays and approved leave are removed <em>before</em> any percentage is computed; half-day leave deducts 0.5 day. <strong>You are never penalised for approved absence</strong> — a sick day lowers your target, not your score.</p>
+    <h3>Why the weekly email and Task Report can disagree</h3>
+    <ul>
+      <li><strong>Different windows:</strong> the email always covers the fixed Mon–Fri week; Task Report periods roll back from today. Opened on Saturday, a "5d" view covers Tue–Sat — different days summed.</li>
+      <li><strong>Different headline metrics:</strong> the email leads with Utilization, the report leads with Efficiency. 49% utilization and 79% efficiency for the same person in the same week can both be correct — volume vs accuracy.</li>
+      <li><strong>Same engine underneath:</strong> identical leave/holiday/target logic everywhere; only the window and the question differ.</li>
+    </ul>
+  </section>
+
+  <section id="performance">
+    <h2>Performance Score (Management)</h2>
+    <p>A single 0–100 composite used as an <em>input</em> to appraisals, increments and promotions. Weighted across 8 dimensions:</p>
+    <table>
+      <tr><th>Dimension</th><th>Weight</th><th>Measures</th></tr>
+      <tr><td>Delivery</td><td>25%</td><td>Estimated hours of completed tasks vs target — output volume, size-weighted</td></tr>
+      <tr><td>Timeliness</td><td>15%</td><td>On-time completion of due-dated tasks</td></tr>
+      <tr><td>Utilization</td><td>15%</td><td>Logged hours vs leave-adjusted target</td></tr>
+      <tr><td>Plan Adherence</td><td>15%</td><td>Hours on Weekly-Plan projects vs planned</td></tr>
+      <tr><td>Efficiency</td><td>10%</td><td>Estimate accuracy (capped 120%)</td></tr>
+      <tr><td>Quality</td><td>10%</td><td>1 − task reopen rate</td></tr>
+      <tr><td>Consistency</td><td>5%</td><td>Steady daily logging vs binge logging</td></tr>
+      <tr><td>Attendance</td><td>5%</td><td>Check-in presence on working days</td></tr>
+    </table>
+    <p>Bands: <span class="badge b-green">A ≥ 85</span> <span class="badge b-blue">B ≥ 70</span> <span class="badge b-amber">C ≥ 50</span> <span class="badge b-red">D &lt; 50</span>. Dimensions with no data are excluded and weights renormalised — missing data never scores zero.</p>
+    <div class="callout good">✅ <strong>Fairness built in:</strong> leave-adjusted everywhere · PM-controlled estimates · anti-gaming caps · evaluate 30–90-day trends, never a single week · metrics inform, humans decide. Full methodology with formulas is published inside the Performance tab itself.</div>
+  </section>
+
+  <section id="emails">
+    <h2>Automated Emails</h2>
+    <table>
+      <tr><th>Email</th><th>When</th><th>To</th><th>Contains</th></tr>
+      <tr><td>Daily AI report</td><td>Daily (cron)</td><td>Management</td><td>Per-person daily metrics, plan-vs-actual, anomalies</td></tr>
+      <tr><td>Your Weekly Work Summary</td><td>Saturday 07:00</td><td>Each member</td><td>Own hours, target, Utilization, Efficiency, tasks, attendance</td></tr>
+      <tr><td>Team Weekly Work Summary</td><td>Saturday 07:00</td><td>Management</td><td>All-member table: Logged / Target / Utilization / Efficiency / Tasks Done</td></tr>
+      <tr><td>Check-in reminders</td><td>On miss</td><td>Member</td><td>Missing check-in / check-out nudge</td></tr>
+      <tr><td>Budget alerts</td><td>At 80%+</td><td>PM</td><td>Project budget utilisation warning</td></tr>
+    </table>
+  </section>
+
+  <section id="portal">
+    <h2>Client Portal</h2>
+    <ul>
+      <li>Customers get a <strong>token link</strong> (<code>/pms-portal?token=…</code>) — no ERPNext login.</li>
+      <li>They see progress, sprint status and task lists; they can comment on tasks. Internal costs and budgets are never exposed.</li>
+      <li>PMs manage portal access from the project's Client Settings.</li>
+    </ul>
+  </section>
+
+  <section id="tickets">
+    <h2>Support Tickets</h2>
+    <p>Client-raised or internal tickets tracked under <strong>Support Tickets</strong> (managers/admins). Tickets can be converted into PMS Tasks (task type <em>Support Ticket</em>) so the work is timed and reported like everything else.</p>
+  </section>
+
+  <section id="faq">
+    <h2>FAQ</h2>
+    <table>
+      <tr><th>Question</th><th>Answer</th></tr>
+      <tr><td>My utilization looks low but I worked all week?</td><td>Timer discipline — check-in hours don't count as work hours. Run the timer on tasks.</td></tr>
+      <tr><td>I was on approved leave — does it hurt my numbers?</td><td>No. Leave days are removed from your target before any % is computed.</td></tr>
+      <tr><td>Email says 49% but Task Report says 79% — bug?</td><td>No — two different metrics over two different windows. See <a href="#metrics">Metrics Explained</a>.</td></tr>
+      <tr><td>Who can see my Performance Score?</td><td>Management only (System Manager / PMS Manager). Not visible to peers.</td></tr>
+      <tr><td>Task estimate looks wrong — can I change it?</td><td>Ask your PM. Estimates are PM-controlled because they feed evaluation metrics.</td></tr>
+      <tr><td>I can't see Reports / Settings in the sidebar</td><td>Role defaults. An admin can enable them per user in User Detail → Permissions.</td></tr>
+    </table>
+  </section>
+
+  <section id="roadmap">
+    <h2>Roadmap</h2>
+    <table>
+      <tr><th>Status</th><th>Item</th><th>Detail</th></tr>
+      <tr><td><span class="badge b-blue">Next</span></td><td><strong>Monthly Performance Score snapshots</strong></td><td>A submittable <code>PMS Performance Score</code> record per employee-month, generated by cron and frozen (docstatus 1) — appraisal decisions get a tamper-evident audit record that doesn't drift as underlying data changes, plus 12-month trend graphs.</td></tr>
+      <tr><td><span class="badge b-blue">Next</span></td><td><strong>PM override ±10 with mandatory comment</strong></td><td>A stored adjustment (who, when, how much, why) on the monthly snapshot so managers can correct for context the metrics can't see. Full audit trail for HR.</td></tr>
+      <tr><td><span class="badge b-gray">Planned</span></td><td>Task completion date field</td><td>Replace the "Done + modified in window" proxy with a real completion timestamp.</td></tr>
+      <tr><td><span class="badge b-gray">Planned</span></td><td>Performance Settings doctype</td><td>Management-tunable dimension weights and caps (currently fixed in code).</td></tr>
+      <tr><td><span class="badge b-gray">Planned</span></td><td>Android APK release</td><td>Capacitor build of the mobile app.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <p style="color:var(--muted); font-size:12px; border-top:1px solid var(--border); padding-top:16px;">Next PMS · Enfono Technologies · This guide is served at <code>/pms-guide</code> and updates with the app.</p>
+  </section>
+</main>
+
+<script>
+  // Active section highlight
+  const links = document.querySelectorAll('.sidebar a');
+  const map = {};
+  links.forEach(a => { map[a.getAttribute('href').slice(1)] = a; });
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting && map[e.target.id]) {
+        links.forEach(a => a.classList.remove('active'));
+        map[e.target.id].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('section[id]').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

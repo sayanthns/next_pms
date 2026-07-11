@@ -2,6 +2,14 @@
 
 A comprehensive project management system built on the Frappe Framework, designed for IT services companies. Inspired by Zoho Sprints.
 
+## Documentation
+
+| Doc | Audience | Where |
+|-----|----------|-------|
+| **User Guide** | End users | Hosted at `/pms-guide` on any site with the app installed (source: `next_pms/www/pms-guide.html`) |
+| **Developer Docs** | Engineers | [docs/DEVELOPER.md](docs/DEVELOPER.md) — architecture, API, metrics engine, deploy runbook, roadmap |
+| **Permissions** | Admins | [PERMISSIONS.md](PERMISSIONS.md) — roles and per-user feature access |
+
 ## Features
 
 ### Project Management
