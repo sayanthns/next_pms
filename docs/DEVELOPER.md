@@ -40,6 +40,8 @@ next_pms/                       Frappe app (Python, v15)
 | Weekly Plan (+ children) | Weekly allocations matrix | `published=1` plans feed Plan Adherence |
 | PMS AI Settings | Single: report/email config | `working_hours_per_day`, recipients, toggles |
 | PMS Client Portal Access | Portal tokens | |
+| **PMS Performance Score** | Frozen monthly score snapshot | Submittable, `PERF-{YYYY-MM}-{user}` (structural one-per-member-month). Frozen fields read-only + no allow_on_submit; override fields (`adjustment`, `adjustment_reason`, `adjusted_by`, `adjusted_on`, `final_score`, `final_band`) carry `allow_on_submit=1`. No role has delete/cancel/amend. `track_changes=1` → Version audit. |
+| **PMS Performance Dimension** | Child of Performance Score | Keeps per-dimension `dim_key/weight/included/score/raw_basis` so the human-readable basis survives the freeze. |
 
 ## API layer (`next_pms/api/`)
 
@@ -49,7 +51,7 @@ All SPA calls go through whitelisted methods here. Key modules:
 |---|---|
 | `_hours.py` | **Single source of truth** for target/utilization math (see Metrics Engine) |
 | `productivity.py` | Employee Productivity tab (`get_employee_productivity`) |
-| `performance.py` | Composite Performance Score: `get_performance_score` (individual, custom `from_date`/`to_date` or rolling `period_days`), `get_team_performance` (ranked leaderboard), `compute_team_performance` (internal, used by monthly cron). All management-only. |
+| `performance.py` | Composite Performance Score: `get_performance_score` (individual, custom `from_date`/`to_date` or rolling `period_days`), `get_team_performance` (ranked leaderboard), `compute_team_performance` (internal, used by monthly cron), `get_score_history` (submitted snapshots for a user, newest first), `apply_adjustment(name, adjustment, reason)` (±10 post-submit override — fresh `get_doc` + single `save()`, never `db_set`+`save`). All management-only. |
 | `crud.py` | Task report, task/project CRUD |
 | `weekly_plan.py` | Weekly Plan matrix builder |
 | `calendar.py` | Meetings |
@@ -120,7 +122,7 @@ Management-only composite, 8 dimensions, weights fixed in `WEIGHTS` (sum 100):
 | Job | Cron | What |
 |---|---|---|
 | `send_weekly_summary` | Sat 07:00 | Per-member email + management team table (Utilization + Efficiency) |
-| `send_monthly_performance_report` | 1st of month 08:00 | Previous month's Performance Scores — per member (own score/band/rank), management (ranked leaderboard + top performer). Toggle: `PMS AI Settings.monthly_performance_enabled` (getattr default ON — field optional). |
+| `send_monthly_performance_report` | 1st of month 08:00 | Three phases: (1) compute team once; (2) `_upsert_month_snapshots` — create+SUBMIT one `PMS Performance Score` per ranked member (deterministic names → idempotent: submitted = skip, crashed draft = replace, unranked members get none), then `frappe.db.commit()`; (3) emails built FROM the frozen snapshots. Pure re-run creates nothing and sends nothing. Caveat: a partial re-run that ranks a NEW member (e.g. backfilled logs) re-emails the whole month. Toggle: `monthly_performance_enabled` (getattr default ON). |
 | `generate_daily_report` (`ai_report.py`) | daily 03:00 | AI daily report to management |
 | `send_checkin_reminders` | per config | Missing check-in/out nudges |
 | Budget alerts | on update | ≥80% budget utilisation |
@@ -181,11 +183,35 @@ Tests live beside the modules (`api/test_*.py`) and in doctype folders (`test_<d
 
 | Status | Item | Notes |
 |---|---|---|
-| **Next** | **Monthly Performance Score snapshots** | New submittable doctype `PMS Performance Score` (employee, month, per-dimension scores, composite, band). Monthly cron computes + submits → frozen, tamper-evident appraisal record that doesn't drift as live data changes; enables trend graphs without recompute. Needs: doctype + cron hook + migrate strategy (reload_doc), fixture export. |
-| **Next** | **PM override ±10 with mandatory comment** | Stored adjustment on the monthly snapshot (adjustment, reason, adjusted_by, timestamp). Metrics inform, humans decide — with an audit trail. Blocked on the snapshot doctype above. |
+| **Shipped** | Monthly Performance Score snapshots | `PMS Performance Score` + dimension child table, cron-frozen, Score History card. |
+| **Shipped** | Management adjustment ±10 with mandatory reason | `apply_adjustment` endpoint + inline editor; Version audit trail. |
 | Planned | `completion_date` on PMS Task | Replace the "Done + modified-in-window" proxy in performance/email metrics. |
 | Planned | PMS Performance Settings (Single) | Management-tunable `WEIGHTS`/caps; replaces hardcoded dict in `performance.py`. |
 | Planned | Android APK release | Capacitor build in `android-capacitor/`. |
+
+## Performance snapshot lifecycle (how to work with it)
+
+```
+1st 08:00 cron ─► compute_team_performance(prev month)
+              ─► _upsert_month_snapshots()  → insert + submit  (docstatus 1 = FROZEN)
+              ─► commit
+              ─► member emails + leaderboard email, FROM the snapshots
+```
+
+- **Freeze guarantee**: any post-submit write to a non-`allow_on_submit` field raises `UpdateAfterSubmitError` (core, tested). Snapshots cannot be deleted/cancelled/amended by any role.
+- **Adjustment path**: `apply_adjustment` → gate → fresh `frappe.get_doc` → set override fields in memory → one `doc.save()`. Controller validates ±10 + mandatory reason in BOTH `validate` and `before_update_after_submit` (plain `validate` does not run post-submit in v15). `final_score = clamp(composite + adj, 0, 100)`, `final_band` recomputed via the shared `_band`. Version row records old→new (audit trail).
+- **Trend**: `get_score_history(user)` → Score History card in PerformanceTab Individual view.
+- Tests: `next_pms/api/test_performance_snapshots.py` (22 cases: naming, freeze matrix, idempotency, clamps, reason rule, gates, Version audit, email idempotency). Run: `bench --site mysite.local run-tests --app next_pms --module next_pms.api.test_performance_snapshots`.
+
+### Deploying a NEW DocType to office (migrate is broken there)
+
+```python
+# bench --site office console — child table FIRST, then parent
+frappe.reload_doc("next_pms", "doctype", "pms_performance_dimension")
+frappe.reload_doc("next_pms", "doctype", "pms_performance_score")
+frappe.db.commit()
+```
+Then restart workers (root `supervisorctl restart all`). Never `bench migrate` on office until the HRMS web-form duplicate is fixed. New cron hooks additionally need `sync_jobs()` (see above).
 
 ## Settings reference (PMS AI Settings, Single)
 
