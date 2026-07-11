@@ -60,6 +60,13 @@
   .callout.good { border-left-color: var(--green); background: #ecfdf5; }
   .kbd { border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; font-size: 12px; background: #fff; font-family: monospace; }
 
+  figure.shot { margin: 18px 0; }
+  figure.shot img { display: block; width: 100%; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  figure.shot.narrow img { max-width: 620px; }
+  figure.shot figcaption { font-size: 12.5px; color: var(--muted); margin-top: 7px; padding-left: 2px; }
+  figure.shot .tag { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--primary); background: #eff6ff; border-radius: 4px; padding: 1px 6px; margin-right: 6px; }
+  figure.shot.gif .tag { color: #b45309; background: #fffbeb; }
+
   @media (max-width: 768px) {
     .sidebar { display: none; }
     main { margin-left: 0; }
@@ -135,6 +142,10 @@
       <li><strong>Stop the timer</strong> when you switch tasks or take a break. Move the task across the Kanban board as it progresses.</li>
     </ol>
     <div class="callout">⚠️ <strong>Attendance ≠ work hours.</strong> Check-in proves you were present; the <em>timer</em> proves what you worked on. Being checked in all day with no timer running = 0 logged hours in every report.</div>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/my-tasks.png" alt="My Tasks view">
+      <figcaption><span class="tag">My Tasks</span>Everything assigned to you across projects — start the timer here, move cards as work progresses.</figcaption>
+    </figure>
   </section>
 
   <section id="roles">
@@ -215,6 +226,10 @@
       <li><strong>Team members:</strong> check Monday morning — it is your commitment for the week. Hours you log on planned projects feed the <em>Plan Adherence</em> dimension of the Performance Score.</li>
       <li><strong>Managers:</strong> allocations automatically sync each project's planned hours and team; publishing makes the plan visible and scoreable.</li>
     </ul>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/weekly-plan.png" alt="Weekly Plan projects × people allocation matrix">
+      <figcaption><span class="tag">Weekly Plan</span>The projects × people matrix — planned hours per member, plus priorities, closures and the watch list.</figcaption>
+    </figure>
   </section>
 
   <section id="calendar">
@@ -224,6 +239,10 @@
       <li><strong>Minutes of Meeting (MoM) are mandatory</strong> — a meeting isn't complete until minutes are recorded.</li>
       <li>Meetings can spawn tasks (source meeting is linked on the task).</li>
     </ul>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/calendar.png" alt="Calendar view with scheduled meetings">
+      <figcaption><span class="tag">Calendar</span>Scheduled meetings with attendees; minutes are mandatory before a meeting is complete.</figcaption>
+    </figure>
   </section>
 
   <section id="task-report">
@@ -236,6 +255,14 @@
       <tr><td><strong>Performance</strong></td><td>Management only</td><td>Composite Performance Score + full methodology documentation (see below)</td></tr>
     </table>
     <div class="callout info">💡 Productivity periods (5d/10d/30d…) are <strong>rolling windows ending today</strong> — not calendar weeks. See "Metrics Explained" for why this matters.</div>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/task-report-tasks.png" alt="Task Report — Tasks tab with filters and totals">
+      <figcaption><span class="tag">Tasks tab</span>Filter by project, user, status, priority, type and date window; totals for tasks, estimated/actual hours and cost update live.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/productivity-overview.png" alt="Task Report — Productivity tab showing one employee's stats">
+      <figcaption><span class="tag">Productivity tab</span>Per-employee attendance, office vs logged hours, Efficiency and Utilization side by side, on-time completion, and a per-project breakdown.</figcaption>
+    </figure>
   </section>
 
   <section id="metrics">
@@ -273,12 +300,28 @@
     </table>
     <p>Bands: <span class="badge b-green">A ≥ 85</span> <span class="badge b-blue">B ≥ 70</span> <span class="badge b-amber">C ≥ 50</span> <span class="badge b-red">D &lt; 50</span>. Dimensions with no data are excluded and weights renormalised — missing data never scores zero.</p>
     <div class="callout good">✅ <strong>Fairness built in:</strong> leave-adjusted everywhere · PM-controlled estimates · anti-gaming caps · evaluate 30–90-day trends, never a single week · metrics inform, humans decide. Full methodology with formulas is published inside the Performance tab itself.</div>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/perf-score-hero.png" alt="Individual performance score ring and summary pills">
+      <figcaption><span class="tag">Individual view</span>The composite score (0–100) and band, with working days, logged-vs-target hours and tasks completed for the window.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/perf-dimensions.png" alt="Dimension breakdown table with per-dimension score bars">
+      <figcaption><span class="tag">Dimension breakdown</span>Every dimension's weight, 0–100 score, contribution to the composite, and the exact basis behind the number.</figcaption>
+    </figure>
 
     <h3>🏆 Team Leaderboard</h3>
     <p>The Performance tab has two views: <strong>Individual</strong> (one employee's full breakdown) and <strong>Leaderboard</strong> (every PMS member ranked by composite score for the chosen window). The top performer is highlighted 🏆; #2 and #3 get 🥈 / 🥉. Each row shows score, band, logged-vs-target hours, tasks done and the member's <em>weakest dimension</em> — a low rank always comes with its reason attached. Members with no scorable data appear unranked rather than as zeros. Clicking any row opens that member's individual breakdown.</p>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/perf-leaderboard.png" alt="Team leaderboard ranked by composite score with medals">
+      <figcaption><span class="tag">Leaderboard view</span>Ranked team table with medals, a top-performer banner, and a weakest-dimension column so a low rank explains itself.</figcaption>
+    </figure>
 
     <h3>Analysing specific dates</h3>
     <p>Besides the rolling periods (5d…90d), a <strong>Custom Range</strong> (from → to) is available on both views — use it to score an exact appraisal cycle, a single sprint, or one calendar month. Clear it (✕) to return to rolling periods.</p>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/perf-controls.png" alt="Performance tab controls: view toggle, employee, period, custom range">
+      <figcaption><span class="tag">Controls</span>View toggle (Individual / Leaderboard), employee picker, rolling period buttons, and the custom date range.</figcaption>
+    </figure>
 
     <h3>📬 Monthly score email</h3>
     <p>On the <strong>1st of every month at 08:00</strong> the system evaluates the previous calendar month and emails:</p>
@@ -294,6 +337,10 @@
       <li><strong>Tamper-evident.</strong> Computed values on a submitted snapshot cannot be edited by anyone — the system rejects the change. Nobody can delete or cancel a snapshot either. The only permitted change is the management adjustment below, and every change is written to the document's version history (who, when, old → new).</li>
       <li><strong>Trend history for free.</strong> The Individual view's <em>Score History</em> card lists every frozen month — score bar, band, rank — so a 6–12 month trajectory is one glance, no recomputation.</li>
     </ul>
+    <figure class="shot">
+      <img src="/assets/next_pms/images/guide/perf-score-history.png" alt="Score History card listing frozen monthly snapshots">
+      <figcaption><span class="tag">Score History</span>One row per frozen month — final score, band, rank, and an <code>adj</code> badge where a management adjustment was applied (hover shows the reason).</figcaption>
+    </figure>
 
     <h3>✏️ How to apply a management adjustment (±10)</h3>
     <p>Metrics can't see everything — a production firefight, mentoring load, a client escalation handled off-ticket. Managers can correct a frozen month by up to <strong>±10 points</strong>, with the reason on record:</p>
@@ -303,6 +350,14 @@
       <li>Enter the adjustment (<code>-10 … +10</code>) and a <strong>reason — mandatory</strong> whenever the adjustment is not zero. Save.</li>
       <li>The row updates instantly: <em>Final Score = frozen score + adjustment</em> (clamped 0–100), band recomputed, and an <code>adj ±n</code> badge appears — hover it to read the reason and who adjusted.</li>
     </ol>
+    <figure class="shot gif">
+      <img src="/assets/next_pms/images/guide/perf-adjust.gif" alt="Animation: opening the Adjust editor, entering +3 and a reason, saving, and the row updating">
+      <figcaption><span class="tag">▶ Walkthrough</span>Adjusting May by +3 with a reason — the final score jumps 64.8 → 67.8 and the <code>adj +3.0</code> badge appears, all captured in the version trail.</figcaption>
+    </figure>
+    <figure class="shot narrow">
+      <img src="/assets/next_pms/images/guide/perf-adjust-editor.png" alt="Inline adjustment editor with number, reason, Save and Cancel">
+      <figcaption>The inline editor: adjustment (−10…+10), a mandatory reason, Save / Cancel.</figcaption>
+    </figure>
     <div class="callout info">💡 Rules: adjustments apply only to <em>submitted</em> snapshots (not the live score); out-of-range values and missing reasons are rejected; the original computed score is never overwritten — final score is stored beside it; adjusting again replaces the previous adjustment, and both remain visible in the audit trail. Available to System Manager / PMS Manager only.</div>
   </section>
 
