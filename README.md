@@ -1,14 +1,21 @@
 # Next PMS - IT Project Management System
 
-A comprehensive project management system built on the Frappe Framework, designed for IT services companies. Inspired by Zoho Sprints.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Frappe v15](https://img.shields.io/badge/Frappe-v15-blue)
+
+A comprehensive project management system built on the Frappe Framework, designed for IT services companies. Inspired by Zoho Sprints. Sprint-based tracking, a built-in timer, attendance, weekly capacity planning, a meeting calendar, a client portal, automated reporting, and a leave-adjusted team **Performance Score** with frozen monthly snapshots.
 
 ## Documentation
 
+📖 **Hosted docs: [next-pms-docs.docs.enfonoerp.com](https://next-pms-docs.docs.enfonoerp.com)** — illustrated user & admin guide plus developer reference.
+
 | Doc | Audience | Where |
 |-----|----------|-------|
-| **User Guide** | End users | Hosted at `/pms-guide` on any site with the app installed (source: `next_pms/www/pms-guide.html`) |
+| **Docs site** | Everyone | [next-pms-docs.docs.enfonoerp.com](https://next-pms-docs.docs.enfonoerp.com) — guide (with screenshots/GIFs) + auto-generated dev reference |
+| **User & Admin Guide** | End users / admins | Hosted at `/pms-guide` on any site with the app installed (source: `next_pms/www/pms-guide.html`) |
 | **Developer Docs** | Engineers | [docs/DEVELOPER.md](docs/DEVELOPER.md) — architecture, API, metrics engine, deploy runbook, roadmap |
 | **Permissions** | Admins | [PERMISSIONS.md](PERMISSIONS.md) — roles and per-user feature access |
+| **Contributing** | Contributors | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## Features
 
@@ -176,6 +183,10 @@ cd ../../../
 bench build --app next_pms
 ```
 
+## Contributing
+
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions and the test/build workflow.
+
 ## License
 
-MIT
+[MIT](LICENSE) © EFTPMS (Enfono Technologies)
