@@ -119,14 +119,33 @@ def _plan_adherence(user, from_date, to_date, logged_by_project):
     return round(min(actual / planned, 1.0) * 100, 1), planned, actual
 
 
+def _resolve_window(period_days, from_date=None, to_date=None):
+    """Explicit [from_date, to_date] wins over rolling period_days."""
+    if from_date and to_date:
+        fd, td = getdate(from_date), getdate(to_date)
+        if fd > td:
+            frappe.throw(_("From Date must be on or before To Date."))
+        return fd, td
+    return _get_date_range(int(period_days))
+
+
 @frappe.whitelist()
-def get_performance_score(user, period_days=30):
-    """Composite performance score for one employee. Management-only."""
+def get_performance_score(user, period_days=30, from_date=None, to_date=None):
+    """Composite performance score for one employee. Management-only.
+    Window = explicit from_date/to_date if both given, else rolling
+    period_days ending today."""
     if not (is_admin_user() or is_manager_user()):
         frappe.throw(_("Performance scores are visible to management only."))
 
-    period_days = int(period_days)
-    from_date, to_date = _get_date_range(period_days)
+    fd, td = _resolve_window(period_days, from_date, to_date)
+    out = _compute_score(user, fd, td)
+    out["period_days"] = int(period_days)
+    return out
+
+
+def _compute_score(user, from_date, to_date):
+    """Scoring engine — no permission gate (callers gate). Also used by
+    the leaderboard endpoint and the monthly performance email cron."""
     from_str, to_str = str(from_date), str(to_date)
 
     # ── Shared bases ──────────────────────────────────────────────────
@@ -294,7 +313,6 @@ def get_performance_score(user, period_days=30):
         "user_image": user_info.get("user_image"),
         "from_date": from_str,
         "to_date": to_str,
-        "period_days": period_days,
         "composite_score": composite,
         "band": _band(composite),
         "included_weight": included_weight,
@@ -304,4 +322,86 @@ def get_performance_score(user, period_days=30):
         "working_days_count": len(working_day_strs),
         "completed_count": len(completed),
         "worked_task_count": len(worked_tasks),
+    }
+
+
+def _pms_member_users():
+    """Enabled internal PMS users (same population as the productivity
+    user picker): has a PMS role, not a portal customer, System User."""
+    pms_roles = ["Next PMS", "PMS Manager", "PMS Developer", "PMS Viewer"]
+    role_rows = frappe.get_all(
+        "Has Role",
+        filters={"role": ["in", pms_roles], "parenttype": "User"},
+        fields=["parent"],
+        distinct=True,
+        ignore_permissions=True,
+    )
+    pms_users = {r.parent for r in role_rows}
+    cust_rows = frappe.get_all(
+        "Has Role",
+        filters={"role": "PMS Customer", "parenttype": "User"},
+        fields=["parent"],
+        ignore_permissions=True,
+    )
+    candidates = list(pms_users - {r.parent for r in cust_rows})
+    if not candidates:
+        return []
+    return frappe.get_all(
+        "User",
+        filters={"name": ["in", candidates], "enabled": 1, "user_type": "System User"},
+        pluck="name",
+        ignore_permissions=True,
+    )
+
+
+def compute_team_performance(from_date, to_date):
+    """Score every PMS member over [from_date, to_date], ranked by
+    composite desc. Internal — no permission gate; callers gate.
+    Members with zero scorable data (included_weight == 0) are listed
+    unranked at the bottom rather than shown as rank-worthy zeros."""
+    rows = []
+    for user in _pms_member_users():
+        try:
+            s = _compute_score(user, getdate(from_date), getdate(to_date))
+        except Exception:
+            frappe.log_error(
+                title=f"Team performance scoring failed for {user}",
+                message=frappe.get_traceback(),
+            )
+            continue
+        rows.append({
+            "user": s["user"],
+            "full_name": s["user_full_name"],
+            "user_image": s["user_image"],
+            "composite_score": s["composite_score"],
+            "band": s["band"],
+            "included_weight": s["included_weight"],
+            "target_hours": s["target_hours"],
+            "total_logged_hours": s["total_logged_hours"],
+            "completed_count": s["completed_count"],
+            "dimensions": {d["key"]: d["score"] for d in s["dimensions"] if d["included"]},
+        })
+    scored = sorted(
+        (r for r in rows if r["included_weight"] > 0),
+        key=lambda r: r["composite_score"],
+        reverse=True,
+    )
+    unscored = [r for r in rows if r["included_weight"] == 0]
+    for i, r in enumerate(scored, start=1):
+        r["rank"] = i
+    for r in unscored:
+        r["rank"] = None
+    return scored + unscored
+
+
+@frappe.whitelist()
+def get_team_performance(period_days=30, from_date=None, to_date=None):
+    """Ranked leaderboard of all PMS members. Management-only."""
+    if not (is_admin_user() or is_manager_user()):
+        frappe.throw(_("Performance scores are visible to management only."))
+    fd, td = _resolve_window(period_days, from_date, to_date)
+    return {
+        "from_date": str(fd),
+        "to_date": str(td),
+        "rows": compute_team_performance(fd, td),
     }

@@ -3,6 +3,13 @@
     <!-- Controls -->
     <div class="perf-controls">
       <div class="control-group">
+        <label class="ctrl-label">View</label>
+        <div class="period-btns">
+          <button class="period-btn" :class="{ active: view === 'individual' }" @click="view = 'individual'; reload()">Individual</button>
+          <button class="period-btn" :class="{ active: view === 'leaderboard' }" @click="view = 'leaderboard'; reload()">🏆 Leaderboard</button>
+        </div>
+      </div>
+      <div class="control-group" v-if="view === 'individual'">
         <label class="ctrl-label">Employee</label>
         <select v-model="selectedUser" class="ctrl-select" @change="load">
           <option value="">Select employee...</option>
@@ -16,23 +23,69 @@
             v-for="p in periods"
             :key="p.value"
             class="period-btn"
-            :class="{ active: period === p.value }"
-            @click="period = p.value; load()"
+            :class="{ active: !customRange && period === p.value }"
+            @click="clearRange(); period = p.value; reload()"
           >{{ p.label }}</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="ctrl-label">Custom Range</label>
+        <div class="range-inputs">
+          <input type="date" v-model="fromDate" class="ctrl-date" @change="onRangeChange" />
+          <span class="range-sep">→</span>
+          <input type="date" v-model="toDate" class="ctrl-date" @change="onRangeChange" />
+          <button v-if="customRange" class="range-clear" title="Clear custom range" @click="clearRange(); reload()">✕</button>
         </div>
       </div>
     </div>
 
     <div v-if="loading" class="perf-loading">
       <div class="spinner"></div>
-      <span>Computing performance score...</span>
+      <span>{{ view === 'leaderboard' ? 'Scoring the whole team...' : 'Computing performance score...' }}</span>
     </div>
-    <div v-else-if="!selectedUser" class="perf-empty">
+
+    <!-- ══════════════ Leaderboard view ══════════════ -->
+    <template v-else-if="view === 'leaderboard' && board">
+      <div class="dim-card">
+        <h3 class="dim-title">Team Leaderboard — {{ board.from_date }} → {{ board.to_date }}</h3>
+        <div v-if="topPerformer" class="award-banner">
+          🏆 <strong>Top performer: {{ topPerformer.full_name }}</strong> — {{ topPerformer.composite_score.toFixed(1) }} (Band {{ topPerformer.band }})
+        </div>
+        <table class="dim-table board-table">
+          <thead>
+            <tr>
+              <th>Rank</th><th>Member</th><th>Score</th><th></th><th>Band</th>
+              <th>Logged / Target</th><th>Tasks Done</th><th>Weakest Dimension</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in board.rows" :key="r.user" :class="{ 'row-top': r.rank === 1, 'row-unranked': !r.rank }"
+                class="board-row" @click="openMember(r)">
+              <td class="rank-cell">{{ medal(r.rank) }}{{ r.rank ? '#' + r.rank : '—' }}</td>
+              <td class="dim-name">{{ r.full_name }}</td>
+              <td class="dim-score">{{ r.rank ? r.composite_score.toFixed(1) : 'no data' }}</td>
+              <td class="dim-bar-cell">
+                <div class="dim-bar-track">
+                  <div class="dim-bar-fill" :style="{ width: (r.composite_score || 0) + '%', background: barColor(r.composite_score) }"></div>
+                </div>
+              </td>
+              <td><span v-if="r.rank" class="band-chip" :style="{ color: barColor(r.composite_score) }">{{ r.band }}</span><span v-else>—</span></td>
+              <td>{{ r.total_logged_hours.toFixed(1) }}h / {{ r.target_hours.toFixed(1) }}h</td>
+              <td>{{ r.completed_count }}</td>
+              <td class="dim-raw">{{ weakest(r) }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="board-note">Ranked by composite score; members with no scorable data appear unranked. Click a row for the full breakdown. On the 1st of each month every member is emailed their own score &amp; rank; management receives this leaderboard.</p>
+      </div>
+    </template>
+
+    <div v-else-if="view === 'individual' && !selectedUser" class="perf-empty">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
       <p>Select an employee to view their performance score</p>
     </div>
 
-    <template v-else-if="data">
+    <template v-else-if="view === 'individual' && data">
       <!-- Score hero -->
       <div class="score-hero">
         <div class="score-ring" :class="'band-' + data.band.toLowerCase()">
@@ -147,14 +200,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { call } from '@/utils/frappe'
 
 const users = ref([])
 const selectedUser = ref('')
 const period = ref(30)
 const data = ref(null)
+const board = ref(null)
 const loading = ref(false)
+const view = ref('individual')
+const fromDate = ref('')
+const toDate = ref('')
+
+const customRange = computed(() => !!(fromDate.value && toDate.value))
+const topPerformer = computed(() => {
+  const top = board.value?.rows?.find(r => r.rank === 1)
+  return top && top.composite_score > 0 ? top : null
+})
 
 const periods = [
   { label: '5d', value: 5 },
@@ -185,13 +248,36 @@ onMounted(async () => {
   }
 })
 
+function windowArgs() {
+  const args = { period_days: period.value }
+  if (customRange.value) {
+    args.from_date = fromDate.value
+    args.to_date = toDate.value
+  }
+  return args
+}
+
+function reload() {
+  if (view.value === 'leaderboard') loadBoard()
+  else load()
+}
+
+function onRangeChange() {
+  if (customRange.value) reload()
+}
+
+function clearRange() {
+  fromDate.value = ''
+  toDate.value = ''
+}
+
 async function load() {
   if (!selectedUser.value) return
   loading.value = true
   try {
     data.value = await call('next_pms.api.performance.get_performance_score', {
       user: selectedUser.value,
-      period_days: period.value,
+      ...windowArgs(),
     })
   } catch (e) {
     console.error('Failed to load performance score:', e)
@@ -199,6 +285,36 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+async function loadBoard() {
+  loading.value = true
+  try {
+    board.value = await call('next_pms.api.performance.get_team_performance', windowArgs())
+  } catch (e) {
+    console.error('Failed to load leaderboard:', e)
+    board.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+function medal(rank) {
+  return { 1: '🏆 ', 2: '🥈 ', 3: '🥉 ' }[rank] || ''
+}
+
+function weakest(r) {
+  const entries = Object.entries(r.dimensions || {})
+  if (!entries.length) return '—'
+  const [key, score] = entries.reduce((min, e) => (e[1] < min[1] ? e : min))
+  return `${labels[key]} (${score.toFixed(0)})`
+}
+
+function openMember(r) {
+  if (!r.rank && r.included_weight === 0) return
+  selectedUser.value = r.user
+  view.value = 'individual'
+  load()
 }
 
 function barColor(score) {
@@ -219,6 +335,21 @@ function barColor(score) {
 .period-btns { display: flex; gap: 4px; }
 .period-btn { padding: 7px 14px; border: 1px solid var(--border-default); background: var(--bg-body); color: var(--text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; border-radius: 8px; transition: all 0.15s; }
 .period-btn.active { background: var(--color-primary, #2563eb); color: #fff; border-color: var(--color-primary, #2563eb); }
+
+.range-inputs { display: flex; align-items: center; gap: 6px; }
+.ctrl-date { padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-body); color: var(--text-primary); font-size: 12.5px; }
+.range-sep { color: var(--text-secondary); font-size: 12px; }
+.range-clear { border: 1px solid var(--border-default); background: var(--bg-body); color: var(--text-secondary); border-radius: 8px; padding: 6px 9px; cursor: pointer; font-size: 11px; }
+.range-clear:hover { color: #ef4444; border-color: #ef4444; }
+
+.award-banner { background: #fefce8; border: 1px solid #fde68a; color: #92400e; border-radius: 8px; padding: 10px 14px; font-size: 13.5px; margin-bottom: 14px; }
+.board-row { cursor: pointer; }
+.board-row:hover td { background: var(--bg-surface-hover); }
+.board-row.row-top td { background: #fefce8; }
+.board-row.row-unranked td { opacity: 0.5; }
+.rank-cell { font-weight: 700; white-space: nowrap; }
+.band-chip { font-weight: 800; font-size: 13px; }
+.board-note { font-size: 12px; color: var(--text-secondary); margin-top: 12px; line-height: 1.6; }
 
 .perf-loading, .perf-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 20px; color: var(--text-secondary); font-size: 13px; }
 .spinner { width: 28px; height: 28px; border: 3px solid var(--border-default); border-top-color: var(--color-primary, #2563eb); border-radius: 50%; animation: spin 0.8s linear infinite; }

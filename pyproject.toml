@@ -1,6 +1,6 @@
 [project]
 name = "next_pms"
-version = "0.0.1"
+version = "1.0.0"
 description = "IT Project Management System for ERPNext"
 authors = [
     {name = "EFTPMS", email = "info@eftpms.com"}

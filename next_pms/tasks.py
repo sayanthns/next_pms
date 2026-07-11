@@ -652,3 +652,169 @@ def _build_checkin_reminder_html(full_name, reason, date_str):
       </div>
     </div>
     """
+
+
+# ═══════════════════ Monthly Performance Report ═══════════════════
+
+def send_monthly_performance_report():
+    """1st of month 08:00 cron — previous calendar month's Performance
+    Scores. Each member gets their own score/band/rank; the management
+    recipient gets the full ranked leaderboard with the top performer
+    highlighted. Disable via PMS AI Settings.monthly_performance_enabled
+    (defaults ON when the field doesn't exist yet)."""
+    if not getattr(frappe.get_cached_doc("PMS AI Settings"), "monthly_performance_enabled", 1):
+        return
+
+    from frappe.utils import add_months, get_first_day, get_last_day
+
+    prev = add_months(getdate(), -1)
+    month_start = get_first_day(prev)
+    month_end = get_last_day(prev)
+    from_str, to_str = str(month_start), str(month_end)
+    month_label = month_start.strftime("%B %Y")
+
+    from next_pms.api.performance import compute_team_performance
+
+    rows = compute_team_performance(month_start, month_end)
+    ranked = [r for r in rows if r["rank"]]
+    if not ranked:
+        return
+
+    # Individual emails — own score, band, rank. No peer names exposed.
+    for r in ranked:
+        try:
+            frappe.sendmail(
+                recipients=[r["user"]],
+                subject=_("Your {0} Performance Score").format(month_label),
+                message=_build_member_monthly_html(r, len(ranked), month_label, from_str, to_str),
+                now=True,
+            )
+        except Exception:
+            frappe.log_error(
+                title=f"Monthly performance email failed for {r['user']}",
+                message=frappe.get_traceback(),
+            )
+
+    # Management leaderboard
+    recipient = (
+        frappe.db.get_single_value("PMS AI Settings", "weekly_summary_recipient")
+        or "sayanth@enfono.in"
+    )
+    try:
+        frappe.sendmail(
+            recipients=[recipient],
+            subject=_("Team Performance Leaderboard — {0}").format(month_label),
+            message=_build_leaderboard_html(rows, month_label, from_str, to_str),
+            now=True,
+        )
+    except Exception:
+        frappe.log_error(
+            title=f"Monthly leaderboard email failed for {recipient}",
+            message=frappe.get_traceback(),
+        )
+
+    frappe.db.commit()
+
+
+def _band_color(band):
+    return {"A": "#10B981", "B": "#2563eb", "C": "#F59E0B", "D": "#EF4444"}.get(band, "#6b7280")
+
+
+_DIM_LABELS = {
+    "delivery": "Delivery", "timeliness": "Timeliness", "utilization": "Utilization",
+    "plan_adherence": "Plan Adherence", "efficiency": "Efficiency", "quality": "Quality",
+    "consistency": "Consistency", "attendance": "Attendance",
+}
+
+
+def _build_member_monthly_html(row, total_ranked, month_label, from_str, to_str):
+    color = _band_color(row["band"])
+    dim_rows = ""
+    for key, label in _DIM_LABELS.items():
+        score = row["dimensions"].get(key)
+        val = f"{score:.0f}" if score is not None else "&mdash;"
+        dim_rows += f"""
+        <tr>
+          <td style="padding:8px 12px; border:1px solid #eef0f3;">{label}</td>
+          <td style="padding:8px 12px; border:1px solid #eef0f3; text-align:right; font-weight:700;">{val}</td>
+        </tr>"""
+    return f"""
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; max-width:560px; margin:0 auto; background:#f5f6f8; padding:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+        <tr>
+          <td bgcolor="#4f46e5" style="background-color:#4f46e5; background:linear-gradient(135deg,#7c3aed,#4f46e5); padding:24px 28px; border-radius:12px 12px 0 0;">
+            <div style="font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#e0e7ff;">Next PMS &middot; Monthly Performance</div>
+            <div style="font-size:22px; font-weight:800; margin-top:6px; color:#ffffff;">Hi {row['full_name']},</div>
+            <div style="font-size:13px; color:#e0e7ff; margin-top:4px;">{month_label} &nbsp;&middot;&nbsp; {from_str} &rarr; {to_str}</div>
+          </td>
+        </tr>
+      </table>
+      <div style="background:#ffffff; padding:24px 28px; text-align:center;">
+        <div style="display:inline-block; padding:18px 34px; border:5px solid {color}; border-radius:16px;">
+          <div style="font-size:40px; font-weight:800; color:#111827;">{row['composite_score']:.1f}</div>
+          <div style="font-size:14px; font-weight:700; color:{color};">Band {row['band']}</div>
+        </div>
+        <div style="margin-top:12px; font-size:14px; color:#374151;">Your rank: <strong>#{row['rank']} of {total_ranked}</strong></div>
+      </div>
+      <div style="background:#ffffff; padding:0 28px 20px;">
+        <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#6b7280; margin:4px 6px 6px;">Dimension Scores (0&ndash;100)</div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:13px;">{dim_rows}
+        </table>
+      </div>
+      <div style="background:#ffffff; border-radius:0 0 12px 12px; padding:16px 28px; border-top:1px solid #eef0f3; color:#9ca3af; font-size:11px; line-height:1.6;">
+        The Performance Score combines 8 weighted dimensions over the calendar month; targets exclude Sundays, holidays and approved leave, so absence never lowers your score.
+        Bands: A &ge; 85 &middot; B &ge; 70 &middot; C &ge; 50 &middot; D &lt; 50. Full methodology: Task Report &rarr; Performance (managers) or the user guide at /pms-guide.
+        <br>Automated monthly report from Next PMS. The score informs reviews; it is not the sole basis of any decision.
+      </div>
+    </div>
+    """
+
+
+def _build_leaderboard_html(rows, month_label, from_str, to_str):
+    medals = {1: "\U0001F3C6", 2: "\U0001F948", 3: "\U0001F949"}
+    body = ""
+    for r in rows:
+        color = _band_color(r["band"])
+        rank = r["rank"]
+        rank_cell = f"{medals.get(rank, '')} #{rank}" if rank else "&mdash;"
+        row_bg = ' style="background:#fefce8;"' if rank == 1 else ""
+        score = f"{r['composite_score']:.1f}" if rank else "no data"
+        body += f"""
+        <tr{row_bg}>
+          <td style="padding:10px; border:1px solid #e5e7eb; text-align:center; font-weight:700;">{rank_cell}</td>
+          <td style="padding:10px; border:1px solid #e5e7eb;">{r['full_name']}</td>
+          <td style="padding:10px; border:1px solid #e5e7eb; text-align:center; font-weight:700; color:{color};">{score}</td>
+          <td style="padding:10px; border:1px solid #e5e7eb; text-align:center; color:{color}; font-weight:600;">{r['band'] if rank else '&mdash;'}</td>
+          <td style="padding:10px; border:1px solid #e5e7eb; text-align:center;">{r['total_logged_hours']:.1f}h / {r['target_hours']:.1f}h</td>
+          <td style="padding:10px; border:1px solid #e5e7eb; text-align:center;">{r['completed_count']}</td>
+        </tr>"""
+    top = next((r for r in rows if r["rank"] == 1 and r["composite_score"] > 0), None)
+    top_line = (
+        f"<p style='font-size:14px;'>\U0001F3C6 <strong>Top performer of {month_label}: "
+        f"{top['full_name']}</strong> &mdash; {top['composite_score']:.1f} (Band {top['band']}). Congratulations!</p>"
+        if top else ""
+    )
+    return f"""
+    <h3>Team Performance Leaderboard &mdash; {month_label}</h3>
+    <p>Window <strong>{from_str}</strong> to <strong>{to_str}</strong>. Composite of 8 weighted dimensions (leave-adjusted).</p>
+    {top_line}
+    <table style="border-collapse:collapse; width:100%; max-width:820px;">
+      <thead>
+        <tr style="background:#f3f4f6;">
+          <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Rank</th>
+          <th style="padding:10px; border:1px solid #e5e7eb; text-align:left;">Member</th>
+          <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Score</th>
+          <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Band</th>
+          <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Logged / Target</th>
+          <th style="padding:10px; border:1px solid #e5e7eb; text-align:center;">Tasks Done</th>
+        </tr>
+      </thead>
+      <tbody>{body}</tbody>
+    </table>
+    <p style="margin-top:16px; color:#6b7280; font-size:13px;">
+      Members without scorable data (no logged hours, tasks or attendance in the month) appear unranked.
+      Each ranked member received their own score email (rank shown, peers' names not).
+      Full methodology: Task Report &rarr; Performance tab.
+      <br>Automated monthly leaderboard from Next PMS.
+    </p>
+    """

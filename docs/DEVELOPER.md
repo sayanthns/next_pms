@@ -49,7 +49,7 @@ All SPA calls go through whitelisted methods here. Key modules:
 |---|---|
 | `_hours.py` | **Single source of truth** for target/utilization math (see Metrics Engine) |
 | `productivity.py` | Employee Productivity tab (`get_employee_productivity`) |
-| `performance.py` | Composite Performance Score (`get_performance_score`, management-only) |
+| `performance.py` | Composite Performance Score: `get_performance_score` (individual, custom `from_date`/`to_date` or rolling `period_days`), `get_team_performance` (ranked leaderboard), `compute_team_performance` (internal, used by monthly cron). All management-only. |
 | `crud.py` | Task report, task/project CRUD |
 | `weekly_plan.py` | Weekly Plan matrix builder |
 | `calendar.py` | Meetings |
@@ -120,11 +120,20 @@ Management-only composite, 8 dimensions, weights fixed in `WEIGHTS` (sum 100):
 | Job | Cron | What |
 |---|---|---|
 | `send_weekly_summary` | Sat 07:00 | Per-member email + management team table (Utilization + Efficiency) |
+| `send_monthly_performance_report` | 1st of month 08:00 | Previous month's Performance Scores — per member (own score/band/rank), management (ranked leaderboard + top performer). Toggle: `PMS AI Settings.monthly_performance_enabled` (getattr default ON — field optional). |
 | `generate_daily_report` (`ai_report.py`) | daily 03:00 | AI daily report to management |
 | `send_checkin_reminders` | per config | Missing check-in/out nudges |
 | Budget alerts | on update | ≥80% budget utilisation |
 
 ⚠️ After deploying scheduler-code changes, **restart workers** — stale workers silently run old code (2026-06-18 incident: 4-day silent outage).
+
+⚠️ A **new cron entry in hooks.py** needs a Scheduled Job Type sync to start firing. Full `bench migrate` does it, but when migrate is risky, sync just the jobs:
+
+```python
+# bench --site <site> console
+from frappe.core.doctype.scheduled_job_type.scheduled_job_type import sync_jobs
+sync_jobs(); frappe.db.commit()
+```
 
 ## Frontend (Vue 3 + Vite + Pinia)
 
@@ -177,6 +186,35 @@ Tests live beside the modules (`api/test_*.py`) and in doctype folders (`test_<d
 | Planned | `completion_date` on PMS Task | Replace the "Done + modified-in-window" proxy in performance/email metrics. |
 | Planned | PMS Performance Settings (Single) | Management-tunable `WEIGHTS`/caps; replaces hardcoded dict in `performance.py`. |
 | Planned | Android APK release | Capacitor build in `android-capacitor/`. |
+
+## Settings reference (PMS AI Settings, Single)
+
+| Field | Used by |
+|---|---|
+| `working_hours_per_day` | `_hours.get_working_hours_per_day()` — every target/utilization figure (default 8) |
+| `daily_report_enabled` / `daily_report_recipient(s)` / `report_detail_level` / `plan_department` | `ai_report.generate_daily_report` |
+| `ai_*` / `fallback_*` | LLM config for the daily report |
+| `weekly_summary_enabled` / `weekly_summary_recipient` | `tasks.send_weekly_summary` — recipient is ALSO the monthly-leaderboard inbox |
+| `monthly_performance_enabled` (optional field) | `tasks.send_monthly_performance_report` — read via `getattr(..., 1)` so it works before the field exists |
+| `attendance_reminder_enabled` / `attendance_manager_recipients` | `tasks.send_checkin_reminders` |
+| `budget_approver_emails` | Budget request approvals |
+
+Pattern: new toggles are read with `getattr(frappe.get_cached_doc("PMS AI Settings"), "<field>", <default>)` so code deploys before schema — add the actual Check field later for UI control, no code change needed.
+
+## Release process
+
+```bash
+# 1. Bump version (both files must match)
+#    next_pms/__init__.py  → __version__
+#    pyproject.toml        → version
+# 2. Commit, push, tag
+git tag -a v<X.Y.Z> -m "next_pms v<X.Y.Z>"
+git push origin main --tags
+# 3. GitHub release with generated notes
+gh release create v<X.Y.Z> --title "next_pms v<X.Y.Z>" --notes-file <notes.md>
+```
+
+Semver: MAJOR = breaking DocType/API change, MINOR = features (new endpoints, tabs, emails), PATCH = fixes.
 
 ## Related docs
 

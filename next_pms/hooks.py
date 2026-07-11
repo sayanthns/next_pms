@@ -58,6 +58,11 @@ scheduler_events = {
         "30 8 * * 1-6": [
             "next_pms.tasks.send_checkin_reminders",
         ],
+        # 1st of month 08:00 — previous month's Performance Scores:
+        # each member their own score/band/rank, management the leaderboard.
+        "0 8 1 * *": [
+            "next_pms.tasks.send_monthly_performance_report",
+        ],
     },
 }
 

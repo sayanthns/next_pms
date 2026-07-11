@@ -94,6 +94,8 @@
   <a href="#metrics">Metrics Explained</a>
   <a href="#performance">Performance Score</a>
   <a href="#emails">Automated Emails</a>
+  <a href="#notifications">Notifications</a>
+  <a href="#settings-ref">Settings Reference</a>
   <div class="group">More</div>
   <a href="#portal">Client Portal</a>
   <a href="#tickets">Support Tickets</a>
@@ -271,18 +273,73 @@
     </table>
     <p>Bands: <span class="badge b-green">A ≥ 85</span> <span class="badge b-blue">B ≥ 70</span> <span class="badge b-amber">C ≥ 50</span> <span class="badge b-red">D &lt; 50</span>. Dimensions with no data are excluded and weights renormalised — missing data never scores zero.</p>
     <div class="callout good">✅ <strong>Fairness built in:</strong> leave-adjusted everywhere · PM-controlled estimates · anti-gaming caps · evaluate 30–90-day trends, never a single week · metrics inform, humans decide. Full methodology with formulas is published inside the Performance tab itself.</div>
+
+    <h3>🏆 Team Leaderboard</h3>
+    <p>The Performance tab has two views: <strong>Individual</strong> (one employee's full breakdown) and <strong>Leaderboard</strong> (every PMS member ranked by composite score for the chosen window). The top performer is highlighted 🏆; #2 and #3 get 🥈 / 🥉. Each row shows score, band, logged-vs-target hours, tasks done and the member's <em>weakest dimension</em> — a low rank always comes with its reason attached. Members with no scorable data appear unranked rather than as zeros. Clicking any row opens that member's individual breakdown.</p>
+
+    <h3>Analysing specific dates</h3>
+    <p>Besides the rolling periods (5d…90d), a <strong>Custom Range</strong> (from → to) is available on both views — use it to score an exact appraisal cycle, a single sprint, or one calendar month. Clear it (✕) to return to rolling periods.</p>
+
+    <h3>📬 Monthly score email</h3>
+    <p>On the <strong>1st of every month at 08:00</strong> the system evaluates the previous calendar month and emails:</p>
+    <ul>
+      <li><strong>Every member:</strong> own score, band, rank ("#3 of 15") and per-dimension scores. Peers' names are <em>not</em> included.</li>
+      <li><strong>Management:</strong> the full ranked leaderboard, with the month's top performer called out for recognition 🏆.</li>
+    </ul>
   </section>
 
   <section id="emails">
     <h2>Automated Emails</h2>
     <table>
-      <tr><th>Email</th><th>When</th><th>To</th><th>Contains</th></tr>
-      <tr><td>Daily AI report</td><td>Daily (cron)</td><td>Management</td><td>Per-person daily metrics, plan-vs-actual, anomalies</td></tr>
-      <tr><td>Your Weekly Work Summary</td><td>Saturday 07:00</td><td>Each member</td><td>Own hours, target, Utilization, Efficiency, tasks, attendance</td></tr>
-      <tr><td>Team Weekly Work Summary</td><td>Saturday 07:00</td><td>Management</td><td>All-member table: Logged / Target / Utilization / Efficiency / Tasks Done</td></tr>
-      <tr><td>Check-in reminders</td><td>On miss</td><td>Member</td><td>Missing check-in / check-out nudge</td></tr>
-      <tr><td>Budget alerts</td><td>At 80%+</td><td>PM</td><td>Project budget utilisation warning</td></tr>
+      <tr><th>Email</th><th>Schedule</th><th>To</th><th>Contains</th><th>Off switch</th></tr>
+      <tr><td>Daily AI report</td><td>Daily 03:00</td><td>Management</td><td>Per-person daily metrics, plan-vs-actual, anomalies</td><td><code>Enable Daily Report</code></td></tr>
+      <tr><td>Scheduled project reports</td><td>08:00 Mon–Sat</td><td>Per report config</td><td>Single/multi-project status reports</td><td>Per report schedule</td></tr>
+      <tr><td>Your Weekly Work Summary</td><td>Saturday 07:00</td><td>Each member</td><td>Own hours, target, Utilization, Efficiency, tasks, attendance</td><td><code>Enable Weekly Summary</code></td></tr>
+      <tr><td>Team Weekly Work Summary</td><td>Saturday 07:00</td><td>Management recipient</td><td>All-member table: Logged / Target / Utilization / Efficiency / Tasks Done</td><td><code>Enable Weekly Summary</code></td></tr>
+      <tr><td><strong>Your Monthly Performance Score</strong></td><td>1st of month 08:00</td><td>Each member</td><td>Own composite score, band, rank, dimension scores for the previous month</td><td><code>Monthly Performance Enabled</code></td></tr>
+      <tr><td><strong>Team Performance Leaderboard</strong></td><td>1st of month 08:00</td><td>Management recipient</td><td>Ranked leaderboard, top performer of the month</td><td><code>Monthly Performance Enabled</code></td></tr>
+      <tr><td>Check-in / check-out reminders</td><td>08:30 Mon–Sat</td><td>Member + manager digest</td><td>Missing check-in / check-out for the previous working day</td><td><code>Enable Attendance Reminders</code></td></tr>
+      <tr><td>Task deadline reminder</td><td>Daily</td><td>Assignee</td><td>Tasks due tomorrow (not Done/Cancelled)</td><td>—</td></tr>
+      <tr><td>Long-running timer alert</td><td>Hourly</td><td>Timer owner</td><td>Timer running 4+ hours — stop or confirm</td><td>—</td></tr>
+      <tr><td>Budget alert</td><td>Daily check</td><td>Project manager</td><td>Project at ≥80% budget utilisation</td><td>—</td></tr>
     </table>
+    <p>All "off switches" live in <strong>PMS AI Settings</strong> (see <a href="#settings-ref">Settings Reference</a>). Recipients: member emails go to the member; management copies go to the configured <em>Weekly Team Summary Recipient</em>.</p>
+  </section>
+
+  <section id="notifications">
+    <h2>In-App Notifications</h2>
+    <p>The bell icon (sidebar) shows unread notifications; mark one or all read from the panel. Notifications are created for:</p>
+    <table>
+      <tr><th>Trigger</th><th>Who is notified</th></tr>
+      <tr><td>Task assigned to you / task comment with <code>@mention</code></td><td>Assignee / mentioned user</td></tr>
+      <tr><td>Task due tomorrow</td><td>Assignee</td></tr>
+      <tr><td>Timer running 4+ hours</td><td>Timer owner</td></tr>
+      <tr><td>Project budget ≥ 80%</td><td>Project manager</td></tr>
+      <tr><td>Client comment on a portal task</td><td>Project team</td></tr>
+    </table>
+    <p>Real-time updates (Kanban moves, new comments) arrive live via Socket.io — no refresh needed. The mobile app (PWA) additionally supports push notifications.</p>
+  </section>
+
+  <section id="settings-ref">
+    <h2>Settings Reference (PMS AI Settings)</h2>
+    <p>Admin-only single settings document that controls reports, emails and the hours baseline (Desk → PMS AI Settings).</p>
+    <table>
+      <tr><th>Group</th><th>Setting</th><th>What it does</th></tr>
+      <tr><td rowspan="3">AI</td><td>AI Provider / API Key / Model</td><td>LLM used for the daily AI report narrative</td></tr>
+      <tr><td>Fallback Provider / API Key / Model</td><td>Secondary LLM if the primary fails</td></tr>
+      <tr><td>Report Detail Level</td><td>Verbosity of the daily AI report</td></tr>
+      <tr><td rowspan="3">Daily report</td><td>Enable Daily Report</td><td>Master switch, daily 03:00</td></tr>
+      <tr><td>Primary Recipient / Additional Recipients</td><td>Who receives the daily AI report</td></tr>
+      <tr><td>Plan Evaluation Department</td><td>Department whose Weekly Plan is evaluated in the report</td></tr>
+      <tr><td rowspan="2">Hours baseline</td><td><strong>Working Hours Per Day</strong></td><td>The daily target (default 8h) behind Utilization, targets and the Performance Score</td></tr>
+      <tr><td>—</td><td>Sundays, holiday lists and approved leave are always excluded automatically (not configurable per user)</td></tr>
+      <tr><td rowspan="2">Weekly/monthly</td><td>Enable Weekly Summary</td><td>Saturday member + team emails</td></tr>
+      <tr><td>Weekly Team Summary Recipient</td><td>Management inbox for team summary <em>and</em> monthly leaderboard</td></tr>
+      <tr><td rowspan="2">Attendance</td><td>Enable Attendance Reminders</td><td>08:30 missing check-in/out nudges</td></tr>
+      <tr><td>Manager Digest Recipients</td><td>Managers receiving the attendance digest</td></tr>
+      <tr><td>Budget</td><td>Budget Approver Emails</td><td>Who approves budget requests</td></tr>
+    </table>
+    <p>Per-user access control (sidebar items, project tabs, feature switches, finance visibility) is separate — <strong>User Detail → Permissions</strong>, admin only. Roles are covered in <a href="#roles">Roles &amp; Access</a>.</p>
   </section>
 
   <section id="portal">
