@@ -88,6 +88,7 @@
   <a href="#overview">Overview</a>
   <a href="#getting-started">Getting Started</a>
   <a href="#roles">Roles &amp; Access</a>
+  <a href="#admin">⚙️ Admin Guide</a>
   <div class="group">Daily Work</div>
   <a href="#projects">Projects &amp; Sprints</a>
   <a href="#tasks">Tasks &amp; Kanban</a>
@@ -159,6 +160,48 @@
       <tr><td><span class="badge b-green">PMS Customer</span></td><td>Client portal only</td></tr>
     </table>
     <p>System Manager / Administrator see everything. Per-user fine-tuning (sidebar items, project tabs, feature switches) lives in <strong>User Detail → Permissions</strong> (admin only).</p>
+  </section>
+
+  <section id="admin">
+    <h2>⚙️ Admin Guide</h2>
+    <p>Everything below is <strong>admin-only</strong> (System Manager / Administrator). All of it lives in the SPA under <strong>Settings → User Management</strong> — no desk access needed except where noted.</p>
+
+    <h3>1. Register / onboard a user</h3>
+    <p>Any ERPNext user on the site can be given PMS access — you do not create a separate PMS account.</p>
+    <ol class="steps">
+      <li>Open <strong>Settings → User Management</strong> (admin only).</li>
+      <li>Find the person in the user list (they must already exist as an enabled ERPNext <em>System User</em>; create them in the desk <em>User</em> list first if not).</li>
+      <li>Toggle <strong>PMS Access ON</strong>. This grants the base <span class="badge b-gray">Next PMS</span> role plus <span class="badge b-violet">PMS Developer</span> as the starting role.</li>
+      <li>Set their <strong>functional role</strong> from the dropdown — <span class="badge b-blue">PMS Manager</span> / <span class="badge b-violet">PMS Developer</span> / <span class="badge b-amber">PMS Viewer</span>. Changing the role replaces the previous one (the base role stays).</li>
+      <li>For a client contact, give <span class="badge b-green">PMS Customer</span> instead and share a portal token (see <a href="#portal">Client Portal</a>).</li>
+    </ol>
+    <div class="callout">⚠️ Toggling PMS Access <strong>OFF</strong> removes <em>all</em> PMS roles (including the base role) — the person disappears from team pickers, reports and the leaderboard. Their historical time logs and snapshots are kept.</div>
+
+    <h3>2. Set the hours baseline</h3>
+    <p>In <strong>User Management → settings</strong>, set <strong>Working Hours / Day</strong> (default <code>8</code>). This single number is the bar behind Utilization, every target, and the whole Performance Score. Sundays, each employee's holiday list and approved leave are removed automatically — you do not configure those here.</p>
+    <div class="callout info">💡 For leave/holiday to actually reduce a person's target, they need an <strong>Employee record with a Holiday List</strong> and approved <strong>Leave Applications</strong> (standard HR doctypes). Without an Employee record the app falls back to "all non-Sundays are working days".</div>
+
+    <h3>3. Configure automated emails</h3>
+    <p>Same <strong>User Management → settings</strong> panel. Each toggle maps to one scheduled job (full list in <a href="#emails">Automated Emails</a>):</p>
+    <ol class="steps">
+      <li><strong>Daily AI report</strong> — turn on, set the recipient, and paste an AI provider key + model (used only to write the narrative). Fires 03:00 daily.</li>
+      <li><strong>Weekly summary</strong> — turn on and set the <strong>Weekly Team Summary Recipient</strong>. This one address also receives the monthly leaderboard. Members always get their own copy. Fires Saturday 07:00.</li>
+      <li><strong>Attendance reminders</strong> — turn on and set manager digest recipients. Fires 08:30 on working days.</li>
+      <li>Save. Changes take effect on the next scheduled run — no restart needed.</li>
+    </ol>
+    <div class="callout info">💡 The <strong>monthly Performance leaderboard + score emails</strong> (1st, 08:00) are ON by default. To disable them, set <code>monthly_performance_enabled = 0</code> on the <strong>PMS AI Settings</strong> single doctype in the desk (this one toggle isn't in the SPA panel yet).</div>
+
+    <h3>4. Per-user permissions</h3>
+    <p>Fine-grained control — which sidebar items, project tabs and features (e.g. finance/cost visibility) a user sees — lives in <strong>User Detail → Permissions</strong> (open a user from User Management). Managers see everything relevant to their projects by default; developers get a restricted set.</p>
+
+    <h3>5. First-time setup checklist</h3>
+    <ol class="steps">
+      <li>Enable PMS Access for the team; set one <span class="badge b-blue">PMS Manager</span>.</li>
+      <li>Set <strong>Working Hours / Day</strong> and turn on the emails you want.</li>
+      <li>Create a <strong>Project</strong>, add team members <em>with hourly rates</em> (rates drive cost + budget), set a budget, and move it to <strong>Active</strong> (timers are blocked on Planning-stage projects).</li>
+      <li>Publish the first <strong>Weekly Plan</strong> so Plan Adherence has something to score.</li>
+      <li>Ensure staff <strong>check in</strong> and <strong>run timers</strong> from day one — every report is empty until there are time logs.</li>
+    </ol>
   </section>
 
   <section id="projects">
