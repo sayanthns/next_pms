@@ -55,7 +55,7 @@
           <thead>
             <tr>
               <th>Rank</th><th>Member</th><th>Score</th><th></th><th>Band</th>
-              <th>Logged / Target</th><th>Tasks Done</th><th>Weakest Dimension</th>
+              <th>Hours (logged vs target)</th><th>Tasks Done</th><th>Weakest Dimension</th>
             </tr>
           </thead>
           <tbody>
@@ -70,13 +70,13 @@
                 </div>
               </td>
               <td><span v-if="r.rank" class="band-chip" :style="{ color: barColor(r.composite_score) }">{{ r.band }}</span><span v-else>—</span></td>
-              <td>{{ r.total_logged_hours.toFixed(1) }}h / {{ r.target_hours.toFixed(1) }}h</td>
+              <td>{{ r.total_logged_hours.toFixed(1) }}h logged · {{ r.target_hours.toFixed(1) }}h target</td>
               <td>{{ r.completed_count }}</td>
               <td class="dim-raw">{{ weakest(r) }}</td>
             </tr>
           </tbody>
         </table>
-        <p class="board-note">Ranked by composite score; members with no scorable data appear unranked. Click a row for the full breakdown. On the 1st of each month every member is emailed their own score &amp; rank; management receives this leaderboard.</p>
+        <p class="board-note">Ranked by composite score; members with no scorable data appear unranked. Click a row for the full breakdown. Logged hours can exceed target (overtime / weekend work) — Utilization still caps at 100%. On the 1st of each month every member is emailed their own score &amp; rank; management receives this leaderboard.</p>
       </div>
     </template>
 
